@@ -3,23 +3,33 @@ import Link from "next/link"
 import { Navbar } from "@/components/Navbar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Calendar, ArrowRight, ShieldCheck, Map, Image as ImageIcon, User } from "lucide-react"
+import { Calendar, ArrowRight, ShieldCheck, Map, Image as ImageIcon, User, MapPinned } from "lucide-react"
 import { PlaceHolderImages } from "@/lib/placeholder-images"
 
 const upcomingEvents = [
+  {
+    id: 3,
+    title: "Uscita al Terminillo",
+    date: "25 Maggio, 2024",
+    location: "Caserma VVF Roma ore 09:00",
+    image: PlaceHolderImages.find(img => img.id === "gallery-3")?.imageUrl,
+    mapUrl: "https://www.google.com/maps/dir/Roma/Monte+Terminillo"
+  },
   {
     id: 1,
     title: "Giro dei Castelli Romani",
     date: "15 Giugno, 2024",
     location: "Partenza: Comando via Genova, Roma",
-    image: PlaceHolderImages.find(img => img.id === "event-1")?.imageUrl
+    image: PlaceHolderImages.find(img => img.id === "event-1")?.imageUrl,
+    mapUrl: "https://www.google.com/maps/dir/Via+Genova,+Roma/Castel+Gandolfo"
   },
   {
     id: 2,
     title: "Litorale Laziale al Tramonto",
     date: "30 Giugno, 2024",
     location: "Ostia - Riva di Traiano",
-    image: PlaceHolderImages.find(img => img.id === "event-2")?.imageUrl
+    image: PlaceHolderImages.find(img => img.id === "event-2")?.imageUrl,
+    mapUrl: "https://www.google.com/maps/dir/Roma/Riva+di+Traiano"
   }
 ]
 
@@ -95,9 +105,16 @@ export default function Home() {
                     <Map className="w-4 h-4 mr-2 text-primary" />
                     {event.location}
                   </div>
-                  <Button asChild className="w-full bg-secondary hover:bg-primary hover:text-white transition-colors py-6">
-                    <Link href={`/events/${event.id}`}>Dettagli Percorso</Link>
-                  </Button>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Button asChild variant="secondary" className="hover:bg-primary hover:text-white transition-colors py-6">
+                      <Link href={`/events/${event.id}`}>Dettagli</Link>
+                    </Button>
+                    <Button asChild variant="outline" className="border-accent text-accent hover:bg-accent hover:text-accent-foreground transition-colors py-6">
+                      <a href={event.mapUrl} target="_blank" rel="noopener noreferrer">
+                        <MapPinned className="mr-2 w-4 h-4" /> Apri Percorso
+                      </a>
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             ))}
