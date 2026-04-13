@@ -1,27 +1,27 @@
-
 import { Navbar } from "@/components/Navbar"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { ShieldCheck, Zap, Heart, Info, FileText, CheckCircle2 } from "lucide-react"
 
 const benefits = [
   {
-    title: "Member Discounts",
-    description: "Enjoy exclusive discounts of up to 20% at our partner garages and gear shops.",
+    title: "Sconti per i Soci",
+    description: "Approfitta di sconti esclusivi fino al 20% presso officine e negozi di abbigliamento partner.",
     icon: Zap,
     color: "text-yellow-500",
     bg: "bg-yellow-500/10"
   },
   {
-    title: "Roadside Assistance",
-    description: "Premium club-funded roadside assistance for all members within national borders.",
+    title: "Assistenza Stradale",
+    description: "Assistenza stradale premium finanziata dal club per tutti i soci su tutto il territorio nazionale.",
     icon: ShieldCheck,
     color: "text-primary",
     bg: "bg-primary/10"
   },
   {
-    title: "Community Events",
-    description: "Early access and priority booking for all track days and annual club tours.",
+    title: "Eventi della Comunità",
+    description: "Accesso anticipato e prenotazione prioritaria per tutte le giornate in pista e i tour annuali del club.",
     icon: Heart,
     color: "text-accent",
     bg: "bg-accent/10"
@@ -31,24 +31,24 @@ const benefits = [
 const conventions = [
   {
     id: "membership-rules",
-    title: "Membership Rules & Conduct",
-    description: "Guidelines for active membership and community interaction.",
+    title: "Regole e Condotta dei Soci",
+    description: "Linee guida per la partecipazione attiva e l'interazione nella comunità.",
     points: [
-      "Respect all road safety regulations during group rides.",
-      "Maintain active communication on club channels.",
-      "Attend at least one club meeting every quarter.",
-      "Keep club property and gear in good condition."
+      "Rispettare tutte le norme del codice della strada durante i giri di gruppo.",
+      "Mantenere una comunicazione attiva sui canali del club.",
+      "Partecipare ad almeno una riunione del club a trimestre.",
+      "Mantenere le proprietà e l'attrezzatura del club in buone condizioni."
     ]
   },
   {
     id: "ride-safety",
-    title: "Group Ride Safety Protocol",
-    description: "Mandatory safety standards for every club-organized outing.",
+    title: "Protocollo Sicurezza Giri di Gruppo",
+    description: "Standard di sicurezza obbligatori per ogni uscita organizzata dal club.",
     points: [
-      "Full protective gear is mandatory for all participants.",
-      "Strict 'no alcohol' policy during and before rides.",
-      "Follow the Lead Rider and Tail Gunner instructions.",
-      "Staggered formation mandatory on straight roads."
+      "L'abbigliamento protettivo completo è obbligatorio per tutti i partecipanti.",
+      "Politica rigorosa 'alcol zero' prima e durante i giri.",
+      "Seguire le istruzioni del Capofila e del Chiudifila.",
+      "Formazione sfalsata obbligatoria sui tratti rettilinei."
     ]
   }
 ]
@@ -60,14 +60,14 @@ export default function ConventionsPage() {
       
       <main className="max-w-7xl mx-auto px-4 py-8">
         <header className="mb-12">
-          <Badge className="mb-4 bg-primary/20 text-primary border-none">Exclusive Membership</Badge>
-          <h1 className="text-4xl font-headline font-bold mb-2">Member Conventions</h1>
-          <p className="text-muted-foreground max-w-2xl">Access your club benefits and understand the rules that keep our community safe and enjoyable for everyone.</p>
+          <Badge className="mb-4 bg-primary/20 text-primary border-none font-bold uppercase tracking-wider">Iscrizione Esclusiva</Badge>
+          <h1 className="text-4xl font-headline font-bold mb-2">Convenzioni e Regolamento</h1>
+          <p className="text-muted-foreground max-w-2xl">Accedi ai vantaggi riservati ai soci e consulta le regole che mantengono la nostra comunità sicura e piacevole per tutti.</p>
         </header>
 
         <section className="mb-16">
-          <h2 className="text-2xl font-headline font-bold mb-8 flex items-center gap-2">
-            <Zap className="w-6 h-6 text-primary" /> Club Benefits
+          <h2 className="text-2xl font-headline font-bold mb-8 flex items-center gap-2 text-white">
+            <Zap className="w-6 h-6 text-primary" /> Vantaggi per i Soci
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {benefits.map((benefit, i) => {
@@ -78,7 +78,7 @@ export default function ConventionsPage() {
                     <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center mb-4", benefit.bg)}>
                       <Icon className={cn("w-6 h-6", benefit.color)} />
                     </div>
-                    <CardTitle className="text-xl">{benefit.title}</CardTitle>
+                    <CardTitle className="text-xl text-white">{benefit.title}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className="text-muted-foreground text-sm leading-relaxed">{benefit.description}</p>
@@ -96,7 +96,7 @@ export default function ConventionsPage() {
                 <div className="flex items-center gap-3">
                   <FileText className="w-6 h-6 text-primary" />
                   <div>
-                    <CardTitle className="text-xl">{conv.title}</CardTitle>
+                    <CardTitle className="text-xl text-white">{conv.title}</CardTitle>
                     <CardDescription>{conv.description}</CardDescription>
                   </div>
                 </div>
@@ -121,12 +121,12 @@ export default function ConventionsPage() {
               <Info className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h3 className="text-xl font-headline font-bold">Need more information?</h3>
-              <p className="text-muted-foreground text-sm">Download our full club handbook or contact the secretary for specific inquiries.</p>
+              <h3 className="text-xl font-headline font-bold text-white">Hai bisogno di più informazioni?</h3>
+              <p className="text-muted-foreground text-sm">Scarica il manuale completo del club o contatta la segreteria per domande specifiche.</p>
             </div>
           </div>
-          <Button variant="default" className="bg-primary text-white px-8 rounded-full h-12">
-            Download PDF Handbook
+          <Button variant="default" className="bg-primary text-white px-8 rounded-full h-12 font-bold">
+            Scarica il Manuale PDF
           </Button>
         </div>
       </main>
