@@ -1,3 +1,4 @@
+
 import Image from "next/image"
 import Link from "next/link"
 import { Navbar } from "@/components/Navbar"
@@ -41,19 +42,23 @@ export default function Home() {
       <Navbar />
       
       {/* Hero Section */}
-      <section className="relative h-[70vh] w-full flex items-center justify-center overflow-hidden">
+      <section className="relative h-[75vh] w-full flex items-center justify-center overflow-hidden">
         {heroImage?.imageUrl && (
-          <Image
-            src={heroImage.imageUrl}
-            alt="Hero Background"
-            fill
-            className="object-cover opacity-40"
-            priority
-            data-ai-hint="motorcycle highway"
-          />
+          <>
+            <Image
+              src={heroImage.imageUrl}
+              alt="Roma Background"
+              fill
+              className="object-cover"
+              priority
+              data-ai-hint="Rome St. Peter"
+            />
+            {/* Dark Filter Overlay for readability */}
+            <div className="absolute inset-0 bg-black/60 z-[1]" />
+          </>
         )}
         <div className="relative z-10 text-center px-4 max-w-4xl flex flex-col items-center">
-          <div className="relative w-32 h-32 md:w-48 md:h-48 mb-6 drop-shadow-[0_0_15px_rgba(211,47,47,0.5)]">
+          <div className="relative w-32 h-32 md:w-48 md:h-48 mb-6 drop-shadow-[0_0_20px_rgba(211,47,47,0.6)]">
             <Image 
               src="/logo_motoclub.gif" 
               alt="Logo Motoclub VVF Roma" 
@@ -65,11 +70,11 @@ export default function Home() {
           <h1 className="text-4xl md:text-7xl font-headline font-bold mb-4 bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent uppercase tracking-tighter">
             Motoclub VVF Roma
           </h1>
-          <p className="text-lg md:text-2xl text-muted-foreground mb-8 font-medium">
+          <p className="text-lg md:text-2xl text-white/90 mb-8 font-medium">
             Passione, Sicurezza e Fratellanza. Sulle strade con il coraggio dei Vigili del Fuoco.
           </p>
           <div className="flex justify-center">
-            <Button size="lg" className="bg-primary hover:bg-primary/90 text-white rounded-full px-8 h-14 text-lg font-bold shadow-lg shadow-primary/20" asChild>
+            <Button size="lg" className="bg-primary hover:bg-primary/90 text-white rounded-full px-10 h-14 text-lg font-bold shadow-lg shadow-primary/30 border-2 border-accent/20" asChild>
               <Link href="/conventions">
                 Vedi Convenzioni <FileText className="ml-2 w-5 h-5" />
               </Link>
@@ -115,7 +120,7 @@ export default function Home() {
                     <Button asChild variant="secondary" className="hover:bg-primary hover:text-white transition-colors py-6">
                       <Link href={`/events/${event.id}`}>Dettagli</Link>
                     </Button>
-                    <Button asChild variant="outline" className="border-accent text-accent hover:bg-accent hover:text-accent-foreground transition-colors py-6">
+                    <Button asChild variant="outline" className="border-accent/50 text-accent hover:bg-accent hover:text-accent-foreground transition-colors py-6">
                       <a href={event.mapUrl} target="_blank" rel="noopener noreferrer">
                         <MapPinned className="mr-2 w-4 h-4" /> Apri Percorso
                       </a>
