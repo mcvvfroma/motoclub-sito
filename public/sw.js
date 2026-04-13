@@ -1,28 +1,18 @@
 
-const CACHE_NAME = 'vvf-roma-v1';
-const urlsToCache = [
-  '/',
-  '/manifest.json',
-  '/logo_motoclub.gif'
-];
-
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => {
-        return cache.addAll(urlsToCache);
-      })
-  );
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(clients.claim());
 });
 
 self.addEventListener('fetch', (event) => {
+  // Il fetch handler è obbligatorio affinché Chrome e altri browser considerino l'app installabile
   event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        if (response) {
-          return response;
-        }
-        return fetch(event.request);
-      })
+    fetch(event.request).catch(() => {
+      // Risposta di fallback se offline e risorsa non in cache
+      return new Response('Motoclub VVF Roma è attualmente offline.');
+    })
   );
 });
