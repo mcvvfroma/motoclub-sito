@@ -32,14 +32,16 @@ export default function Home() {
       
       {/* Hero Section */}
       <section className="relative h-[60vh] w-full flex items-center justify-center overflow-hidden">
-        <Image
-          src={heroImage?.imageUrl || ""}
-          alt="Hero"
-          fill
-          className="object-cover opacity-40"
-          priority
-          data-ai-hint="motorcycle highway"
-        />
+        {heroImage?.imageUrl && (
+          <Image
+            src={heroImage.imageUrl}
+            alt="Hero"
+            fill
+            className="object-cover opacity-40"
+            priority
+            data-ai-hint="motorcycle highway"
+          />
+        )}
         <div className="relative z-10 text-center px-4 max-w-4xl">
           <h1 className="text-4xl md:text-7xl font-headline font-bold mb-4 bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent uppercase tracking-tighter">
             Motoclub VVF Roma
@@ -48,8 +50,10 @@ export default function Home() {
             Passione, Sicurezza e Fratellanza. Sulle strade con il coraggio dei Vigili del Fuoco.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Button size="lg" className="bg-primary hover:bg-primary/90 text-white rounded-full px-8 h-14 text-lg">
-              Prossime Uscite <Calendar className="ml-2 w-5 h-5" />
+            <Button size="lg" className="bg-primary hover:bg-primary/90 text-white rounded-full px-8 h-14 text-lg" asChild>
+              <Link href="/events">
+                Prossime Uscite <Calendar className="ml-2 w-5 h-5" />
+              </Link>
             </Button>
             <Button variant="outline" size="lg" className="rounded-full px-8 border-accent text-accent hover:bg-accent/10 h-14 text-lg">
               Diventa Socio <ShieldCheck className="ml-2 w-5 h-5" />
@@ -68,11 +72,18 @@ export default function Home() {
               Tutti gli eventi <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {upcomingEvents.map(event => (
               <Card key={event.id} className="overflow-hidden border-border bg-card hover:border-primary/50 transition-all group shadow-xl">
                 <div className="relative h-56 w-full">
-                  <Image src={event.image || ""} alt={event.title} fill className="object-cover transition-transform group-hover:scale-105" />
+                  {event.image && (
+                    <Image 
+                      src={event.image} 
+                      alt={event.title} 
+                      fill 
+                      className="object-cover transition-transform group-hover:scale-105" 
+                    />
+                  )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
                   <div className="absolute bottom-4 left-4">
                     <p className="text-accent text-sm font-bold uppercase tracking-widest">{event.date}</p>

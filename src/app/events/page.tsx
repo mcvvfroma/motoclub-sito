@@ -1,12 +1,12 @@
-
 import Image from "next/image"
 import Link from "next/link"
 import { Navbar } from "@/components/Navbar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Calendar, MapPin, Users, Filter } from "lucide-react"
+import { Calendar, MapPin, Users, Filter, ArrowRight } from "lucide-react"
 import { PlaceHolderImages } from "@/lib/placeholder-images"
+import { cn } from "@/lib/utils"
 
 const events = [
   {
@@ -55,15 +55,15 @@ export default function EventsPage() {
       <main className="max-w-7xl mx-auto px-4 py-8">
         <header className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
-            <h1 className="text-4xl font-headline font-bold mb-2">Events & Rides</h1>
-            <p className="text-muted-foreground">Join our upcoming scheduled outings and social gatherings.</p>
+            <h1 className="text-4xl font-headline font-bold mb-2">Eventi & Giri</h1>
+            <p className="text-muted-foreground">Partecipa alle nostre prossime uscite programmate e incontri sociali.</p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" className="gap-2">
-              <Filter className="w-4 h-4" /> Filter
+              <Filter className="w-4 h-4" /> Filtra
             </Button>
             <Button variant="default" size="sm" className="bg-primary text-white">
-              Create Event
+              Crea Evento
             </Button>
           </div>
         </header>
@@ -72,7 +72,9 @@ export default function EventsPage() {
           {events.map((event) => (
             <Card key={event.id} className="bg-card border-border overflow-hidden hover:shadow-xl hover:shadow-primary/5 transition-all">
               <div className="relative h-40">
-                <Image src={event.image || ""} alt={event.title} fill className="object-cover" />
+                {event.image && (
+                  <Image src={event.image} alt={event.title} fill className="object-cover" />
+                )}
                 <Badge className="absolute top-4 right-4 bg-background/80 backdrop-blur-sm text-foreground hover:bg-background">
                   {event.type}
                 </Badge>
@@ -91,7 +93,7 @@ export default function EventsPage() {
                   </div>
                   <div className="flex items-center text-sm text-muted-foreground">
                     <Users className="w-4 h-4 mr-2" />
-                    {event.attending}/{event.maxSpots} Attending
+                    {event.attending}/{event.maxSpots} Partecipanti
                   </div>
                 </div>
 
@@ -103,7 +105,7 @@ export default function EventsPage() {
                     {event.difficulty}
                   </span>
                   <Button variant="link" asChild className="text-primary p-0 h-auto font-bold">
-                    <Link href={`/events/${event.id}`}>View Route <ArrowRight className="ml-1 w-4 h-4" /></Link>
+                    <Link href={`/events/${event.id}`}>Vedi Percorso <ArrowRight className="ml-1 w-4 h-4" /></Link>
                   </Button>
                 </div>
               </CardContent>
@@ -112,25 +114,5 @@ export default function EventsPage() {
         </div>
       </main>
     </div>
-  )
-}
-
-function ArrowRight(props: any) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M5 12h14" />
-      <path d="m12 5 7 7-7 7" />
-    </svg>
   )
 }

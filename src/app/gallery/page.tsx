@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState } from "react"
@@ -27,23 +26,25 @@ export default function GalleryPage() {
       <main className="max-w-7xl mx-auto px-4 py-8">
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
           <div>
-            <h1 className="text-4xl font-headline font-bold mb-2">Club Gallery</h1>
-            <p className="text-muted-foreground">Relive the moments from our past adventures.</p>
+            <h1 className="text-4xl font-headline font-bold mb-2">Galleria del Club</h1>
+            <p className="text-muted-foreground">Rivivi i momenti delle nostre passate avventure.</p>
           </div>
           <Button className="bg-primary hover:bg-primary/90 gap-2 h-12 px-6 rounded-full shadow-lg shadow-primary/20">
-            <Plus className="w-5 h-5" /> Upload Photos
+            <Plus className="w-5 h-5" /> Carica Foto
           </Button>
         </header>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {photos.map((photo) => (
             <div key={photo.id} className="group relative aspect-square rounded-2xl overflow-hidden bg-card cursor-pointer">
-              <Image 
-                src={photo.src || ""} 
-                alt={`Photo by ${photo.author}`} 
-                fill 
-                className="object-cover transition-transform duration-500 group-hover:scale-110" 
-              />
+              {photo.src && (
+                <Image 
+                  src={photo.src} 
+                  alt={`Foto di ${photo.author}`} 
+                  fill 
+                  className="object-cover transition-transform duration-500 group-hover:scale-110" 
+                />
+              )}
               
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-4">
                 <div className="flex items-center gap-2 mb-3">
@@ -73,7 +74,7 @@ export default function GalleryPage() {
             <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3">
               <Camera className="w-6 h-6 text-muted-foreground" />
             </div>
-            <p className="text-sm font-medium text-muted-foreground">Add more memories</p>
+            <p className="text-sm font-medium text-muted-foreground">Aggiungi ricordi</p>
           </div>
         </div>
       </main>

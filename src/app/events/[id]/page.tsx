@@ -1,5 +1,5 @@
-
 import Image from "next/image"
+import Link from "next/link"
 import { Navbar } from "@/components/Navbar"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { MapPin, Clock, Calendar, ShieldCheck, Thermometer, Wind, CloudRain, AlertTriangle, CheckCircle2 } from "lucide-react"
 import { PlaceHolderImages } from "@/lib/placeholder-images"
 import { aiRideConditionAdvisory } from "@/ai/flows/ai-ride-condition-advisory"
+import { cn } from "@/lib/utils"
 
 export default async function EventDetailPage({ params }: { params: { id: string } }) {
   const eventId = (await params).id
@@ -49,8 +50,10 @@ export default async function EventDetailPage({ params }: { params: { id: string
         {/* Left: Main Content */}
         <div className="lg:col-span-2 space-y-8">
           <header>
-            <Button variant="ghost" className="mb-4 pl-0 hover:bg-transparent hover:text-primary">
-              ← Back to Events
+            <Button variant="ghost" className="mb-4 pl-0 hover:bg-transparent hover:text-primary" asChild>
+              <Link href="/events">
+                ← Torna agli Eventi
+              </Link>
             </Button>
             <h1 className="text-4xl font-headline font-bold mb-4">{event.title}</h1>
             <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
@@ -67,29 +70,29 @@ export default async function EventDetailPage({ params }: { params: { id: string
           </header>
 
           <div className="relative h-80 rounded-2xl overflow-hidden">
-            <Image src={event.image || ""} alt={event.title} fill className="object-cover" />
+            {event.image && <Image src={event.image} alt={event.title} fill className="object-cover" />}
           </div>
 
           <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle>About the Ride</CardTitle>
+              <CardTitle>Informazioni sul Giro</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <p className="text-muted-foreground leading-relaxed">{event.description}</p>
               
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 rounded-xl bg-secondary/50 border border-border">
-                  <p className="text-xs text-muted-foreground uppercase font-bold mb-1">Total Distance</p>
+                  <p className="text-xs text-muted-foreground uppercase font-bold mb-1">Distanza Totale</p>
                   <p className="text-lg font-headline font-bold">{event.distance}</p>
                 </div>
                 <div className="p-4 rounded-xl bg-secondary/50 border border-border">
-                  <p className="text-xs text-muted-foreground uppercase font-bold mb-1">Estimated Time</p>
+                  <p className="text-xs text-muted-foreground uppercase font-bold mb-1">Tempo Stimato</p>
                   <p className="text-lg font-headline font-bold">{event.duration}</p>
                 </div>
               </div>
 
               <div>
-                <h4 className="font-headline font-bold mb-2">Planned Route</h4>
+                <h4 className="font-headline font-bold mb-2">Percorso Pianificato</h4>
                 <p className="text-sm bg-background p-4 rounded-lg border border-border font-mono">
                   {event.route}
                 </p>
@@ -99,11 +102,11 @@ export default async function EventDetailPage({ params }: { params: { id: string
 
           <Card className="bg-card border-border overflow-hidden">
              <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Route Map</CardTitle>
-              <Button size="sm" variant="outline" className="border-primary text-primary">Open Maps</Button>
+              <CardTitle>Mappa del Percorso</CardTitle>
+              <Button size="sm" variant="outline" className="border-primary text-primary">Apri Mappe</Button>
             </CardHeader>
             <div className="relative h-64 w-full">
-              <Image src={event.map || ""} alt="Map" fill className="object-cover" />
+              {event.map && <Image src={event.map} alt="Map" fill className="object-cover" />}
               <div className="absolute inset-0 bg-primary/10 pointer-events-none"></div>
             </div>
           </Card>
@@ -117,8 +120,8 @@ export default async function EventDetailPage({ params }: { params: { id: string
                 <ShieldCheck className="w-5 h-5" />
                 <span className="text-xs font-bold uppercase tracking-widest">AI Ride Advisor</span>
               </div>
-              <CardTitle className="text-2xl">Safety Advisory</CardTitle>
-              <CardDescription>Generated for {event.date}</CardDescription>
+              <CardTitle className="text-2xl">Consigli di Sicurezza</CardTitle>
+              <CardDescription>Generato per il {event.date}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className={cn(
@@ -127,29 +130,29 @@ export default async function EventDetailPage({ params }: { params: { id: string
               )}>
                 {advisory.isSafeToRide ? <CheckCircle2 className="w-6 h-6 text-green-500" /> : <AlertTriangle className="w-6 h-6 text-red-500" />}
                 <div>
-                  <p className="font-bold text-sm">{advisory.isSafeToRide ? "Ready to Ride" : "Caution Advised"}</p>
+                  <p className="font-bold text-sm">{advisory.isSafeToRide ? "Pronti a Partire" : "Attenzione Consigliata"}</p>
                   <p className="text-xs text-muted-foreground">{advisory.overallAdvisory}</p>
                 </div>
               </div>
 
               <div className="space-y-3">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="flex items-center gap-2 text-muted-foreground"><Thermometer className="w-4 h-4" /> Temperature</span>
+                  <span className="flex items-center gap-2 text-muted-foreground"><Thermometer className="w-4 h-4" /> Temperatura</span>
                   <span className="font-medium">{advisory.temperatureRange}</span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="flex items-center gap-2 text-muted-foreground"><CloudRain className="w-4 h-4" /> Rain Risk</span>
+                  <span className="flex items-center gap-2 text-muted-foreground"><CloudRain className="w-4 h-4" /> Rischio Pioggia</span>
                   <span className="font-medium">{advisory.precipitationRisk}</span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="flex items-center gap-2 text-muted-foreground"><Wind className="w-4 h-4" /> Winds</span>
+                  <span className="flex items-center gap-2 text-muted-foreground"><Wind className="w-4 h-4" /> Vento</span>
                   <span className="font-medium">{advisory.windConditions}</span>
                 </div>
               </div>
 
               <div className="pt-4 border-t border-border">
                 <h4 className="text-sm font-bold mb-3 flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4 text-accent" /> Expert Recommendations
+                  <AlertTriangle className="w-4 h-4 text-accent" /> Raccomandazioni degli Esperti
                 </h4>
                 <ul className="text-xs space-y-2 text-muted-foreground">
                   {advisory.recommendations.map((rec, i) => (
@@ -165,25 +168,25 @@ export default async function EventDetailPage({ params }: { params: { id: string
 
           <Card className="bg-primary text-primary-foreground border-none">
             <CardHeader>
-              <CardTitle>Attendance</CardTitle>
-              <CardDescription className="text-primary-foreground/70">Secure your spot for this ride</CardDescription>
+              <CardTitle>Presenze</CardTitle>
+              <CardDescription className="text-primary-foreground/70">Assicurati un posto per questa uscita</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex justify-between items-end">
                 <div>
                   <p className="text-3xl font-headline font-bold">14</p>
-                  <p className="text-xs opacity-70">Riders going</p>
+                  <p className="text-xs opacity-70">Partecipanti</p>
                 </div>
                 <div className="text-right">
                   <p className="text-lg font-bold">6</p>
-                  <p className="text-xs opacity-70">Spots left</p>
+                  <p className="text-xs opacity-70">Posti rimasti</p>
                 </div>
               </div>
               <div className="h-2 w-full bg-white/20 rounded-full overflow-hidden">
                 <div className="h-full bg-white w-[70%]" />
               </div>
               <Button className="w-full bg-white text-primary hover:bg-white/90 font-bold py-6 rounded-xl">
-                I&apos;m Attending
+                Parteciperò
               </Button>
             </CardContent>
           </Card>
