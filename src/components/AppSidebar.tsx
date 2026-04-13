@@ -5,7 +5,7 @@ import * as React from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
-import { Home, Calendar, Image as ImageIcon, FileText, User, Users } from "lucide-react"
+import { Home, Calendar, Image as ImageIcon, FileText, User, Users, ShieldAlert } from "lucide-react"
 
 import {
   Sidebar,
@@ -29,6 +29,9 @@ const navItems = [
 export function AppSidebar() {
   const pathname = usePathname()
   const { setOpenMobile } = useSidebar()
+  
+  // Simulazione admin per visibilità menu
+  const isAdmin = true 
 
   if (pathname === "/login" || pathname === "/register") return null
 
@@ -70,6 +73,21 @@ export function AppSidebar() {
               </SidebarMenuItem>
             )
           })}
+          
+          {isAdmin && (
+            <SidebarMenuItem>
+              <SidebarMenuButton 
+                asChild 
+                isActive={pathname === "/admin/members"}
+                className="h-12 text-base font-medium transition-colors border-t border-border mt-2 pt-4 hover:bg-primary/10 hover:text-primary data-[active=true]:bg-primary/20 data-[active=true]:text-primary"
+              >
+                <Link href="/admin/members" onClick={() => setOpenMobile(false)}>
+                  <ShieldAlert className="mr-3 h-5 w-5 text-primary" />
+                  <span className="font-bold">Gestione Soci</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
         </SidebarMenu>
       </SidebarContent>
       <SidebarFooter className="border-t border-border p-4">
