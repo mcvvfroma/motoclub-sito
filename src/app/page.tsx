@@ -1,4 +1,3 @@
-
 import Image from "next/image"
 import Link from "next/link"
 import { Navbar } from "@/components/Navbar"
@@ -41,7 +40,7 @@ export default function Home() {
     <div className="min-h-screen pb-20 md:pb-0 md:pt-16">
       <Navbar />
       
-      {/* Hero Section - Reduced height to 60vh to show content below */}
+      {/* Hero Section */}
       <section className="relative h-[60vh] w-full flex items-center justify-center overflow-hidden px-6 pt-16 md:pt-0">
         {heroImage?.imageUrl && (
           <>
@@ -53,7 +52,7 @@ export default function Home() {
               priority
               data-ai-hint={heroImage.imageHint}
             />
-            {/* Dark Filter Overlay for readability */}
+            {/* Dark Filter Overlay for readability on image */}
             <div className="absolute inset-0 bg-black/40 z-[1]" />
           </>
         )}
@@ -85,14 +84,14 @@ export default function Home() {
         {/* Upcoming Section */}
         <section>
           <div className="flex items-center justify-between mb-8">
-            <h2 className="text-3xl font-headline font-bold border-l-4 border-primary pl-4">Prossimi Giri</h2>
+            <h2 className="text-3xl font-headline font-bold border-l-4 border-primary pl-4 text-foreground">Prossimi Giri</h2>
             <Link href="/events" className="text-primary flex items-center gap-1 hover:underline font-bold">
               Tutti gli eventi <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {upcomingEvents.map(event => (
-              <Card key={event.id} className="overflow-hidden border-border bg-card hover:border-primary/50 transition-all group shadow-xl">
+              <Card key={event.id} className="overflow-hidden border-border bg-card hover:border-primary/50 transition-all group shadow-md hover:shadow-xl">
                 <div className="relative h-56 w-full">
                   {event.image && (
                     <Image 
@@ -117,7 +116,7 @@ export default function Home() {
                     <Button asChild variant="secondary" className="hover:bg-primary hover:text-white transition-colors py-6">
                       <Link href={`/events/${event.id}`}>Dettagli</Link>
                     </Button>
-                    <Button asChild variant="outline" className="border-accent/50 text-accent hover:bg-accent hover:text-accent-foreground transition-colors py-6">
+                    <Button asChild variant="outline" className="border-accent/50 text-accent hover:bg-accent hover:text-white transition-colors py-6">
                       <a href={event.mapUrl} target="_blank" rel="noopener noreferrer">
                         <MapPinned className="mr-2 w-4 h-4" /> Apri Percorso
                       </a>
@@ -131,25 +130,25 @@ export default function Home() {
 
         {/* Quick Stats / Info */}
         <section className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          <div className="bg-card p-8 rounded-2xl border border-border text-center hover:border-accent/50 transition-colors">
-            <div className="w-12 h-12 bg-primary/20 text-primary rounded-xl flex items-center justify-center mx-auto mb-4">
+          <div className="bg-card p-8 rounded-2xl border border-border text-center hover:border-accent/50 transition-colors shadow-sm">
+            <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center mx-auto mb-4">
               <Calendar className="w-6 h-6" />
             </div>
-            <h3 className="text-3xl font-bold font-headline mb-1 text-white">12</h3>
+            <h3 className="text-3xl font-bold font-headline mb-1 text-foreground">12</h3>
             <p className="text-muted-foreground uppercase text-xs font-bold tracking-widest">Eventi Attivi</p>
           </div>
-          <div className="bg-card p-8 rounded-2xl border border-border text-center hover:border-accent/50 transition-colors">
-            <div className="w-12 h-12 bg-accent/20 text-accent rounded-xl flex items-center justify-center mx-auto mb-4">
+          <div className="bg-card p-8 rounded-2xl border border-border text-center hover:border-accent/50 transition-colors shadow-sm">
+            <div className="w-12 h-12 bg-accent/10 text-accent rounded-xl flex items-center justify-center mx-auto mb-4">
               <User className="w-6 h-6" />
             </div>
-            <h3 className="text-3xl font-bold font-headline mb-1 text-white">256</h3>
+            <h3 className="text-3xl font-bold font-headline mb-1 text-foreground">256</h3>
             <p className="text-muted-foreground uppercase text-xs font-bold tracking-widest">Soci Iscritti</p>
           </div>
-          <div className="bg-card p-8 rounded-2xl border border-border text-center hover:border-accent/50 transition-colors">
-            <div className="w-12 h-12 bg-primary/20 text-primary rounded-xl flex items-center justify-center mx-auto mb-4">
+          <div className="bg-card p-8 rounded-2xl border border-border text-center hover:border-accent/50 transition-colors shadow-sm">
+            <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center mx-auto mb-4">
               <ImageIcon className="w-6 h-6" />
             </div>
-            <h3 className="text-3xl font-bold font-headline mb-1 text-white">1.2k</h3>
+            <h3 className="text-3xl font-bold font-headline mb-1 text-foreground">1.2k</h3>
             <p className="text-muted-foreground uppercase text-xs font-bold tracking-widest">Foto Condivise</p>
           </div>
         </section>
