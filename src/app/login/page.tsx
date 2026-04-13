@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { MapPin } from "lucide-react"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -12,8 +12,14 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center p-4 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/20 via-background to-background">
       <Card className="w-full max-w-md border-border bg-card/50 backdrop-blur-xl shadow-2xl">
         <CardHeader className="text-center space-y-4">
-          <div className="mx-auto w-16 h-16 bg-primary rounded-2xl flex items-center justify-center shadow-lg shadow-primary/40 border border-accent/20">
-            <MapPin className="text-white w-9 h-9" />
+          <div className="mx-auto w-24 h-24 relative mb-2 drop-shadow-xl">
+            <Image 
+              src="/logo_motoclub.gif" 
+              alt="Logo Motoclub VVF Roma" 
+              fill 
+              className="object-contain"
+              priority
+            />
           </div>
           <div>
             <CardTitle className="text-3xl font-headline font-bold">Area Soci</CardTitle>

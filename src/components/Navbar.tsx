@@ -1,8 +1,9 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname } from "next/navigation"
-import { MapPin, Calendar, Image as ImageIcon, FileText, User, Home } from "lucide-react"
+import { Calendar, Image as ImageIcon, FileText, User, Home } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const navItems = [
@@ -21,8 +22,14 @@ export function Navbar() {
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/80 backdrop-blur-lg border-t border-border md:top-0 md:bottom-auto md:border-b md:border-t-0">
       <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
         <Link href="/" className="hidden md:flex items-center gap-2">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-            <MapPin className="text-white w-5 h-5" />
+          <div className="relative w-10 h-10">
+            <Image 
+              src="/logo_motoclub.gif" 
+              alt="Logo Motoclub VVF Roma" 
+              fill 
+              className="object-contain"
+              priority
+            />
           </div>
           <div className="flex flex-col">
             <span className="font-headline font-bold text-lg leading-none tracking-tight">Motoclub VVF</span>

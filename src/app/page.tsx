@@ -41,18 +41,27 @@ export default function Home() {
       <Navbar />
       
       {/* Hero Section */}
-      <section className="relative h-[60vh] w-full flex items-center justify-center overflow-hidden">
+      <section className="relative h-[70vh] w-full flex items-center justify-center overflow-hidden">
         {heroImage?.imageUrl && (
           <Image
             src={heroImage.imageUrl}
-            alt="Hero"
+            alt="Hero Background"
             fill
             className="object-cover opacity-40"
             priority
             data-ai-hint="motorcycle highway"
           />
         )}
-        <div className="relative z-10 text-center px-4 max-w-4xl">
+        <div className="relative z-10 text-center px-4 max-w-4xl flex flex-col items-center">
+          <div className="relative w-32 h-32 md:w-48 md:h-48 mb-6 drop-shadow-[0_0_15px_rgba(211,47,47,0.5)]">
+            <Image 
+              src="/logo_motoclub.gif" 
+              alt="Logo Motoclub VVF Roma" 
+              fill 
+              className="object-contain"
+              priority
+            />
+          </div>
           <h1 className="text-4xl md:text-7xl font-headline font-bold mb-4 bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent uppercase tracking-tighter">
             Motoclub VVF Roma
           </h1>
@@ -60,7 +69,7 @@ export default function Home() {
             Passione, Sicurezza e Fratellanza. Sulle strade con il coraggio dei Vigili del Fuoco.
           </p>
           <div className="flex justify-center">
-            <Button size="lg" className="bg-primary hover:bg-primary/90 text-white rounded-full px-8 h-14 text-lg" asChild>
+            <Button size="lg" className="bg-primary hover:bg-primary/90 text-white rounded-full px-8 h-14 text-lg font-bold shadow-lg shadow-primary/20" asChild>
               <Link href="/conventions">
                 Vedi Convenzioni <FileText className="ml-2 w-5 h-5" />
               </Link>
