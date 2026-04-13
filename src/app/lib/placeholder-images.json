@@ -3,9 +3,9 @@
   "placeholderImages": [
     {
       "id": "hero-ride",
-      "description": "Colosseo con illuminazione tricolore - Variante 2",
-      "imageUrl": "/colosseo_tricolore2.jpg",
-      "imageHint": "Colosseum tricolor"
+      "description": "Casco Vigili del Fuoco",
+      "imageUrl": "/cascovigili.jpg",
+      "imageHint": "firefighter helmet"
     },
     {
       "id": "event-1",
