@@ -53,7 +53,7 @@ export default function Home() {
               priority
               data-ai-hint={heroImage.imageHint}
             />
-            {/* Dark Filter Overlay for readability - slightly shifted to emphasize the left side content */}
+            {/* Dark Filter Overlay for readability */}
             <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent z-[1]" />
           </>
         )}
@@ -67,12 +67,9 @@ export default function Home() {
               priority
             />
           </div>
-          <h1 className="text-4xl md:text-7xl font-headline font-bold mb-4 bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent uppercase tracking-tighter">
+          <h1 className="text-4xl md:text-7xl font-headline font-bold mb-10 bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent uppercase tracking-tighter">
             Motoclub VVF Roma
           </h1>
-          <p className="text-lg md:text-2xl text-white/90 mb-10 font-medium leading-tight">
-            Passione, Sicurezza e Fratellanza.<br />Sulle strade con il coraggio dei Vigili del Fuoco.
-          </p>
           <div className="flex justify-start">
             <Button size="lg" className="bg-primary hover:bg-primary/90 text-white rounded-full px-10 h-14 text-lg font-bold shadow-lg shadow-primary/30 border-2 border-accent/20" asChild>
               <Link href="/conventions">
