@@ -1,0 +1,47 @@
+
+{
+  "placeholderImages": [
+    {
+      "id": "hero-ride",
+      "description": "Group of motorcycle riders on a scenic highway",
+      "imageUrl": "https://picsum.photos/seed/riders1/1200/600",
+      "imageHint": "motorcycle highway"
+    },
+    {
+      "id": "event-1",
+      "description": "Mountain pass ride",
+      "imageUrl": "https://picsum.photos/seed/mountain/600/400",
+      "imageHint": "mountain road"
+    },
+    {
+      "id": "event-2",
+      "description": "Coastal sunset tour",
+      "imageUrl": "https://picsum.photos/seed/coastal/600/400",
+      "imageHint": "coastal sunset"
+    },
+    {
+      "id": "gallery-1",
+      "description": "Vintage motorcycle detail",
+      "imageUrl": "https://picsum.photos/seed/vintage/800/800",
+      "imageHint": "vintage motorcycle"
+    },
+    {
+      "id": "gallery-2",
+      "description": "Bikers gathering at a cafe",
+      "imageUrl": "https://picsum.photos/seed/cafe/800/800",
+      "imageHint": "bikers cafe"
+    },
+    {
+      "id": "gallery-3",
+      "description": "Action shot on a bend",
+      "imageUrl": "https://picsum.photos/seed/action/800/800",
+      "imageHint": "motorcycle racing"
+    },
+    {
+      "id": "map-placeholder",
+      "description": "Stylized map of a riding route",
+      "imageUrl": "https://picsum.photos/seed/mapview/800/400",
+      "imageHint": "topographic map"
+    }
+  ]
+}
