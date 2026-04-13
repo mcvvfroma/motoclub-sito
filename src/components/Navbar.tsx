@@ -4,7 +4,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
-import { Calendar, Image as ImageIcon, FileText, User, Home, Menu } from "lucide-react"
+import { Calendar, Image as ImageIcon, FileText, User, Home, Menu, Users } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useSidebar } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button"
 const navItems = [
   { name: "Home", href: "/", icon: Home },
   { name: "Eventi", href: "/events", icon: Calendar },
+  { name: "Soci", href: "/members", icon: Users },
   { name: "Galleria", href: "/gallery", icon: ImageIcon },
   { name: "Convenzioni", href: "/conventions", icon: FileText },
 ]
@@ -56,7 +57,7 @@ export function Navbar() {
         </Link>
 
         {/* Desktop: Navigation Links */}
-        <div className="hidden md:flex flex-1 justify-center gap-8">
+        <div className="hidden md:flex flex-1 justify-center gap-6">
           {navItems.map((item) => {
             const Icon = item.icon
             const isActive = pathname === item.href
@@ -65,11 +66,11 @@ export function Navbar() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex items-center gap-2 px-3 py-1 rounded-md transition-colors",
-                  isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                  "flex items-center gap-2 px-2 py-1 rounded-md transition-colors",
+                  isActive ? "text-primary font-bold" : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                <Icon className="w-5 h-5" />
+                <Icon className="w-4 h-4" />
                 <span className="text-sm font-medium">{item.name}</span>
               </Link>
             )
@@ -78,10 +79,10 @@ export function Navbar() {
 
         {/* User Area */}
         <div className="hidden md:flex items-center gap-4">
-          <Link href="/login" className="text-sm font-medium hover:text-primary transition-colors">
+          <Link href="/login" className="text-xs font-medium hover:text-primary transition-colors text-muted-foreground">
             Logout
           </Link>
-          <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center">
+          <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center shadow-lg shadow-accent/20">
             <User className="w-4 h-4 text-accent-foreground" />
           </div>
         </div>

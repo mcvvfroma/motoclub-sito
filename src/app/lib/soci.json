@@ -1,0 +1,45 @@
+
+{
+  "soci": [
+    {
+      "id": 1,
+      "nome": "Marco Rossi",
+      "grado": "Capo Squadra",
+      "ruolo": "Presidente",
+      "dataIscrizione": "12/03/2018",
+      "moto": "Ducati Multistrada 1260"
+    },
+    {
+      "id": 2,
+      "nome": "Alessandro Bianchi",
+      "grado": "Vigile Coordinatore",
+      "ruolo": "Vice-Presidente",
+      "dataIscrizione": "05/06/2019",
+      "moto": "BMW R1250GS"
+    },
+    {
+      "id": 3,
+      "nome": "Giuseppe Verdi",
+      "grado": "Vigile del Fuoco",
+      "ruolo": "Segretario",
+      "dataIscrizione": "20/01/2021",
+      "moto": "Honda Africa Twin"
+    },
+    {
+      "id": 4,
+      "nome": "Roberto Neri",
+      "grado": "Vigile del Fuoco",
+      "ruolo": "Socio Ordinario",
+      "dataIscrizione": "15/09/2022",
+      "moto": "Moto Guzzi V85TT"
+    },
+    {
+      "id": 5,
+      "nome": "Luca Gialli",
+      "grado": "Ispettore Antincendi",
+      "ruolo": "Socio Ordinario",
+      "dataIscrizione": "10/02/2023",
+      "moto": "Yamaha Tracer 9"
+    }
+  ]
+}

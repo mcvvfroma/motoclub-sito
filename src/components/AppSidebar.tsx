@@ -5,7 +5,7 @@ import * as React from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
-import { Home, Calendar, Image as ImageIcon, FileText, User } from "lucide-react"
+import { Home, Calendar, Image as ImageIcon, FileText, User, Users } from "lucide-react"
 
 import {
   Sidebar,
@@ -21,6 +21,7 @@ import {
 const navItems = [
   { name: "Home", href: "/", icon: Home },
   { name: "Eventi", href: "/events", icon: Calendar },
+  { name: "Soci", href: "/members", icon: Users },
   { name: "Galleria", href: "/gallery", icon: ImageIcon },
   { name: "Convenzioni", href: "/conventions", icon: FileText },
 ]
