@@ -3,7 +3,7 @@ import Link from "next/link"
 import { Navbar } from "@/components/Navbar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Calendar, ArrowRight, Map, Image as ImageIcon, User, MapPinned } from "lucide-react"
+import { Calendar, ArrowRight, Map, Image as ImageIcon, User, MapPinned, FileText } from "lucide-react"
 import { PlaceHolderImages } from "@/lib/placeholder-images"
 
 const upcomingEvents = [
@@ -61,8 +61,8 @@ export default function Home() {
           </p>
           <div className="flex justify-center">
             <Button size="lg" className="bg-primary hover:bg-primary/90 text-white rounded-full px-8 h-14 text-lg" asChild>
-              <Link href="/events">
-                Prossime Uscite <Calendar className="ml-2 w-5 h-5" />
+              <Link href="/conventions">
+                Vedi Convenzioni <FileText className="ml-2 w-5 h-5" />
               </Link>
             </Button>
           </div>
