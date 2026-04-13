@@ -1,13 +1,25 @@
-
 import { Navbar } from "@/components/Navbar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { User, Calendar, Shield, Bike } from "lucide-react"
+import { User, Calendar, Shield, Bike, Loader2 } from "lucide-react"
 import sociData from "@/app/lib/soci.json"
 
 export default function MembersPage() {
-  const { soci } = sociData
+  // Safe extraction of soci list
+  const soci = sociData?.soci || []
+
+  if (!soci || soci.length === 0) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background text-foreground">
+        <Navbar />
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-8 h-8 text-primary animate-spin" />
+          <p className="text-muted-foreground font-medium">Caricamento soci...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen pb-20 md:pb-0 md:pt-16 bg-background">
@@ -33,13 +45,13 @@ export default function MembersPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {soci.map((socio) => (
-                  <TableRow key={socio.id} className="hover:bg-primary/5 transition-colors border-border">
-                    <TableCell className="font-medium flex items-center gap-3">
+                {soci.map((socio: any) => (
+                  <TableRow key={socio.id || socio.email} className="hover:bg-primary/5 transition-colors border-border">
+                    <TableCell className="font-medium flex items-center gap-3 text-foreground">
                       <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
                         <User className="w-4 h-4" />
                       </div>
-                      {socio.nome}
+                      {socio.nome} {socio.cognome}
                     </TableCell>
                     <TableCell className="text-muted-foreground">{socio.grado}</TableCell>
                     <TableCell>
@@ -48,7 +60,7 @@ export default function MembersPage() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-muted-foreground">{socio.dataIscrizione}</TableCell>
-                    <TableCell className="italic text-sm">{socio.moto}</TableCell>
+                    <TableCell className="italic text-sm text-muted-foreground">{socio.moto}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -58,14 +70,14 @@ export default function MembersPage() {
 
         {/* Mobile View: Cards instead of table */}
         <section className="md:hidden grid grid-cols-1 gap-4">
-          {soci.map((socio) => (
-            <Card key={socio.id} className="bg-card border-border">
+          {soci.map((socio: any) => (
+            <Card key={socio.id || socio.email} className="bg-card border-border">
               <CardHeader className="flex flex-row items-center gap-4 pb-2">
                 <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-white">
                   <User className="w-6 h-6" />
                 </div>
                 <div>
-                  <CardTitle className="text-lg">{socio.nome}</CardTitle>
+                  <CardTitle className="text-lg">{socio.nome} {socio.cognome}</CardTitle>
                   <p className="text-xs text-accent font-bold uppercase">{socio.ruolo}</p>
                 </div>
               </CardHeader>

@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useEffect, useState } from "react"
@@ -9,22 +8,23 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
-import { Edit, Trash2, ShieldAlert, UserCog } from "lucide-react"
+import { Edit, Trash2, ShieldAlert, UserCog, Loader2 } from "lucide-react"
 import sociData from "@/app/lib/soci.json"
 
 export default function AdminMembersPage() {
   const router = useRouter()
   const { toast } = useToast()
   
-  // Simulazione di stato utente (In produzione questo verrebbe da Firebase Auth)
-  // Per testare il reindirizzamento, cambia 'admin' in 'socio'
+  // Simulazione di stato utente (Admin di default per questa demo)
   const [currentUser] = useState({
-    nome: "Marco Rossi",
+    nome: "Leonardo Bocale",
     status: "admin" 
   })
 
+  // Safe extraction of soci list
+  const soci = sociData?.soci || []
+
   useEffect(() => {
-    // Controllo permessi
     if (currentUser.status !== 'admin') {
       toast({
         variant: "destructive",
@@ -36,6 +36,18 @@ export default function AdminMembersPage() {
   }, [currentUser, router, toast])
 
   if (currentUser.status !== 'admin') return null
+
+  if (!soci || soci.length === 0) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background text-foreground">
+        <Navbar />
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-8 h-8 text-primary animate-spin" />
+          <p className="text-muted-foreground font-medium">Caricamento dati amministrativi...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen pb-20 md:pb-0 md:pt-16 bg-background">
@@ -65,17 +77,17 @@ export default function AdminMembersPage() {
             <Table>
               <TableHeader className="bg-secondary/50">
                 <TableRow className="border-border">
-                  <TableHead className="text-accent font-bold">Nome</TableHead>
+                  <TableHead className="text-accent font-bold">Nome Completo</TableHead>
                   <TableHead className="text-accent font-bold">Email</TableHead>
                   <TableHead className="text-accent font-bold">Status</TableHead>
                   <TableHead className="text-accent font-bold text-right">Azioni</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {sociData.soci.map((socio) => (
-                  <TableRow key={socio.id} className="hover:bg-primary/5 transition-colors border-border">
+                {soci.map((socio: any) => (
+                  <TableRow key={socio.id || socio.email} className="hover:bg-primary/5 transition-colors border-border">
                     <TableCell className="font-medium text-foreground">
-                      {socio.nome}
+                      {socio.nome} {socio.cognome}
                     </TableCell>
                     <TableCell className="text-muted-foreground font-mono text-xs">
                       {socio.email}
