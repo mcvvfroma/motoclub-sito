@@ -2,29 +2,29 @@ import { Navbar } from "@/components/Navbar"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { ShieldCheck, Zap, Heart, Info, FileText, CheckCircle2 } from "lucide-react"
+import { ShieldCheck, Zap, Heart, Info, FileText, CheckCircle2, Wrench, ShoppingBag } from "lucide-react"
 
 const benefits = [
   {
-    title: "Sconti per i Soci",
-    description: "Approfitta di sconti esclusivi fino al 20% presso officine e negozi di abbigliamento partner.",
-    icon: Zap,
-    color: "text-yellow-500",
-    bg: "bg-yellow-500/10"
-  },
-  {
-    title: "Assistenza Stradale",
-    description: "Assistenza stradale premium finanziata dal club per tutti i soci su tutto il territorio nazionale.",
-    icon: ShieldCheck,
+    title: "Officina Moto Roma",
+    description: "Sconto esclusivo del 15% su tutti i tagliandi e manutenzione ordinaria per i soci VVF.",
+    icon: Wrench,
     color: "text-primary",
     bg: "bg-primary/10"
   },
   {
-    title: "Eventi della Comunità",
-    description: "Accesso anticipato e prenotazione prioritaria per tutte le giornate in pista e i tour annuali del club.",
-    icon: Heart,
+    title: "Assicurazione Veloci",
+    description: "Polizza agevolata dedicata ai soci VVF con tariffe agevolate e assistenza stradale inclusa.",
+    icon: ShieldCheck,
     color: "text-accent",
     bg: "bg-accent/10"
+  },
+  {
+    title: "Negozio Accessori",
+    description: "Buono da 20€ sull'acquisto di un nuovo casco e 10% di sconto su tutto l'abbigliamento tecnico.",
+    icon: ShoppingBag,
+    color: "text-yellow-500",
+    bg: "bg-yellow-500/10"
   }
 ]
 
@@ -35,20 +35,20 @@ const conventions = [
     description: "Linee guida per la partecipazione attiva e l'interazione nella comunità.",
     points: [
       "Rispettare tutte le norme del codice della strada durante i giri di gruppo.",
-      "Mantenere una comunicazione attiva sui canali del club.",
+      "Mantenere una comunicazione attiva sui canali ufficiali del club.",
       "Partecipare ad almeno una riunione del club a trimestre.",
       "Mantenere le proprietà e l'attrezzatura del club in buone condizioni."
     ]
   },
   {
     id: "ride-safety",
-    title: "Protocollo Sicurezza Giri di Gruppo",
-    description: "Standard di sicurezza obbligatori per ogni uscita organizzata dal club.",
+    title: "Protocollo Sicurezza Giri",
+    description: "Standard di sicurezza obbligatori per ogni uscita organizzata dal Motoclub.",
     points: [
       "L'abbigliamento protettivo completo è obbligatorio per tutti i partecipanti.",
       "Politica rigorosa 'alcol zero' prima e durante i giri.",
-      "Seguire le istruzioni del Capofila e del Chiudifila.",
-      "Formazione sfalsata obbligatoria sui tratti rettilinei."
+      "Seguire sempre le istruzioni del Capofila e del Chiudifila.",
+      "Formazione sfalsata obbligatoria sui tratti rettilinei per massima visibilità."
     ]
   }
 ]
@@ -60,14 +60,14 @@ export default function ConventionsPage() {
       
       <main className="max-w-7xl mx-auto px-4 py-8">
         <header className="mb-12">
-          <Badge className="mb-4 bg-primary/20 text-primary border-none font-bold uppercase tracking-wider">Iscrizione Esclusiva</Badge>
+          <Badge className="mb-4 bg-primary/20 text-primary border-none font-bold uppercase tracking-wider">Vantaggi Esclusivi</Badge>
           <h1 className="text-4xl font-headline font-bold mb-2">Convenzioni e Regolamento</h1>
-          <p className="text-muted-foreground max-w-2xl">Accedi ai vantaggi riservati ai soci e consulta le regole che mantengono la nostra comunità sicura e piacevole per tutti.</p>
+          <p className="text-muted-foreground max-w-2xl">Accedi ai vantaggi riservati ai soci del Motoclub VVF Roma e consulta le regole della nostra comunità.</p>
         </header>
 
         <section className="mb-16">
           <h2 className="text-2xl font-headline font-bold mb-8 flex items-center gap-2 text-white">
-            <Zap className="w-6 h-6 text-primary" /> Vantaggi per i Soci
+            <Zap className="w-6 h-6 text-accent" /> Le Nostre Convenzioni
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {benefits.map((benefit, i) => {
@@ -122,10 +122,10 @@ export default function ConventionsPage() {
             </div>
             <div>
               <h3 className="text-xl font-headline font-bold text-white">Hai bisogno di più informazioni?</h3>
-              <p className="text-muted-foreground text-sm">Scarica il manuale completo del club o contatta la segreteria per domande specifiche.</p>
+              <p className="text-muted-foreground text-sm">Scarica il manuale completo del club o contatta la segreteria del Comando.</p>
             </div>
           </div>
-          <Button variant="default" className="bg-primary text-white px-8 rounded-full h-12 font-bold">
+          <Button variant="default" className="bg-primary text-white px-8 rounded-full h-12 font-bold shadow-lg shadow-primary/20">
             Scarica il Manuale PDF
           </Button>
         </div>
