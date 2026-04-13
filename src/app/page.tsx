@@ -3,7 +3,7 @@ import Link from "next/link"
 import { Navbar } from "@/components/Navbar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Calendar, ArrowRight, ShieldCheck, Map, Image as ImageIcon, User, MapPinned } from "lucide-react"
+import { Calendar, ArrowRight, Map, Image as ImageIcon, User, MapPinned } from "lucide-react"
 import { PlaceHolderImages } from "@/lib/placeholder-images"
 
 const upcomingEvents = [
@@ -59,14 +59,11 @@ export default function Home() {
           <p className="text-lg md:text-2xl text-muted-foreground mb-8 font-medium">
             Passione, Sicurezza e Fratellanza. Sulle strade con il coraggio dei Vigili del Fuoco.
           </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
+          <div className="flex justify-center">
             <Button size="lg" className="bg-primary hover:bg-primary/90 text-white rounded-full px-8 h-14 text-lg" asChild>
               <Link href="/events">
                 Prossime Uscite <Calendar className="ml-2 w-5 h-5" />
               </Link>
-            </Button>
-            <Button variant="outline" size="lg" className="rounded-full px-8 border-accent text-accent hover:bg-accent/10 h-14 text-lg">
-              Diventa Socio <ShieldCheck className="ml-2 w-5 h-5" />
             </Button>
           </div>
         </div>
