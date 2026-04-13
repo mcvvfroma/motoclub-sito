@@ -42,23 +42,23 @@ export default function Home() {
       <Navbar />
       
       {/* Hero Section */}
-      <section className="relative h-[85vh] w-full flex items-center justify-center overflow-hidden px-6">
+      <section className="relative h-[60vh] md:h-[85vh] w-full flex items-center justify-center overflow-hidden px-6 pt-16 md:pt-0">
         {heroImage?.imageUrl && (
           <>
             <Image
               src={heroImage.imageUrl}
               alt="Background Casco"
               fill
-              className="object-cover"
+              className="object-contain md:object-cover"
               priority
               data-ai-hint={heroImage.imageHint}
             />
-            {/* Dark Filter Overlay for readability */}
-            <div className="absolute inset-0 bg-black/60 z-[1]" />
+            {/* Dark Filter Overlay for readability - lighter on mobile to see the casco */}
+            <div className="absolute inset-0 bg-black/40 md:bg-black/60 z-[1]" />
           </>
         )}
         <div className="relative z-10 text-center max-w-2xl flex flex-col items-center animate-in fade-in slide-in-from-bottom-8 duration-1000">
-          <div className="relative w-32 h-32 md:w-44 md:h-44 mb-8 drop-shadow-[0_0_20px_rgba(211,47,47,0.6)]">
+          <div className="relative w-24 h-24 md:w-44 md:h-44 mb-6 md:mb-8 drop-shadow-[0_0_20px_rgba(211,47,47,0.6)]">
             <Image 
               src="/logo_motoclub.gif" 
               alt="Logo Motoclub VVF Roma" 
@@ -67,11 +67,11 @@ export default function Home() {
               priority
             />
           </div>
-          <h1 className="text-4xl md:text-7xl font-headline font-bold mb-10 bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent uppercase tracking-tighter">
+          <h1 className="text-3xl md:text-7xl font-headline font-bold mb-8 md:mb-10 bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent uppercase tracking-tighter">
             Motoclub VVF Roma
           </h1>
           <div className="flex justify-center">
-            <Button size="lg" className="bg-primary hover:bg-primary/90 text-white rounded-full px-10 h-14 text-lg font-bold shadow-lg shadow-primary/30 border-2 border-accent/20" asChild>
+            <Button size="lg" className="bg-primary hover:bg-primary/90 text-white rounded-full px-8 md:px-10 h-12 md:h-14 text-base md:text-lg font-bold shadow-lg shadow-primary/30 border-2 border-accent/20" asChild>
               <Link href="/conventions">
                 Vedi Convenzioni <FileText className="ml-2 w-5 h-5" />
               </Link>
