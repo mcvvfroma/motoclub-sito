@@ -8,10 +8,14 @@ import { AppSidebar } from "@/components/AppSidebar"
 export const metadata: Metadata = {
   title: 'Motoclub VVF Roma | Motoclub Vigili del Fuoco',
   description: 'Il motoclub ufficiale del Comando dei Vigili del Fuoco di Roma.',
+  manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
-    statusBarStyle: 'default',
+    statusBarStyle: 'black-translucent',
     title: 'VVF Roma',
+  },
+  formatDetection: {
+    telephone: false,
   },
 };
 
@@ -20,6 +24,7 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({
@@ -34,6 +39,8 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
         <link rel="apple-touch-icon" href="/logo_motoclub.gif" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
       <body className="font-body antialiased bg-background text-foreground">
         <SidebarProvider defaultOpen={false}>
@@ -45,6 +52,21 @@ export default function RootLayout({
           </div>
         </SidebarProvider>
         <Toaster />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js').then(function(registration) {
+                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                  }, function(err) {
+                    console.log('ServiceWorker registration failed: ', err);
+                  });
+                });
+              }
+            `,
+          }}
+        />
       </body>
     </html>
   );
