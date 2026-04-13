@@ -7,7 +7,7 @@ import { Navbar } from "@/components/Navbar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { User, Mail, Loader2 } from "lucide-react"
+import { User, Mail } from "lucide-react"
 import sociData from "@/app/lib/soci.json"
 
 export default function MembersPage() {
@@ -15,11 +15,22 @@ export default function MembersPage() {
   const [isAuthorized, setIsAuthorized] = useState(false)
   
   useEffect(() => {
-    const user = localStorage.getItem("vvf_user")
-    if (!user) {
+    const storedUser = localStorage.getItem("vvf_user")
+    if (!storedUser) {
       router.push("/login")
-    } else {
-      setIsAuthorized(true)
+      return
+    }
+
+    try {
+      const user = JSON.parse(storedUser)
+      // Controllo sicurezza: solo gli admin possono vedere l'anagrafica soci
+      if (user.status !== 'admin') {
+        router.push("/")
+      } else {
+        setIsAuthorized(true)
+      }
+    } catch (e) {
+      router.push("/login")
     }
   }, [router])
 
@@ -33,9 +44,9 @@ export default function MembersPage() {
       
       <main className="max-w-7xl mx-auto px-4 py-8">
         <header className="mb-12">
-          <Badge className="mb-4 bg-primary/10 text-primary border-none font-bold uppercase tracking-wider">La nostra comunità</Badge>
+          <Badge className="mb-4 bg-primary/10 text-primary border-none font-bold uppercase tracking-wider">Accesso Riservato Admin</Badge>
           <h1 className="text-4xl font-headline font-bold mb-2 text-foreground">Anagrafica Soci</h1>
-          <p className="text-muted-foreground max-w-2xl">Elenco ufficiale dei colleghi e soci iscritti al Motoclub VVF Roma.</p>
+          <p className="text-muted-foreground max-w-2xl">Elenco completo dei soci iscritti al Motoclub VVF Roma.</p>
         </header>
 
         <section className="hidden md:block">

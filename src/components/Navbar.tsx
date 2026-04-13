@@ -19,7 +19,11 @@ export function Navbar() {
   useEffect(() => {
     const storedUser = localStorage.getItem("vvf_user")
     if (storedUser) {
-      setUser(JSON.parse(storedUser))
+      try {
+        setUser(JSON.parse(storedUser))
+      } catch (e) {
+        setUser(null)
+      }
     }
   }, [pathname])
 
@@ -31,10 +35,13 @@ export function Navbar() {
 
   if (pathname === "/login" || pathname === "/register") return null
 
+  const isAdmin = user?.status === "admin"
+
   const navItems = [
     { name: "Home", href: "/", icon: Home },
     { name: "Eventi", href: "/events", icon: Calendar },
-    ...(user ? [{ name: "Soci", href: "/members", icon: Users }] : []),
+    // Link visibile solo per Admin
+    ...(isAdmin ? [{ name: "Soci", href: "/members", icon: Users }] : []),
     { name: "Galleria", href: "/gallery", icon: ImageIcon },
     { name: "Convenzioni", href: "/conventions", icon: FileText },
   ]
