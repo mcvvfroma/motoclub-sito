@@ -3,9 +3,9 @@
   "placeholderImages": [
     {
       "id": "hero-ride",
-      "description": "Scorcio di Roma con la Basilica di San Pietro al tramonto, atmosfera istituzionale",
-      "imageUrl": "https://picsum.photos/seed/rome-firefighters/1200/800",
-      "imageHint": "Rome St. Peter"
+      "description": "Colosseo con illuminazione tricolore",
+      "imageUrl": "/colosseo_tricolore.jpg",
+      "imageHint": "Colosseum tricolor"
     },
     {
       "id": "event-1",

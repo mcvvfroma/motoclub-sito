@@ -51,7 +51,7 @@ export default function Home() {
               fill
               className="object-cover"
               priority
-              data-ai-hint="Rome St. Peter"
+              data-ai-hint={heroImage.imageHint}
             />
             {/* Dark Filter Overlay for readability */}
             <div className="absolute inset-0 bg-black/60 z-[1]" />
