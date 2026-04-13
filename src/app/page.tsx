@@ -41,24 +41,24 @@ export default function Home() {
     <div className="min-h-screen pb-20 md:pb-0 md:pt-16">
       <Navbar />
       
-      {/* Hero Section */}
-      <section className="relative h-[60vh] md:h-[85vh] w-full flex items-center justify-center overflow-hidden px-6 pt-16 md:pt-0">
+      {/* Hero Section - Reduced height to 60vh to show content below */}
+      <section className="relative h-[60vh] w-full flex items-center justify-center overflow-hidden px-6 pt-16 md:pt-0">
         {heroImage?.imageUrl && (
           <>
             <Image
               src={heroImage.imageUrl}
               alt="Background Casco"
               fill
-              className="object-contain md:object-cover"
+              className="object-contain"
               priority
               data-ai-hint={heroImage.imageHint}
             />
-            {/* Dark Filter Overlay for readability - lighter on mobile to see the casco */}
-            <div className="absolute inset-0 bg-black/40 md:bg-black/60 z-[1]" />
+            {/* Dark Filter Overlay for readability */}
+            <div className="absolute inset-0 bg-black/40 z-[1]" />
           </>
         )}
         <div className="relative z-10 text-center max-w-2xl flex flex-col items-center animate-in fade-in slide-in-from-bottom-8 duration-1000">
-          <div className="relative w-24 h-24 md:w-44 md:h-44 mb-6 md:mb-8 drop-shadow-[0_0_20px_rgba(211,47,47,0.6)]">
+          <div className="relative w-24 h-24 md:w-32 md:h-32 mb-4 md:mb-6 drop-shadow-[0_0_20px_rgba(211,47,47,0.6)]">
             <Image 
               src="/logo_motoclub.gif" 
               alt="Logo Motoclub VVF Roma" 
@@ -67,7 +67,7 @@ export default function Home() {
               priority
             />
           </div>
-          <h1 className="text-3xl md:text-7xl font-headline font-bold mb-8 md:mb-10 bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent uppercase tracking-tighter">
+          <h1 className="text-3xl md:text-5xl font-headline font-bold mb-6 md:mb-8 bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent uppercase tracking-tighter">
             Motoclub VVF Roma
           </h1>
           <div className="flex justify-center">
