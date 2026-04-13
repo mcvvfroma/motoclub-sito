@@ -1,10 +1,13 @@
+
 "use client"
 
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
-import { Calendar, Image as ImageIcon, FileText, User, Home } from "lucide-react"
+import { Calendar, Image as ImageIcon, FileText, User, Home, Menu } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useSidebar } from "@/components/ui/sidebar"
+import { Button } from "@/components/ui/button"
 
 const navItems = [
   { name: "Home", href: "/", icon: Home },
@@ -15,13 +18,28 @@ const navItems = [
 
 export function Navbar() {
   const pathname = usePathname()
+  const { toggleSidebar } = useSidebar()
 
   if (pathname === "/login" || pathname === "/register") return null
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/80 backdrop-blur-lg border-t border-border md:top-0 md:bottom-auto md:border-b md:border-t-0">
-      <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-        <Link href="/" className="hidden md:flex items-center gap-2">
+    <nav className="fixed top-0 left-0 right-0 z-[100] bg-card/80 backdrop-blur-lg border-b border-border h-16">
+      <div className="max-w-7xl mx-auto px-4 h-full flex items-center justify-between">
+        {/* Mobile: Hamburger Button */}
+        <div className="flex md:hidden">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={toggleSidebar}
+            className="text-[#FFD700] hover:bg-white/10"
+          >
+            <Menu className="w-8 h-8" />
+            <span className="sr-only">Apri menu</span>
+          </Button>
+        </div>
+
+        {/* Logo Section */}
+        <Link href="/" className="flex items-center gap-2">
           <div className="relative w-10 h-10">
             <Image 
               src="/logo_motoclub.gif" 
@@ -37,7 +55,8 @@ export function Navbar() {
           </div>
         </Link>
 
-        <div className="flex flex-1 justify-around md:justify-center md:gap-8">
+        {/* Desktop: Navigation Links */}
+        <div className="hidden md:flex flex-1 justify-center gap-8">
           {navItems.map((item) => {
             const Icon = item.icon
             const isActive = pathname === item.href
@@ -46,17 +65,18 @@ export function Navbar() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex flex-col md:flex-row items-center gap-1 md:gap-2 px-3 py-1 rounded-md transition-colors",
+                  "flex items-center gap-2 px-3 py-1 rounded-md transition-colors",
                   isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
                 )}
               >
                 <Icon className="w-5 h-5" />
-                <span className="text-[10px] md:text-sm font-medium">{item.name}</span>
+                <span className="text-sm font-medium">{item.name}</span>
               </Link>
             )
           })}
         </div>
 
+        {/* User Area */}
         <div className="hidden md:flex items-center gap-4">
           <Link href="/login" className="text-sm font-medium hover:text-primary transition-colors">
             Logout
@@ -65,6 +85,9 @@ export function Navbar() {
             <User className="w-4 h-4 text-accent-foreground" />
           </div>
         </div>
+
+        {/* Mobile Spacer (to keep logo centered or balanced) */}
+        <div className="flex md:hidden w-10" />
       </div>
     </nav>
   )
