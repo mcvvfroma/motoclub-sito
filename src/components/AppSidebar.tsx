@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useEffect, useState } from "react"
@@ -6,6 +5,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
 import { Home, Calendar, Image as ImageIcon, FileText, User, Users, ShieldAlert, LogOut } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 import {
   Sidebar,
@@ -116,7 +116,7 @@ export function AppSidebar() {
               </div>
               <span className="truncate">{user.nome}</span>
             </div>
-            <Button variant="ghost" onClick={handleLogout} className="justify-start gap-3 h-10 text-muted-foreground hover:text-destructive">
+            <Button variant="ghost" onClick={handleLogout} className="justify-start gap-3 h-10 text-muted-foreground hover:text-destructive text-sm font-medium">
               <LogOut className="w-4 h-4" />
               <span>Esci</span>
             </Button>
