@@ -1,11 +1,11 @@
 
 "use client"
 
-import * as React from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { usePathname } from "next/navigation"
-import { Home, Calendar, Image as ImageIcon, FileText, User, Users, ShieldAlert } from "lucide-react"
+import { usePathname, useRouter } from "next/navigation"
+import { Home, Calendar, Image as ImageIcon, FileText, User, Users, ShieldAlert, LogOut } from "lucide-react"
 
 import {
   Sidebar,
@@ -18,22 +18,39 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 
-const navItems = [
-  { name: "Home", href: "/", icon: Home },
-  { name: "Eventi", href: "/events", icon: Calendar },
-  { name: "Soci", href: "/members", icon: Users },
-  { name: "Galleria", href: "/gallery", icon: ImageIcon },
-  { name: "Convenzioni", href: "/conventions", icon: FileText },
-]
-
 export function AppSidebar() {
   const pathname = usePathname()
+  const router = useRouter()
   const { setOpenMobile } = useSidebar()
-  
-  // Simulazione admin per visibilità menu
-  const isAdmin = true 
+  const [user, setUser] = useState<any>(null)
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem("vvf_user")
+    if (storedUser) {
+      setUser(JSON.parse(storedUser))
+    } else {
+      setUser(null)
+    }
+  }, [pathname])
+
+  const handleLogout = () => {
+    localStorage.removeItem("vvf_user")
+    setUser(null)
+    setOpenMobile(false)
+    router.push("/login")
+  }
 
   if (pathname === "/login" || pathname === "/register") return null
+
+  const navItems = [
+    { name: "Home", href: "/", icon: Home },
+    { name: "Eventi", href: "/events", icon: Calendar },
+    ...(user ? [{ name: "Soci", href: "/members", icon: Users }] : []),
+    { name: "Galleria", href: "/gallery", icon: ImageIcon },
+    { name: "Convenzioni", href: "/conventions", icon: FileText },
+  ]
+
+  const isAdmin = user?.status === "admin"
 
   return (
     <Sidebar side="left" collapsible="offcanvas" className="border-r border-border bg-card">
@@ -91,16 +108,29 @@ export function AppSidebar() {
         </SidebarMenu>
       </SidebarContent>
       <SidebarFooter className="border-t border-border p-4">
-        <Link 
-          href="/login" 
-          className="flex items-center gap-3 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
-          onClick={() => setOpenMobile(false)}
-        >
-          <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center">
-            <User className="w-4 h-4 text-accent-foreground" />
+        {user ? (
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-3 text-sm font-medium text-muted-foreground p-2">
+              <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center">
+                <User className="w-4 h-4 text-accent-foreground" />
+              </div>
+              <span className="truncate">{user.nome}</span>
+            </div>
+            <Button variant="ghost" onClick={handleLogout} className="justify-start gap-3 h-10 text-muted-foreground hover:text-destructive">
+              <LogOut className="w-4 h-4" />
+              <span>Esci</span>
+            </Button>
           </div>
-          <span>Area Riservata / Logout</span>
-        </Link>
+        ) : (
+          <Link 
+            href="/login" 
+            className="flex items-center gap-3 text-sm font-medium text-muted-foreground hover:text-primary transition-colors p-2"
+            onClick={() => setOpenMobile(false)}
+          >
+            <User className="w-5 h-5" />
+            <span>Accedi</span>
+          </Link>
+        )}
       </SidebarFooter>
     </Sidebar>
   )

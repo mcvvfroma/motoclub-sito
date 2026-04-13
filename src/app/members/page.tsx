@@ -1,25 +1,31 @@
+
+"use client"
+
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { Navbar } from "@/components/Navbar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { User, Mail, Shield, Loader2 } from "lucide-react"
+import { User, Mail, Loader2 } from "lucide-react"
 import sociData from "@/app/lib/soci.json"
 
 export default function MembersPage() {
-  // Safe extraction of soci list
+  const router = useRouter()
+  const [isAuthorized, setIsAuthorized] = useState(false)
+  
+  useEffect(() => {
+    const user = localStorage.getItem("vvf_user")
+    if (!user) {
+      router.push("/login")
+    } else {
+      setIsAuthorized(true)
+    }
+  }, [router])
+
   const soci = sociData?.soci || []
 
-  if (!soci || soci.length === 0) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background text-foreground">
-        <Navbar />
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-8 h-8 text-primary animate-spin" />
-          <p className="text-muted-foreground font-medium">Caricamento soci...</p>
-        </div>
-      </div>
-    )
-  }
+  if (!isAuthorized) return null
 
   return (
     <div className="min-h-screen pb-20 md:pb-0 md:pt-16 bg-background">
@@ -70,7 +76,7 @@ export default function MembersPage() {
           </Card>
         </section>
 
-        {/* Mobile View: Cards instead of table */}
+        {/* Mobile View */}
         <section className="md:hidden grid grid-cols-1 gap-4">
           {soci.map((socio: any, index: number) => (
             <Card key={index} className="bg-card border-border">

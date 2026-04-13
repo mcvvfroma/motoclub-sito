@@ -1,27 +1,43 @@
 
 "use client"
 
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { usePathname } from "next/navigation"
-import { Calendar, Image as ImageIcon, FileText, User, Home, Menu, Users } from "lucide-react"
+import { usePathname, useRouter } from "next/navigation"
+import { Calendar, Image as ImageIcon, FileText, User, Home, Menu, Users, LogOut } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useSidebar } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 
-const navItems = [
-  { name: "Home", href: "/", icon: Home },
-  { name: "Eventi", href: "/events", icon: Calendar },
-  { name: "Soci", href: "/members", icon: Users },
-  { name: "Galleria", href: "/gallery", icon: ImageIcon },
-  { name: "Convenzioni", href: "/conventions", icon: FileText },
-]
-
 export function Navbar() {
   const pathname = usePathname()
+  const router = useRouter()
   const { toggleSidebar } = useSidebar()
+  const [user, setUser] = useState<any>(null)
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem("vvf_user")
+    if (storedUser) {
+      setUser(JSON.parse(storedUser))
+    }
+  }, [pathname])
+
+  const handleLogout = () => {
+    localStorage.removeItem("vvf_user")
+    setUser(null)
+    router.push("/login")
+  }
 
   if (pathname === "/login" || pathname === "/register") return null
+
+  const navItems = [
+    { name: "Home", href: "/", icon: Home },
+    { name: "Eventi", href: "/events", icon: Calendar },
+    ...(user ? [{ name: "Soci", href: "/members", icon: Users }] : []),
+    { name: "Galleria", href: "/gallery", icon: ImageIcon },
+    { name: "Convenzioni", href: "/conventions", icon: FileText },
+  ]
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-[100] bg-card/80 backdrop-blur-lg border-b border-border h-16">
@@ -79,15 +95,24 @@ export function Navbar() {
 
         {/* User Area */}
         <div className="hidden md:flex items-center gap-4">
-          <Link href="/login" className="text-xs font-medium hover:text-primary transition-colors text-muted-foreground">
-            Logout
-          </Link>
+          {user ? (
+            <>
+              <span className="text-xs font-medium text-muted-foreground">{user.nome}</span>
+              <Button variant="ghost" size="icon" onClick={handleLogout} className="text-muted-foreground hover:text-primary">
+                <LogOut className="w-4 h-4" />
+              </Button>
+            </>
+          ) : (
+            <Link href="/login" className="text-xs font-medium hover:text-primary transition-colors text-muted-foreground">
+              Login
+            </Link>
+          )}
           <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center shadow-lg shadow-accent/20">
             <User className="w-4 h-4 text-accent-foreground" />
           </div>
         </div>
 
-        {/* Mobile Spacer (to keep logo centered or balanced) */}
+        {/* Mobile Spacer */}
         <div className="flex md:hidden w-10" />
       </div>
     </nav>

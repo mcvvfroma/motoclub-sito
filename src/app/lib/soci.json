@@ -3,14 +3,14 @@
     {
       "nome": "Leonardo",
       "cognome": "Bocale",
-      "email": "leonardo@email.it",
-      "status": "admin"
+      "email": "leoboca@libero.it",
+      "status": "socio"
     },
     {
-      "nome": "Mario",
-      "cognome": "Rossi",
-      "email": "mario.rossi@email.it",
-      "status": "socio"
+      "nome": "Giorgio",
+      "cognome": "Grippo",
+      "email": "g.grippo@libero.it",
+      "status": "admin"
     }
   ]
 }
