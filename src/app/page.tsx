@@ -42,22 +42,22 @@ export default function Home() {
       <Navbar />
       
       {/* Hero Section */}
-      <section className="relative h-[85vh] w-full flex items-center justify-start overflow-hidden px-6 md:px-20 lg:px-32">
+      <section className="relative h-[85vh] w-full flex items-center justify-center overflow-hidden px-6">
         {heroImage?.imageUrl && (
           <>
             <Image
               src={heroImage.imageUrl}
-              alt="Roma Background"
+              alt="Background Casco"
               fill
               className="object-cover"
               priority
               data-ai-hint={heroImage.imageHint}
             />
             {/* Dark Filter Overlay for readability */}
-            <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent z-[1]" />
+            <div className="absolute inset-0 bg-black/60 z-[1]" />
           </>
         )}
-        <div className="relative z-10 text-left max-w-2xl flex flex-col items-start animate-in fade-in slide-in-from-left-8 duration-1000">
+        <div className="relative z-10 text-center max-w-2xl flex flex-col items-center animate-in fade-in slide-in-from-bottom-8 duration-1000">
           <div className="relative w-32 h-32 md:w-44 md:h-44 mb-8 drop-shadow-[0_0_20px_rgba(211,47,47,0.6)]">
             <Image 
               src="/logo_motoclub.gif" 
@@ -70,7 +70,7 @@ export default function Home() {
           <h1 className="text-4xl md:text-7xl font-headline font-bold mb-10 bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent uppercase tracking-tighter">
             Motoclub VVF Roma
           </h1>
-          <div className="flex justify-start">
+          <div className="flex justify-center">
             <Button size="lg" className="bg-primary hover:bg-primary/90 text-white rounded-full px-10 h-14 text-lg font-bold shadow-lg shadow-primary/30 border-2 border-accent/20" asChild>
               <Link href="/conventions">
                 Vedi Convenzioni <FileText className="ml-2 w-5 h-5" />
