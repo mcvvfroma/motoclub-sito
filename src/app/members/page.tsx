@@ -2,7 +2,7 @@ import { Navbar } from "@/components/Navbar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { User, Calendar, Shield, Bike, Loader2 } from "lucide-react"
+import { User, Mail, Shield, Loader2 } from "lucide-react"
 import sociData from "@/app/lib/soci.json"
 
 export default function MembersPage() {
@@ -37,30 +37,32 @@ export default function MembersPage() {
             <Table>
               <TableHeader className="bg-secondary/50">
                 <TableRow>
-                  <TableHead className="text-accent font-bold">Socio</TableHead>
-                  <TableHead className="text-accent font-bold">Grado VVF</TableHead>
-                  <TableHead className="text-accent font-bold">Ruolo Club</TableHead>
-                  <TableHead className="text-accent font-bold">Iscritto dal</TableHead>
-                  <TableHead className="text-accent font-bold">Motocicletta</TableHead>
+                  <TableHead className="text-accent font-bold">Nome</TableHead>
+                  <TableHead className="text-accent font-bold">Cognome</TableHead>
+                  <TableHead className="text-accent font-bold">Email</TableHead>
+                  <TableHead className="text-accent font-bold">Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {soci.map((socio: any) => (
-                  <TableRow key={socio.id || socio.email} className="hover:bg-primary/5 transition-colors border-border">
-                    <TableCell className="font-medium flex items-center gap-3 text-foreground">
-                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                        <User className="w-4 h-4" />
-                      </div>
-                      {socio.nome} {socio.cognome}
+                {soci.map((socio: any, index: number) => (
+                  <TableRow key={index} className="hover:bg-primary/5 transition-colors border-border">
+                    <TableCell className="font-medium text-foreground">
+                      {socio.nome}
                     </TableCell>
-                    <TableCell className="text-muted-foreground">{socio.grado}</TableCell>
+                    <TableCell className="font-medium text-foreground">
+                      {socio.cognome}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground font-mono text-xs">
+                      {socio.email}
+                    </TableCell>
                     <TableCell>
-                      <Badge variant={socio.ruolo === "Socio Ordinario" ? "outline" : "default"} className={socio.ruolo !== "Socio Ordinario" ? "bg-accent text-accent-foreground" : "border-accent text-accent"}>
-                        {socio.ruolo}
+                      <Badge 
+                        variant={socio.status === "admin" ? "default" : "outline"} 
+                        className={socio.status === "admin" ? "bg-accent text-accent-foreground" : "border-muted-foreground text-muted-foreground"}
+                      >
+                        {socio.status.toUpperCase()}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-muted-foreground">{socio.dataIscrizione}</TableCell>
-                    <TableCell className="italic text-sm text-muted-foreground">{socio.moto}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -70,29 +72,26 @@ export default function MembersPage() {
 
         {/* Mobile View: Cards instead of table */}
         <section className="md:hidden grid grid-cols-1 gap-4">
-          {soci.map((socio: any) => (
-            <Card key={socio.id || socio.email} className="bg-card border-border">
+          {soci.map((socio: any, index: number) => (
+            <Card key={index} className="bg-card border-border">
               <CardHeader className="flex flex-row items-center gap-4 pb-2">
-                <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-white">
-                  <User className="w-6 h-6" />
+                <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white">
+                  <User className="w-5 h-5" />
                 </div>
                 <div>
                   <CardTitle className="text-lg">{socio.nome} {socio.cognome}</CardTitle>
-                  <p className="text-xs text-accent font-bold uppercase">{socio.ruolo}</p>
+                  <Badge 
+                    variant={socio.status === "admin" ? "default" : "outline"} 
+                    className={socio.status === "admin" ? "bg-accent text-accent-foreground text-[10px]" : "border-muted-foreground text-muted-foreground text-[10px]"}
+                  >
+                    {socio.status.toUpperCase()}
+                  </Badge>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-3 pt-2">
+              <CardContent className="pt-2">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Shield className="w-4 h-4 text-primary" />
-                  <span>{socio.grado}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Calendar className="w-4 h-4 text-primary" />
-                  <span>Iscritto: {socio.dataIscrizione}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Bike className="w-4 h-4 text-primary" />
-                  <span>{socio.moto}</span>
+                  <Mail className="w-4 h-4 text-primary" />
+                  <span className="font-mono text-xs">{socio.email}</span>
                 </div>
               </CardContent>
             </Card>

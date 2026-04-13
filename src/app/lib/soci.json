@@ -1,26 +1,16 @@
 {
   "soci": [
     {
-      "id": 1,
       "nome": "Leonardo",
       "cognome": "Bocale",
       "email": "leonardo@email.it",
-      "status": "admin",
-      "grado": "Capo Squadra",
-      "ruolo": "Presidente",
-      "dataIscrizione": "01/01/2020",
-      "moto": "BMW R1250GS"
+      "status": "admin"
     },
     {
-      "id": 2,
       "nome": "Mario",
       "cognome": "Rossi",
       "email": "mario.rossi@email.it",
-      "status": "socio",
-      "grado": "Vigile Coordinatore",
-      "ruolo": "Socio Ordinario",
-      "dataIscrizione": "15/03/2022",
-      "moto": "Ducati Multistrada"
+      "status": "socio"
     }
   ]
 }
