@@ -1,16 +1,15 @@
-
 "use client"
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { MapPin, Calendar, Image as ImageIcon, FileText, User, LogOut, Home } from "lucide-react"
+import { MapPin, Calendar, Image as ImageIcon, FileText, User, Home } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const navItems = [
   { name: "Home", href: "/", icon: Home },
-  { name: "Events", href: "/events", icon: Calendar },
-  { name: "Gallery", href: "/gallery", icon: ImageIcon },
-  { name: "Conventions", href: "/conventions", icon: FileText },
+  { name: "Eventi", href: "/events", icon: Calendar },
+  { name: "Galleria", href: "/gallery", icon: ImageIcon },
+  { name: "Convenzioni", href: "/conventions", icon: FileText },
 ]
 
 export function Navbar() {
@@ -25,7 +24,10 @@ export function Navbar() {
           <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
             <MapPin className="text-white w-5 h-5" />
           </div>
-          <span className="font-headline font-bold text-xl tracking-tight">RideRoute</span>
+          <div className="flex flex-col">
+            <span className="font-headline font-bold text-lg leading-none tracking-tight">Motoclub VVF</span>
+            <span className="text-[10px] font-bold text-accent uppercase tracking-wider">Roma</span>
+          </div>
         </Link>
 
         <div className="flex flex-1 justify-around md:justify-center md:gap-8">
@@ -53,7 +55,7 @@ export function Navbar() {
             Logout
           </Link>
           <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center">
-            <User className="w-4 h-4 text-white" />
+            <User className="w-4 h-4 text-accent-foreground" />
           </div>
         </div>
       </div>

@@ -1,31 +1,30 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 220 12% 12%;
-    --foreground: 210 20% 98%;
-    --card: 220 12% 15%;
-    --card-foreground: 210 20% 98%;
-    --popover: 220 12% 12%;
-    --popover-foreground: 210 20% 98%;
-    --primary: 219 82% 59%;
-    --primary-foreground: 210 20% 98%;
-    --secondary: 220 12% 20%;
-    --secondary-foreground: 210 20% 98%;
-    --muted: 220 12% 25%;
-    --muted-foreground: 215 20% 65%;
-    --accent: 272 73% 71%;
-    --accent-foreground: 210 20% 98%;
+    --background: 0 0% 10%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 12%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 63% 51%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 18%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 20%;
+    --muted-foreground: 0 0% 65%;
+    --accent: 45 93% 47%;
+    --accent-foreground: 0 0% 10%;
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 20% 98%;
-    --border: 220 12% 25%;
-    --input: 220 12% 25%;
-    --ring: 219 82% 59%;
-    --chart-1: 219 82% 59%;
-    --chart-2: 272 73% 71%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 0 63% 51%;
+    --chart-1: 0 63% 51%;
+    --chart-2: 45 93% 47%;
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;

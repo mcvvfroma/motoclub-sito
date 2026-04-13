@@ -1,11 +1,10 @@
-
 import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 
 export const metadata: Metadata = {
-  title: 'RideRoute | Motorcycle Club',
-  description: 'The ultimate app for motorcycle enthusiasts and club members.',
+  title: 'Motoclub VVF Roma | Motoclub Vigili del Fuoco',
+  description: 'Il motoclub ufficiale del Comando dei Vigili del Fuoco di Roma.',
 };
 
 export default function RootLayout({
@@ -14,7 +13,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="it">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />

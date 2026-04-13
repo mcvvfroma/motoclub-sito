@@ -9,16 +9,16 @@ import { PlaceHolderImages } from "@/lib/placeholder-images"
 const upcomingEvents = [
   {
     id: 1,
-    title: "Mountain Pass Adventure",
-    date: "May 20, 2024",
-    location: "Alps - Milan Base",
+    title: "Giro dei Castelli Romani",
+    date: "15 Giugno, 2024",
+    location: "Partenza: Comando via Genova, Roma",
     image: PlaceHolderImages.find(img => img.id === "event-1")?.imageUrl
   },
   {
     id: 2,
-    title: "Lakeside Sunset Cruise",
-    date: "June 05, 2024",
-    location: "Lake Como",
+    title: "Litorale Laziale al Tramonto",
+    date: "30 Giugno, 2024",
+    location: "Ostia - Riva di Traiano",
     image: PlaceHolderImages.find(img => img.id === "event-2")?.imageUrl
   }
 ]
@@ -41,18 +41,18 @@ export default function Home() {
           data-ai-hint="motorcycle highway"
         />
         <div className="relative z-10 text-center px-4 max-w-4xl">
-          <h1 className="text-4xl md:text-6xl font-headline font-bold mb-4 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            Fuel Your Passion. Ride Together.
+          <h1 className="text-4xl md:text-7xl font-headline font-bold mb-4 bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent uppercase tracking-tighter">
+            Motoclub VVF Roma
           </h1>
-          <p className="text-lg md:text-xl text-muted-foreground mb-8">
-            Connect with fellow riders, discover epic routes, and manage your club life all in one place.
+          <p className="text-lg md:text-2xl text-muted-foreground mb-8 font-medium">
+            Passione, Sicurezza e Fratellanza. Sulle strade con il coraggio dei Vigili del Fuoco.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Button size="lg" className="bg-primary hover:bg-primary/90 rounded-full px-8">
-              Explore Events <Calendar className="ml-2 w-4 h-4" />
+            <Button size="lg" className="bg-primary hover:bg-primary/90 text-white rounded-full px-8 h-14 text-lg">
+              Prossime Uscite <Calendar className="ml-2 w-5 h-5" />
             </Button>
-            <Button variant="outline" size="lg" className="rounded-full px-8 border-accent text-accent hover:bg-accent/10">
-              Member Benefits <ShieldCheck className="ml-2 w-4 h-4" />
+            <Button variant="outline" size="lg" className="rounded-full px-8 border-accent text-accent hover:bg-accent/10 h-14 text-lg">
+              Diventa Socio <ShieldCheck className="ml-2 w-5 h-5" />
             </Button>
           </div>
         </div>
@@ -63,26 +63,29 @@ export default function Home() {
         {/* Upcoming Section */}
         <section>
           <div className="flex items-center justify-between mb-8">
-            <h2 className="text-3xl font-headline font-bold">Upcoming Rides</h2>
-            <Link href="/events" className="text-primary flex items-center gap-1 hover:underline">
-              View all <ArrowRight className="w-4 h-4" />
+            <h2 className="text-3xl font-headline font-bold border-l-4 border-primary pl-4">Prossimi Giri</h2>
+            <Link href="/events" className="text-primary flex items-center gap-1 hover:underline font-bold">
+              Tutti gli eventi <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8">
             {upcomingEvents.map(event => (
-              <Card key={event.id} className="overflow-hidden border-border bg-card hover:border-primary/50 transition-all group">
-                <div className="relative h-48 w-full">
+              <Card key={event.id} className="overflow-hidden border-border bg-card hover:border-primary/50 transition-all group shadow-xl">
+                <div className="relative h-56 w-full">
                   <Image src={event.image || ""} alt={event.title} fill className="object-cover transition-transform group-hover:scale-105" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+                  <div className="absolute bottom-4 left-4">
+                    <p className="text-accent text-sm font-bold uppercase tracking-widest">{event.date}</p>
+                    <CardTitle className="text-2xl text-white">{event.title}</CardTitle>
+                  </div>
                 </div>
                 <CardContent className="p-6">
-                  <p className="text-accent text-sm font-medium mb-2">{event.date}</p>
-                  <CardTitle className="text-xl mb-2">{event.title}</CardTitle>
-                  <div className="flex items-center text-muted-foreground text-sm">
-                    <Map className="w-4 h-4 mr-2" />
+                  <div className="flex items-center text-muted-foreground text-sm mb-6">
+                    <Map className="w-4 h-4 mr-2 text-primary" />
                     {event.location}
                   </div>
-                  <Button asChild className="mt-6 w-full bg-secondary hover:bg-secondary/80">
-                    <Link href={`/events/${event.id}`}>View Details</Link>
+                  <Button asChild className="w-full bg-secondary hover:bg-primary hover:text-white transition-colors py-6">
+                    <Link href={`/events/${event.id}`}>Dettagli Percorso</Link>
                   </Button>
                 </CardContent>
               </Card>
@@ -92,26 +95,26 @@ export default function Home() {
 
         {/* Quick Stats / Info */}
         <section className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          <div className="bg-card p-8 rounded-2xl border border-border text-center">
+          <div className="bg-card p-8 rounded-2xl border border-border text-center hover:border-accent/50 transition-colors">
             <div className="w-12 h-12 bg-primary/20 text-primary rounded-xl flex items-center justify-center mx-auto mb-4">
               <Calendar className="w-6 h-6" />
             </div>
-            <h3 className="text-2xl font-bold font-headline mb-1">12</h3>
-            <p className="text-muted-foreground">Active Events</p>
+            <h3 className="text-3xl font-bold font-headline mb-1 text-white">12</h3>
+            <p className="text-muted-foreground uppercase text-xs font-bold tracking-widest">Eventi Attivi</p>
           </div>
-          <div className="bg-card p-8 rounded-2xl border border-border text-center">
+          <div className="bg-card p-8 rounded-2xl border border-border text-center hover:border-accent/50 transition-colors">
             <div className="w-12 h-12 bg-accent/20 text-accent rounded-xl flex items-center justify-center mx-auto mb-4">
               <User className="w-6 h-6" />
             </div>
-            <h3 className="text-2xl font-bold font-headline mb-1">256</h3>
-            <p className="text-muted-foreground">Club Members</p>
+            <h3 className="text-3xl font-bold font-headline mb-1 text-white">256</h3>
+            <p className="text-muted-foreground uppercase text-xs font-bold tracking-widest">Soci Iscritti</p>
           </div>
-          <div className="bg-card p-8 rounded-2xl border border-border text-center">
+          <div className="bg-card p-8 rounded-2xl border border-border text-center hover:border-accent/50 transition-colors">
             <div className="w-12 h-12 bg-primary/20 text-primary rounded-xl flex items-center justify-center mx-auto mb-4">
               <ImageIcon className="w-6 h-6" />
             </div>
-            <h3 className="text-2xl font-bold font-headline mb-1">1.2k</h3>
-            <p className="text-muted-foreground">Photos Shared</p>
+            <h3 className="text-3xl font-bold font-headline mb-1 text-white">1.2k</h3>
+            <p className="text-muted-foreground uppercase text-xs font-bold tracking-widest">Foto Condivise</p>
           </div>
         </section>
 
