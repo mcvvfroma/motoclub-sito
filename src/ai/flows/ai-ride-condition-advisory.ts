@@ -33,9 +33,34 @@ export async function aiRideConditionAdvisory(input: AIRideConditionAdvisoryInpu
 
 const prompt = ai.definePrompt({
   name: 'aiRideConditionAdvisoryPrompt',
+  model: 'googleai/gemini-2.5-flash',
   input: { schema: AIRideConditionAdvisoryInputSchema },
   output: { schema: AIRideConditionAdvisoryOutputSchema },
-  prompt: `You are an expert motorcycle riding conditions analyst and safety advisor. Your task is to analyze weather data and provide a comprehensive advisory for motorcycle club members, focusing on safety, enjoyment, and potential hazards.\n\nAnalyze the provided weather data for "{{locationDescription}}" and generate a structured advisory.\n\nWeather Data (JSON):\n{{{weatherData}}}\n\nBased on this weather data, provide the following:\n1. An overall summary of the riding conditions.\n2. A boolean indicating if it's generally safe to ride.\n3. An assessment of the hazard level (low, medium, or high).\n4. Specific recommendations or precautions for riders.\n5. The expected temperature range.\n6. The description of precipitation risk.\n7. The description of wind conditions.\n\nProvide your response in JSON format according to the output schema.`,
+  config: {
+    safetySettings: [
+      {
+        category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+        threshold: 'BLOCK_NONE',
+      },
+    ],
+  },
+  prompt: `You are an expert motorcycle riding conditions analyst and safety advisor. Your task is to analyze weather data and provide a comprehensive advisory for motorcycle club members, focusing on safety, enjoyment, and potential hazards.
+
+Analyze the provided weather data for "{{locationDescription}}" and generate a structured advisory.
+
+Weather Data (JSON):
+{{{weatherData}}}
+
+Based on this weather data, provide the following:
+1. An overall summary of the riding conditions.
+2. A boolean indicating if it's generally safe to ride.
+3. An assessment of the hazard level (low, medium, or high).
+4. Specific recommendations or precautions for riders.
+5. The expected temperature range.
+6. The description of precipitation risk.
+7. The description of wind conditions.
+
+Provide your response strictly in JSON format according to the output schema.`,
 });
 
 const aiRideConditionAdvisoryFlow = ai.defineFlow(
@@ -45,7 +70,34 @@ const aiRideConditionAdvisoryFlow = ai.defineFlow(
     outputSchema: AIRideConditionAdvisoryOutputSchema,
   },
   async (input) => {
-    const { output } = await prompt(input);
-    return output!;
+    try {
+      const { output } = await prompt(input);
+      
+      if (!output) {
+        return {
+          overallAdvisory: "Impossibile generare un'informativa dettagliata. Si consiglia prudenza generica.",
+          isSafeToRide: true,
+          hazardLevel: 'medium',
+          recommendations: ["Controllare sempre le condizioni meteo locali prima di mettersi in viaggio.", "Mantenere una guida difensiva."],
+          temperatureRange: "N/D",
+          precipitationRisk: "N/D",
+          windConditions: "N/D"
+        };
+      }
+      
+      return output;
+    } catch (error) {
+      console.error("Genkit prompt execution failed:", error);
+      // Return a safe default instead of crashing the page
+      return {
+        overallAdvisory: "Servizio di consulenza AI temporaneamente non disponibile. Guidare con la massima attenzione.",
+        isSafeToRide: true,
+        hazardLevel: 'medium',
+        recommendations: ["Verificare manualmente le condizioni meteo.", "Attenersi ai protocolli di sicurezza standard del club."],
+        temperatureRange: "Dati non disponibili",
+        precipitationRisk: "Dati non disponibili",
+        windConditions: "Dati non disponibili"
+      };
+    }
   }
 );
