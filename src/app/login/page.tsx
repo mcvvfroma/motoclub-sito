@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
+import { Info } from "lucide-react"
 import sociData from "@/app/lib/soci.json"
 
 export default function LoginPage() {
@@ -23,26 +24,36 @@ export default function LoginPage() {
     e.preventDefault()
     setIsLoading(true)
 
+    // Password universale per test: VVF2026
+    const TEMP_PASSWORD = "VVF2026"
+
     // Simulazione controllo credenziali basato su soci.json
     const user = sociData.soci.find(s => s.email.toLowerCase() === email.toLowerCase())
 
     if (user) {
-      // In un'app reale useremmo Firebase Auth o un sistema di sessioni
-      // Qui simuliamo salvando i dati dell'utente nel localStorage
-      localStorage.setItem("vvf_user", JSON.stringify(user))
-      
-      toast({
-        title: "Accesso effettuato",
-        description: `Benvenuto, ${user.nome}!`,
-      })
-      
-      router.push("/")
-      router.refresh()
+      if (password === TEMP_PASSWORD) {
+        // In un'app reale useremmo Firebase Auth
+        localStorage.setItem("vvf_user", JSON.stringify(user))
+        
+        toast({
+          title: "Accesso effettuato",
+          description: `Benvenuto, ${user.nome}! Entrato come ${user.status}.`,
+        })
+        
+        router.push("/")
+        router.refresh()
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Password errata",
+          description: "La password inserita non è corretta.",
+        })
+      }
     } else {
       toast({
         variant: "destructive",
-        title: "Errore di accesso",
-        description: "Email non trovata nel registro soci. Contatta la segreteria.",
+        title: "Utente non trovato",
+        description: "Email non presente nel registro soci. Verifica l'indirizzo.",
       })
     }
     setIsLoading(false)
@@ -69,11 +80,11 @@ export default function LoginPage() {
         <CardContent>
           <form className="space-y-6" onSubmit={handleLogin}>
             <div className="space-y-2">
-              <Label htmlFor="email">Email istituzionale o privata</Label>
+              <Label htmlFor="email">Email registrata</Label>
               <Input 
                 id="email" 
                 type="email" 
-                placeholder="nome.cognome@vigilfuoco.it" 
+                placeholder="es: leoboca@libero.it" 
                 className="bg-background border-border h-12"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -92,18 +103,25 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                placeholder="Inserisci la tua password"
+                placeholder="Inserisci password"
               />
             </div>
-            <Button type="submit" disabled={isLoading} className="w-full bg-primary hover:bg-primary/90 text-white h-14 font-bold text-lg rounded-xl transition-all shadow-lg shadow-primary/30">
-              {isLoading ? "Verifica in corso..." : "Entra"}
-            </Button>
+            <div className="space-y-4">
+              <Button type="submit" disabled={isLoading} className="w-full bg-primary hover:bg-primary/90 text-white h-14 font-bold text-lg rounded-xl transition-all shadow-lg shadow-primary/30">
+                {isLoading ? "Verifica in corso..." : "Entra"}
+              </Button>
+              
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-accent/10 border border-accent/20 text-accent text-[11px] font-medium animate-pulse">
+                <Info className="w-4 h-4 shrink-0" />
+                <p>TEST MODE: Usa l'email di un socio e la password <span className="font-bold underline">VVF2026</span></p>
+              </div>
+            </div>
           </form>
           
           <div className="mt-8 pt-6 border-t border-border text-center">
             <p className="text-sm text-muted-foreground">
               Non sei ancora dei nostri?{" "}
-              <Link href="/register" className="text-accent font-bold hover:underline">Fai domanda di iscrizione</Link>
+              <Link href="#" className="text-accent font-bold hover:underline">Fai domanda di iscrizione</Link>
             </p>
           </div>
         </CardContent>
