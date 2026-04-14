@@ -1,117 +1,295 @@
+
+"use client"
+
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { Navbar } from "@/components/Navbar"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Calendar, MapPin, Users, Filter, ArrowRight } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
+import { useToast } from "@/hooks/use-toast"
+import { Calendar, MapPin, Users, Filter, ArrowRight, Plus, Edit, Trash2, Clock, Info } from "lucide-react"
 import { PlaceHolderImages } from "@/lib/placeholder-images"
 import { cn } from "@/lib/utils"
 
-const events = [
+const initialEvents = [
   {
     id: 1,
-    title: "Mountain Pass Adventure",
-    date: "May 20, 2024",
-    time: "08:30 AM",
-    location: "Alps - Milan Base",
-    attending: 14,
-    maxSpots: 20,
+    title: "Giro dei Castelli Romani",
+    date: "2024-05-20",
+    time: "08:30",
+    location: "Caserma VVF Roma ore 09:00",
+    description: "Un classico intramontabile tra le curve e i sapori dei Castelli Romani.",
     type: "Touring",
-    difficulty: "Medium",
+    difficulty: "Easy",
     image: PlaceHolderImages.find(img => img.id === "event-1")?.imageUrl
   },
   {
     id: 2,
-    title: "Lakeside Sunset Cruise",
-    date: "June 05, 2024",
-    time: "05:00 PM",
-    location: "Lake Como",
-    attending: 24,
-    maxSpots: 40,
+    title: "Litorale al Tramonto",
+    date: "2024-06-05",
+    time: "17:00",
+    location: "Ostia - Riva di Traiano",
+    description: "Aperitivo in moto guardando il mare, partenza dal Comando via Genova.",
     type: "Social",
     difficulty: "Easy",
     image: PlaceHolderImages.find(img => img.id === "event-2")?.imageUrl
-  },
-  {
-    id: 3,
-    title: "Retro Bike Meet",
-    date: "June 12, 2024",
-    time: "10:00 AM",
-    location: "Monza Square",
-    attending: 45,
-    maxSpots: 100,
-    type: "Meetup",
-    difficulty: "Easy",
-    image: PlaceHolderImages.find(img => img.id === "gallery-1")?.imageUrl
   }
 ]
 
 export default function EventsPage() {
+  const { toast } = useToast()
+  const [user, setUser] = useState<any>(null)
+  const [events, setEvents] = useState<any[]>(initialEvents)
+  const [isAdding, setIsAdding] = useState(false)
+  const [editingEvent, setEditingEvent] = useState<any>(null)
+  const [formData, setFormData] = useState({
+    title: "",
+    date: "",
+    time: "",
+    location: "",
+    description: "",
+    type: "Touring",
+    difficulty: "Medium"
+  })
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem("vvf_user")
+    if (storedUser) {
+      setUser(JSON.parse(storedUser))
+    }
+  }, [])
+
+  const isAdmin = user?.status === "admin"
+
+  const handleSaveEvent = () => {
+    if (!formData.title || !formData.date || !formData.location) {
+      toast({ variant: "destructive", title: "Errore", description: "Compila i campi obbligatori (Titolo, Data, Luogo)." })
+      return
+    }
+
+    if (editingEvent) {
+      setEvents(events.map(e => e.id === editingEvent.id ? { ...formData, id: e.id, image: e.image } : e))
+      toast({ title: "Evento aggiornato", description: "Le modifiche sono state salvate correttamente." })
+      setEditingEvent(null)
+    } else {
+      const newEvent = {
+        ...formData,
+        id: Date.now(),
+        image: "https://picsum.photos/seed/" + Math.random() + "/600/400"
+      }
+      setEvents([newEvent, ...events])
+      toast({ title: "Evento creato", description: "Il nuovo giro è stato aggiunto al calendario." })
+      setIsAdding(false)
+    }
+    
+    setFormData({ title: "", date: "", time: "", location: "", description: "", type: "Touring", difficulty: "Medium" })
+  }
+
+  const handleDeleteEvent = (id: number) => {
+    setEvents(events.filter(e => e.id !== id))
+    toast({ title: "Evento rimosso", description: "L'evento è stato eliminato con successo." })
+  }
+
+  const openEditDialog = (event: any) => {
+    setEditingEvent(event)
+    setFormData({ ...event })
+  }
+
   return (
-    <div className="min-h-screen pb-20 md:pb-0 md:pt-16">
+    <div className="min-h-screen pb-20 md:pb-0 md:pt-16 bg-background">
       <Navbar />
       
       <main className="max-w-7xl mx-auto px-4 py-8">
-        <header className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <header className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
-            <h1 className="text-4xl font-headline font-bold mb-2">Eventi & Giri</h1>
-            <p className="text-muted-foreground">Partecipa alle nostre prossime uscite programmate e incontri sociali.</p>
+            <Badge className="mb-4 bg-accent/10 text-accent border-none font-bold uppercase tracking-widest">Calendario Uscite</Badge>
+            <h1 className="text-4xl font-headline font-bold mb-2 text-foreground uppercase tracking-tighter">Eventi & Giri</h1>
+            <p className="text-muted-foreground max-w-2xl">Partecipa alle nostre uscite programmate e agli incontri sociali del club.</p>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="gap-2">
-              <Filter className="w-4 h-4" /> Filtra
-            </Button>
-            <Button variant="default" size="sm" className="bg-primary text-white">
-              Crea Evento
-            </Button>
-          </div>
+          
+          {isAdmin && (
+            <Dialog open={isAdding} onOpenChange={setIsAdding}>
+              <DialogTrigger asChild>
+                <Button className="bg-destructive hover:bg-destructive/90 gap-2 h-12 px-6 rounded-full shadow-lg shadow-destructive/20 font-bold uppercase tracking-tighter">
+                   <Plus className="w-5 h-5" /> + AGGIUNGI EVENTO
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="bg-card border-border sm:max-w-[500px]">
+                <DialogHeader>
+                  <DialogTitle className="text-2xl font-headline">Nuovo Evento</DialogTitle>
+                  <DialogDescription>Inserisci i dettagli del prossimo giro organizzato.</DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="title">Titolo del Giro</Label>
+                    <Input id="title" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="bg-background" placeholder="es: Passo del Terminillo" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="date">Data</Label>
+                      <Input id="date" type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="bg-background" />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="time">Orario</Label>
+                      <Input id="time" type="time" value={formData.time} onChange={e => setFormData({...formData, time: e.target.value})} className="bg-background" />
+                    </div>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="location">Luogo di Ritrovo</Label>
+                    <Input id="location" value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} className="bg-background" placeholder="es: Comando VVF via Genova" />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="description">Descrizione / Percorso</Label>
+                    <Textarea id="description" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="bg-background min-h-[100px]" placeholder="Dettagli sul percorso e tappe previste..." />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="ghost" onClick={() => setIsAdding(false)}>Annulla</Button>
+                  <Button onClick={handleSaveEvent} className="bg-primary text-white font-bold">Crea Evento</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )}
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {events.map((event) => (
-            <Card key={event.id} className="bg-card border-border overflow-hidden hover:shadow-xl hover:shadow-primary/5 transition-all">
-              <div className="relative h-40">
+            <Card key={event.id} className="bg-card border-border overflow-hidden hover:shadow-2xl hover:shadow-primary/5 transition-all group flex flex-col">
+              <div className="relative h-48">
                 {event.image && (
-                  <Image src={event.image} alt={event.title} fill className="object-cover" />
+                  <Image src={event.image} alt={event.title} fill className="object-cover transition-transform group-hover:scale-105 duration-500" />
                 )}
-                <Badge className="absolute top-4 right-4 bg-background/80 backdrop-blur-sm text-foreground hover:bg-background">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                <Badge className="absolute top-4 right-4 bg-background/90 backdrop-blur-sm text-foreground border-accent/20">
                   {event.type}
                 </Badge>
               </div>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-2 text-accent text-sm mb-2 font-medium">
+              <CardContent className="p-6 flex-1 flex flex-col">
+                <div className="flex items-center gap-2 text-accent text-sm mb-3 font-bold uppercase tracking-wider">
                   <Calendar className="w-4 h-4" />
-                  {event.date} • {event.time}
+                  {event.date} {event.time && `• ${event.time}`}
                 </div>
-                <CardTitle className="text-xl mb-4 leading-tight">{event.title}</CardTitle>
+                <CardTitle className="text-2xl mb-3 leading-tight font-headline group-hover:text-primary transition-colors">{event.title}</CardTitle>
                 
-                <div className="space-y-2 mb-6">
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <MapPin className="w-4 h-4 mr-2" />
+                <div className="space-y-3 mb-6 flex-1">
+                  <div className="flex items-start text-sm text-muted-foreground">
+                    <MapPin className="w-4 h-4 mr-2 text-primary shrink-0 mt-0.5" />
                     {event.location}
                   </div>
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <Users className="w-4 h-4 mr-2" />
-                    {event.attending}/{event.maxSpots} Partecipanti
-                  </div>
+                  <p className="text-sm text-muted-foreground line-clamp-3 italic leading-relaxed">
+                    "{event.description}"
+                  </p>
                 </div>
 
-                <div className="flex items-center justify-between pt-4 border-t border-border">
-                  <span className={cn(
-                    "text-xs font-bold uppercase tracking-wider px-2 py-1 rounded",
-                    event.difficulty === "Easy" ? "bg-green-500/10 text-green-500" : "bg-yellow-500/10 text-yellow-500"
-                  )}>
-                    {event.difficulty}
-                  </span>
-                  <Button variant="link" asChild className="text-primary p-0 h-auto font-bold">
-                    <Link href={`/events/${event.id}`}>Vedi Percorso <ArrowRight className="ml-1 w-4 h-4" /></Link>
+                <div className="flex items-center justify-between pt-5 border-t border-border mt-auto">
+                  <div className="flex gap-2">
+                    {isAdmin ? (
+                      <>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => openEditDialog(event)}
+                          className="h-9 w-9 text-accent hover:bg-accent/10"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              className="h-9 w-9 text-destructive hover:bg-destructive/10"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent className="bg-card border-border">
+                            <AlertDialogHeader>
+                              <AlertDialogTitle className="text-xl font-headline">Conferma Eliminazione</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Vuoi davvero eliminare l'evento "{event.title}"? Tutti i dati andranno persi.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel className="bg-background border-border">Annulla</AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={() => handleDeleteEvent(event.id)} 
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Elimina
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </>
+                    ) : (
+                      <Badge variant="outline" className="border-muted-foreground/30 text-[10px] uppercase font-bold tracking-widest text-muted-foreground">
+                        {event.difficulty}
+                      </Badge>
+                    )}
+                  </div>
+                  <Button variant="link" asChild className="text-primary p-0 h-auto font-bold group-hover:translate-x-1 transition-transform">
+                    <Link href={`/events/${event.id}`}>Dettagli <ArrowRight className="ml-1 w-4 h-4" /></Link>
                   </Button>
                 </div>
               </CardContent>
             </Card>
           ))}
+          
+          {events.length === 0 && (
+            <div className="col-span-full py-20 text-center bg-card/50 rounded-3xl border-2 border-dashed border-border">
+              <Info className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-20" />
+              <p className="text-muted-foreground font-medium">Nessun evento programmato al momento.</p>
+            </div>
+          )}
         </div>
+
+        {/* Edit Dialog (Hidden) */}
+        {editingEvent && (
+          <Dialog open={!!editingEvent} onOpenChange={(open) => !open && setEditingEvent(null)}>
+            <DialogContent className="bg-card border-border sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-headline">Modifica Evento</DialogTitle>
+                <DialogDescription>Aggiorna le informazioni per "{editingEvent.title}".</DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-title">Titolo</Label>
+                  <Input id="edit-title" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="bg-background" />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="edit-date">Data</Label>
+                    <Input id="edit-date" type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="bg-background" />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="edit-time">Orario</Label>
+                    <Input id="edit-time" type="time" value={formData.time} onChange={e => setFormData({...formData, time: e.target.value})} className="bg-background" />
+                  </div>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-location">Luogo</Label>
+                  <Input id="edit-location" value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} className="bg-background" />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-description">Descrizione</Label>
+                  <Textarea id="edit-description" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="bg-background min-h-[100px]" />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="ghost" onClick={() => setEditingEvent(null)}>Annulla</Button>
+                <Button onClick={handleSaveEvent} className="bg-accent text-accent-foreground font-bold">Salva Modifiche</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
       </main>
     </div>
   )
