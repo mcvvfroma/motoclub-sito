@@ -52,7 +52,6 @@ export function AppSidebar() {
   const navItems = [
     { name: "Home", href: "/", icon: Home },
     { name: "Eventi", href: "/events", icon: Calendar },
-    // Link visibile solo per Admin come richiesto
     ...(isAdmin ? [{ name: "Soci", href: "/members", icon: Users }] : []),
     { name: "Galleria", href: "/gallery", icon: ImageIcon },
     { name: "Convenzioni", href: "/conventions", icon: FileText },
@@ -68,10 +67,11 @@ export function AppSidebar() {
               alt="Logo Motoclub VVF Roma" 
               fill 
               className="object-contain"
+              priority
             />
           </div>
           <div className="flex flex-col">
-            <span className="font-headline font-bold text-lg leading-none tracking-tight">Motoclub VVF</span>
+            <span className="font-headline font-bold text-lg leading-none tracking-tight text-foreground">Motoclub VVF</span>
             <span className="text-[10px] font-bold text-accent uppercase tracking-wider">Roma</span>
           </div>
         </Link>
@@ -101,12 +101,12 @@ export function AppSidebar() {
             <SidebarMenuItem>
               <SidebarMenuButton 
                 asChild 
-                isActive={pathname === "/admin/members"}
+                isActive={pathname === "/members"}
                 className="h-12 text-base font-medium transition-colors border-t border-border mt-2 pt-4 hover:bg-primary/10 hover:text-primary data-[active=true]:bg-primary/20 data-[active=true]:text-primary"
               >
-                <Link href="/admin/members" onClick={() => setOpenMobile(false)}>
+                <Link href="/members" onClick={() => setOpenMobile(false)}>
                   <ShieldAlert className="mr-3 h-5 w-5 text-primary" />
-                  <span className="font-bold">Gestione Soci</span>
+                  <span className="font-bold">Anagrafica Soci</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>

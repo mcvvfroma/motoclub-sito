@@ -50,7 +50,7 @@ const initialBenefits = [
 export default function ConventionsPage() {
   const { toast } = useToast()
   const [user, setUser] = useState<any>(null)
-  const [benefits, setBenefits] = useState<any[]>(initialBenefits)
+  const [benefits, setBenefits] = useState<any[]>([])
   const [isAdding, setIsAdding] = useState(false)
   const [editingBenefit, setEditingBenefit] = useState<any>(null)
   const [formData, setFormData] = useState({
@@ -60,12 +60,31 @@ export default function ConventionsPage() {
     description: ""
   })
 
+  // Caricamento dati iniziali e utente
   useEffect(() => {
     const storedUser = localStorage.getItem("vvf_user")
     if (storedUser) {
       setUser(JSON.parse(storedUser))
     }
+
+    const storedBenefits = localStorage.getItem("vvf_conventions")
+    if (storedBenefits) {
+      try {
+        setBenefits(JSON.parse(storedBenefits))
+      } catch (e) {
+        setBenefits(initialBenefits)
+      }
+    } else {
+      setBenefits(initialBenefits)
+    }
   }, [])
+
+  // Salvataggio su localStorage ogni volta che i benefits cambiano
+  useEffect(() => {
+    if (benefits.length > 0) {
+      localStorage.setItem("vvf_conventions", JSON.stringify(benefits))
+    }
+  }, [benefits])
 
   const isAdmin = user?.status === "admin"
 
@@ -76,21 +95,24 @@ export default function ConventionsPage() {
     }
 
     if (editingBenefit) {
-      setBenefits(benefits.map(b => b.id === editingBenefit.id ? { ...formData, id: b.id } : b))
-      toast({ title: "Convenzione aggiornata", description: "Le modifiche sono state salvate." })
+      const updated = benefits.map(b => b.id === editingBenefit.id ? { ...formData, id: b.id } : b)
+      setBenefits(updated)
+      toast({ title: "Salvataggio completato", description: "Convenzione aggiornata con successo." })
       setEditingBenefit(null)
     } else {
       const newBenefit = { ...formData, id: Date.now() }
-      setBenefits([...benefits, newBenefit])
-      toast({ title: "Convenzione aggiunta", description: "Il nuovo vantaggio è stato inserito." })
+      const updated = [...benefits, newBenefit]
+      setBenefits(updated)
+      toast({ title: "Convenzione registrata", description: "Il nuovo vantaggio è stato salvato nel cloud locale." })
       setIsAdding(false)
     }
     setFormData({ title: "", category: "Officina", discount: "", description: "" })
   }
 
   const handleDeleteBenefit = (id: number) => {
-    setBenefits(benefits.filter(b => b.id !== id))
-    toast({ title: "Convenzione rimossa", description: "Il vantaggio è stato eliminato." })
+    const updated = benefits.filter(b => b.id !== id)
+    setBenefits(updated)
+    toast({ title: "Convenzione rimossa", description: "Il vantaggio è stato eliminato correttamente." })
   }
 
   const openEditDialog = (benefit: any) => {
@@ -106,8 +128,8 @@ export default function ConventionsPage() {
         <header className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
             <Badge className="mb-4 bg-primary/10 text-primary border-none font-bold uppercase tracking-wider">Vantaggi Esclusivi</Badge>
-            <h1 className="text-4xl font-headline font-bold mb-2 text-foreground">Convenzioni e Regolamento</h1>
-            <p className="text-muted-foreground max-w-2xl">Accedi ai vantaggi riservati ai soci del Motoclub VVF Roma e consulta le regole della nostra comunità.</p>
+            <h1 className="text-4xl font-headline font-bold mb-2 text-foreground">Convenzioni & Regolamento</h1>
+            <p className="text-muted-foreground max-w-2xl">Accedi ai vantaggi riservati ai soci del Motoclub VVF Roma. I dati sono sincronizzati con il tuo dispositivo.</p>
           </div>
 
           {isAdmin && (
@@ -154,7 +176,7 @@ export default function ConventionsPage() {
                 </div>
                 <DialogFooter>
                   <Button variant="ghost" onClick={() => setIsAdding(false)}>Annulla</Button>
-                  <Button onClick={handleSaveBenefit} className="bg-primary text-white font-bold">Salva</Button>
+                  <Button onClick={handleSaveBenefit} className="bg-primary text-white font-bold">Salva Convenzione</Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
@@ -163,7 +185,7 @@ export default function ConventionsPage() {
 
         <section className="mb-16">
           <h2 className="text-2xl font-headline font-bold mb-8 flex items-center gap-2 text-foreground">
-            <Zap className="w-6 h-6 text-accent" /> Le Nostre Convenzioni
+            <Zap className="w-6 h-6 text-accent" /> Vantaggi Attivi
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {benefits.map((benefit) => {
@@ -205,7 +227,7 @@ export default function ConventionsPage() {
                           <AlertDialogContent className="bg-card border-border text-foreground">
                             <AlertDialogHeader>
                               <AlertDialogTitle className="font-headline">Conferma Eliminazione</AlertDialogTitle>
-                              <AlertDialogDescription>Vuoi davvero rimuovere la convenzione con {benefit.title}?</AlertDialogDescription>
+                              <AlertDialogDescription>Vuoi davvero rimuovere la convenzione con {benefit.title}? L'azione è immediata.</AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel className="bg-background border-border">Annulla</AlertDialogCancel>
@@ -219,10 +241,15 @@ export default function ConventionsPage() {
                 </Card>
               )
             })}
+            
+            {benefits.length === 0 && (
+              <div className="col-span-full py-12 text-center text-muted-foreground italic border-2 border-dashed border-border rounded-2xl">
+                Nessuna convenzione disponibile al momento.
+              </div>
+            )}
           </div>
         </section>
 
-        {/* Regolamento (rimane statico come richiesto) */}
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <Card className="bg-card border-border overflow-hidden shadow-sm">
             <CardHeader className="bg-secondary border-b border-border">
@@ -267,7 +294,6 @@ export default function ConventionsPage() {
           </Card>
         </section>
 
-        {/* Edit Dialog (Hidden) */}
         {editingBenefit && (
           <Dialog open={!!editingBenefit} onOpenChange={(open) => !open && setEditingBenefit(null)}>
             <DialogContent className="bg-card border-border sm:max-w-[500px]">
