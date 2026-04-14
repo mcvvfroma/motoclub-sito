@@ -23,7 +23,8 @@ const initialUpcomingEvents = [
     id: 1,
     title: "Uscita di Roma",
     date: "2026-05-29",
-    location: "Caserma VVF Roma ore 08:30",
+    time: "08:30",
+    location: "Caserma VVF Roma",
     weatherLocation: "Roma",
     mapUrl: "https://www.google.com/maps/search/?api=1&query=Caserma+VVF+Roma",
     image: PlaceHolderImages.find(img => img.id === "event-1")?.imageUrl,
@@ -34,7 +35,8 @@ const initialUpcomingEvents = [
     id: 2,
     title: "Passo del Terminillo",
     date: "2026-06-14",
-    location: "Comando VVF via Genova, ore 09:00",
+    time: "09:00",
+    location: "Comando VVF via Genova",
     weatherLocation: "Terminillo",
     mapUrl: "https://www.google.com/maps/dir/Roma/Monte+Terminillo",
     image: PlaceHolderImages.find(img => img.id === "gallery-3")?.imageUrl,
@@ -45,6 +47,7 @@ const initialUpcomingEvents = [
     id: 3,
     title: "Raduno Nazionale VVF 2026",
     date: "2026-09-12",
+    time: "09:00",
     location: "Piazza del Popolo, Roma",
     weatherLocation: "Roma",
     mapUrl: "https://www.google.com/maps/search/?api=1&query=Piazza+del+Popolo+Roma",
@@ -58,7 +61,16 @@ export default function Home() {
   const { toast } = useToast()
   const [events, setEvents] = useState(initialUpcomingEvents)
   const [editingEvent, setEditingEvent] = useState<any>(null)
-  const [formData, setFormData] = useState<any>({})
+  const [formData, setFormData] = useState<any>({
+    title: "",
+    date: "",
+    time: "",
+    location: "",
+    weatherLocation: "",
+    mapUrl: "",
+    description: "",
+    image: ""
+  })
 
   const heroImage = PlaceHolderImages.find(img => img.id === "hero-ride")
 
@@ -91,7 +103,8 @@ export default function Home() {
   }
 
   const saveEdit = () => {
-    setEvents(events.map(e => e.id === editingEvent.id ? { ...formData } : e))
+    const finalImage = formData.image || `https://picsum.photos/seed/${formData.weatherLocation || formData.title}/600/400`
+    setEvents(events.map(e => e.id === editingEvent.id ? { ...formData, image: finalImage } : e))
     setEditingEvent(null)
     toast({ title: "Uscita aggiornata", description: "Le modifiche sono state salvate." })
   }
@@ -164,6 +177,7 @@ export default function Home() {
                         alt={event.title} 
                         fill 
                         className="object-cover transition-transform group-hover:scale-105" 
+                        data-ai-hint={event.weatherLocation || event.title}
                       />
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
@@ -289,21 +303,43 @@ export default function Home() {
           <Dialog open={!!editingEvent} onOpenChange={(open) => !open && setEditingEvent(null)}>
             <DialogContent className="bg-card border-border sm:max-w-[500px] text-foreground">
               <DialogHeader>
-                <DialogTitle className="text-2xl font-headline">Modifica Veloce</DialogTitle>
+                <DialogTitle className="text-2xl font-headline">Modifica Uscita</DialogTitle>
                 <DialogDescription>Stai modificando l'uscita direttamente dalla Home.</DialogDescription>
               </DialogHeader>
-              <div className="grid gap-4 py-4">
+              <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-2">
                 <div className="grid gap-2">
                   <Label>Titolo</Label>
                   <Input value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="bg-background" />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label>Data</Label>
+                    <Input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="bg-background" />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Orario</Label>
+                    <Input type="time" value={formData.time} onChange={e => setFormData({...formData, time: e.target.value})} className="bg-background" />
+                  </div>
+                </div>
+                <div className="grid gap-2">
+                  <Label>Luogo Ritrovo</Label>
+                  <Input value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} className="bg-background" />
                 </div>
                 <div className="grid gap-2">
                   <Label>Località Meteo</Label>
                   <Input value={formData.weatherLocation} onChange={e => setFormData({...formData, weatherLocation: e.target.value})} className="bg-background" />
                 </div>
                 <div className="grid gap-2">
+                  <Label>Link Immagine (opzionale)</Label>
+                  <Input value={formData.image} onChange={e => setFormData({...formData, image: e.target.value})} className="bg-background" />
+                </div>
+                <div className="grid gap-2">
                   <Label>URL Percorso</Label>
                   <Input value={formData.mapUrl} onChange={e => setFormData({...formData, mapUrl: e.target.value})} className="bg-background" />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Descrizione / Percorso</Label>
+                  <Textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="bg-background" />
                 </div>
               </div>
               <DialogFooter>

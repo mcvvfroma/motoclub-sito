@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
-import { Calendar, MapPin, Users, Filter, ArrowRight, Plus, Edit, Trash2, Clock, Info, CheckCircle, Sun, Cloud, CloudRain, MapPinned } from "lucide-react"
+import { Calendar, MapPin, Users, Filter, ArrowRight, Plus, Edit, Trash2, Clock, Info, CheckCircle, Sun, Cloud, CloudRain, MapPinned, ImageIcon } from "lucide-react"
 import { PlaceHolderImages } from "@/lib/placeholder-images"
 import { cn } from "@/lib/utils"
 
@@ -62,7 +62,6 @@ const initialEvents = [
 
 export default function EventsPage() {
   const { toast } = useToast()
-  const [user, setUser] = useState<any>(null)
   const [events, setEvents] = useState<any[]>(initialEvents)
   const [isAdding, setIsAdding] = useState(false)
   const [editingEvent, setEditingEvent] = useState<any>(null)
@@ -74,16 +73,10 @@ export default function EventsPage() {
     weatherLocation: "",
     mapUrl: "",
     description: "",
+    image: "",
     type: "Touring",
     difficulty: "Medium"
   })
-
-  useEffect(() => {
-    const storedUser = localStorage.getItem("vvf_user")
-    if (storedUser) {
-      setUser(JSON.parse(storedUser))
-    }
-  }, [])
 
   // Per lo sviluppo i tasti sono sempre attivi
   const isAdmin = true 
@@ -136,22 +129,25 @@ export default function EventsPage() {
       return
     }
 
+    // Immagine di fallback se non inserita manualmente
+    const finalImage = formData.image || `https://picsum.photos/seed/${formData.weatherLocation || formData.title}/600/400`
+
     if (editingEvent) {
-      setEvents(events.map(e => e.id === editingEvent.id ? { ...formData, id: e.id, image: e.image } : e))
+      setEvents(events.map(e => e.id === editingEvent.id ? { ...formData, id: e.id, image: finalImage } : e))
       toast({ title: "Uscita aggiornata", description: "Le modifiche sono state salvate correttamente." })
       setEditingEvent(null)
     } else {
       const newEvent = {
         ...formData,
         id: Date.now(),
-        image: "https://picsum.photos/seed/" + Math.random() + "/600/400"
+        image: finalImage
       }
       setEvents([newEvent, ...events])
       toast({ title: "Uscita creata", description: "La nuova uscita è stata aggiunta al calendario." })
       setIsAdding(false)
     }
     
-    setFormData({ title: "", date: "", time: "", location: "", weatherLocation: "", mapUrl: "", description: "", type: "Touring", difficulty: "Medium" })
+    setFormData({ title: "", date: "", time: "", location: "", weatherLocation: "", mapUrl: "", description: "", image: "", type: "Touring", difficulty: "Medium" })
   }
 
   const handleDeleteEvent = (id: number) => {
@@ -209,7 +205,11 @@ export default function EventsPage() {
                 <div className="grid gap-2">
                   <Label htmlFor="weatherLocation">Località Meteo</Label>
                   <Input id="weatherLocation" value={formData.weatherLocation} onChange={e => setFormData({...formData, weatherLocation: e.target.value})} className="bg-background" placeholder="es: Terminillo" />
-                  <p className="text-[10px] text-muted-foreground italic">Inserisci solo il comune o la vetta per previsioni precise.</p>
+                  <p className="text-[10px] text-muted-foreground italic">Usato per previsioni e immagini automatiche.</p>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="image">Link Immagine (opzionale)</Label>
+                  <Input id="image" value={formData.image} onChange={e => setFormData({...formData, image: e.target.value})} className="bg-background" placeholder="Incolla l'URL di una foto" />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="mapUrl">URL Google Maps (Percorso con tappe)</Label>
@@ -242,7 +242,13 @@ export default function EventsPage() {
               )}>
                 <div className="relative h-48">
                   {event.image && (
-                    <Image src={event.image} alt={event.title} fill className="object-cover transition-transform group-hover:scale-105 duration-500" />
+                    <Image 
+                      src={event.image} 
+                      alt={event.title} 
+                      fill 
+                      className="object-cover transition-transform group-hover:scale-105 duration-500"
+                      data-ai-hint={event.weatherLocation || event.title}
+                    />
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
                   {isPast ? (
@@ -254,9 +260,6 @@ export default function EventsPage() {
                       PROSSIMA USCITA
                     </Badge>
                   )}
-                  <Badge className="absolute top-4 right-4 bg-background/90 backdrop-blur-sm text-foreground border-accent/20">
-                    {event.type}
-                  </Badge>
 
                   <a 
                     href={`https://www.ilmeteo.it/meteo/${encodeURIComponent(weatherKey)}`}
@@ -336,13 +339,6 @@ export default function EventsPage() {
               </Card>
             )
           })}
-          
-          {events.length === 0 && (
-            <div className="col-span-full py-20 text-center bg-card/50 rounded-3xl border-2 border-dashed border-border">
-              <Info className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-20" />
-              <p className="text-muted-foreground font-medium">Nessuna uscita programmata al momento.</p>
-            </div>
-          )}
         </div>
 
         {/* Edit Dialog */}
@@ -375,14 +371,18 @@ export default function EventsPage() {
                 <div className="grid gap-2">
                   <Label htmlFor="edit-weatherLocation">Località Meteo</Label>
                   <Input id="edit-weatherLocation" value={formData.weatherLocation} onChange={e => setFormData({...formData, weatherLocation: e.target.value})} className="bg-background" placeholder="es: Terminillo" />
-                  <p className="text-[10px] text-muted-foreground italic">Inserisci solo il comune o la vetta per previsioni precise.</p>
+                  <p className="text-[10px] text-muted-foreground italic">Usato per previsioni e immagini automatiche.</p>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-image">Link Immagine (opzionale)</Label>
+                  <Input id="edit-image" value={formData.image} onChange={e => setFormData({...formData, image: e.target.value})} className="bg-background" />
                 </div>
                 <div className="grid gap-2">
                     <Label htmlFor="edit-mapUrl">URL Google Maps (Percorso con tappe)</Label>
                     <Input id="edit-mapUrl" value={formData.mapUrl} onChange={e => setFormData({...formData, mapUrl: e.target.value})} className="bg-background" placeholder="Incolla l'URL di Maps" />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="edit-description">Descrizione</Label>
+                  <Label htmlFor="edit-description">Descrizione / Percorso</Label>
                   <Textarea id="edit-description" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="bg-background min-h-[100px]" />
                 </div>
               </div>
