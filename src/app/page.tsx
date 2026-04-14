@@ -1,26 +1,34 @@
 
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { Navbar } from "@/components/Navbar"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, ArrowRight, Map, Image as ImageIcon, User, MapPinned, FileText, Sun, Cloud, CloudRain, Clock, CheckCircle } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
+import { useToast } from "@/hooks/use-toast"
+import { Calendar, ArrowRight, Map, Image as ImageIcon, User, MapPinned, FileText, Sun, Cloud, CloudRain, Clock, CheckCircle, Edit, Trash2 } from "lucide-react"
 import { PlaceHolderImages } from "@/lib/placeholder-images"
 import { cn } from "@/lib/utils"
 
-const upcomingEvents = [
+const initialUpcomingEvents = [
   {
     id: 1,
     title: "Uscita di Roma",
     date: "2026-05-29",
     location: "Caserma VVF Roma ore 08:30",
     weatherLocation: "Roma",
+    mapUrl: "https://www.google.com/maps/search/?api=1&query=Caserma+VVF+Roma",
     image: PlaceHolderImages.find(img => img.id === "event-1")?.imageUrl,
-    mapUrl: "https://www.google.com/maps/search/?api=1&query=Caserma+VVF+Roma"
+    description: "Partenza dalla Caserma per un'uscita istituzionale tra i monumenti della Capitale.",
+    type: "Touring"
   },
   {
     id: 2,
@@ -28,8 +36,10 @@ const upcomingEvents = [
     date: "2026-06-14",
     location: "Comando VVF via Genova, ore 09:00",
     weatherLocation: "Terminillo",
+    mapUrl: "https://www.google.com/maps/dir/Roma/Monte+Terminillo",
     image: PlaceHolderImages.find(img => img.id === "gallery-3")?.imageUrl,
-    mapUrl: "https://www.google.com/maps/dir/Roma/Monte+Terminillo"
+    description: "La classica scalata alla 'Montagna di Roma'. Curve mozzafiato e aria fresca.",
+    type: "Touring"
   },
   {
     id: 3,
@@ -37,15 +47,21 @@ const upcomingEvents = [
     date: "2026-09-12",
     location: "Piazza del Popolo, Roma",
     weatherLocation: "Roma",
+    mapUrl: "https://www.google.com/maps/search/?api=1&query=Piazza+del+Popolo+Roma",
     image: PlaceHolderImages.find(img => img.id === "hero-ride")?.imageUrl,
-    mapUrl: "https://www.google.com/maps/search/?api=1&query=Piazza+del+Popolo+Roma"
+    description: "Il grande raduno biennale di tutti i motoclub dei Vigili del Fuoco d'Italia.",
+    type: "Raduno"
   }
 ]
 
 export default function Home() {
+  const { toast } = useToast()
+  const [events, setEvents] = useState(initialUpcomingEvents)
+  const [editingEvent, setEditingEvent] = useState<any>(null)
+  const [formData, setFormData] = useState<any>({})
+
   const heroImage = PlaceHolderImages.find(img => img.id === "hero-ride")
 
-  // Weather Mock Function
   const getMockWeather = (dateStr: string) => {
     const eventDate = new Date(dateStr)
     const today = new Date()
@@ -62,6 +78,22 @@ export default function Home() {
     ]
     const seed = eventDate.getDate() % 3
     return { ...weathers[seed] }
+  }
+
+  const handleDelete = (id: number) => {
+    setEvents(events.filter(e => e.id !== id))
+    toast({ title: "Uscita rimossa", description: "L'uscita è stata eliminata dalla Home." })
+  }
+
+  const openEdit = (event: any) => {
+    setEditingEvent(event)
+    setFormData({ ...event })
+  }
+
+  const saveEdit = () => {
+    setEvents(events.map(e => e.id === editingEvent.id ? { ...formData } : e))
+    setEditingEvent(null)
+    toast({ title: "Uscita aggiornata", description: "Le modifiche sono state salvate." })
   }
 
   return (
@@ -117,7 +149,7 @@ export default function Home() {
             </Link>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {upcomingEvents.map(event => {
+            {events.map(event => {
               const weather = getMockWeather(event.date)
               const WeatherIcon = weather.icon
               const weatherKey = event.weatherLocation || "Roma"
@@ -167,13 +199,56 @@ export default function Home() {
                       <Map className="w-4 h-4 mr-2 text-primary shrink-0" />
                       <span className="line-clamp-1">{event.location}</span>
                     </div>
-                    <div className="grid grid-cols-2 gap-3 mt-auto">
-                      <Button asChild variant="secondary" className="hover:bg-primary hover:text-white transition-colors py-6 font-bold uppercase tracking-tighter text-xs text-center">
-                        <Link href={`/events/${event.id}`}>Dettagli</Link>
-                      </Button>
-                      <Button asChild variant="outline" className="border-accent/50 text-accent hover:bg-accent hover:text-white transition-colors py-6 font-bold uppercase tracking-tighter text-xs text-center">
+
+                    <div className="flex items-center justify-between mb-6">
+                       <div className="flex gap-2">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => openEdit(event)}
+                          className="h-8 w-8 text-accent hover:bg-accent/10"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent className="bg-card border-border text-foreground">
+                            <AlertDialogHeader>
+                              <AlertDialogTitle className="text-xl font-headline">Conferma Eliminazione</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Vuoi davvero rimuovere "{event.title}" dalla vetrina Home?
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel className="bg-background border-border">Annulla</AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={() => handleDelete(event.id)} 
+                                className="bg-destructive text-white"
+                              >
+                                Rimuovi
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                      <Link href={`/events/${event.id}`} className="text-primary text-xs font-bold hover:underline flex items-center gap-1">
+                        Dettagli <ArrowRight className="w-3 h-3" />
+                      </Link>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-3 mt-auto">
+                      <Button asChild variant="outline" className="border-accent/50 text-accent hover:bg-accent hover:text-white transition-colors py-6 font-bold uppercase tracking-tighter text-xs text-center w-full">
                         <a href={mapUrl} target="_blank" rel="noopener noreferrer">
-                          <MapPinned className="mr-2 w-4 h-4" /> Percorso
+                          <MapPinned className="mr-2 w-4 h-4" /> VEDI PERCORSO COMPLETO
                         </a>
                       </Button>
                     </div>
@@ -184,6 +259,7 @@ export default function Home() {
           </div>
         </section>
 
+        {/* Counters Section */}
         <section className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           <div className="bg-card p-8 rounded-2xl border border-border text-center hover:border-accent/50 transition-colors shadow-sm group">
             <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
@@ -207,6 +283,36 @@ export default function Home() {
             <p className="text-muted-foreground uppercase text-xs font-bold tracking-widest">Foto Gallery</p>
           </div>
         </section>
+
+        {/* Edit Dialog for Home */}
+        {editingEvent && (
+          <Dialog open={!!editingEvent} onOpenChange={(open) => !open && setEditingEvent(null)}>
+            <DialogContent className="bg-card border-border sm:max-w-[500px] text-foreground">
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-headline">Modifica Veloce</DialogTitle>
+                <DialogDescription>Stai modificando l'uscita direttamente dalla Home.</DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label>Titolo</Label>
+                  <Input value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="bg-background" />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Località Meteo</Label>
+                  <Input value={formData.weatherLocation} onChange={e => setFormData({...formData, weatherLocation: e.target.value})} className="bg-background" />
+                </div>
+                <div className="grid gap-2">
+                  <Label>URL Percorso</Label>
+                  <Input value={formData.mapUrl} onChange={e => setFormData({...formData, mapUrl: e.target.value})} className="bg-background" />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="ghost" onClick={() => setEditingEvent(null)}>Annulla</Button>
+                <Button onClick={saveEdit} className="bg-accent text-accent-foreground font-bold">Salva</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
 
       </main>
     </div>

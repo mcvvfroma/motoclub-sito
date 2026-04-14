@@ -85,7 +85,8 @@ export default function EventsPage() {
     }
   }, [])
 
-  const isAdmin = user?.status === "admin"
+  // Per lo sviluppo i tasti sono sempre attivi
+  const isAdmin = true 
 
   const sortedEvents = useMemo(() => {
     const today = new Date()
@@ -175,58 +176,56 @@ export default function EventsPage() {
             <p className="text-muted-foreground max-w-2xl">Partecipa alle nostre uscite programmate e agli incontri sociali del club.</p>
           </div>
           
-          {isAdmin && (
-            <Dialog open={isAdding} onOpenChange={setIsAdding}>
-              <DialogTrigger asChild>
-                <Button className="bg-destructive hover:bg-destructive/90 gap-2 h-12 px-6 rounded-full shadow-lg shadow-destructive/20 font-bold uppercase tracking-tighter">
-                   <Plus className="w-5 h-5" /> + AGGIUNGI USCITA
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="bg-card border-border sm:max-w-[500px]">
-                <DialogHeader>
-                  <DialogTitle className="text-2xl font-headline">Nuova Uscita</DialogTitle>
-                  <DialogDescription>Inserisci i dettagli della prossima uscita organizzata.</DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-2">
+          <Dialog open={isAdding} onOpenChange={setIsAdding}>
+            <DialogTrigger asChild>
+              <Button className="bg-destructive hover:bg-destructive/90 gap-2 h-12 px-6 rounded-full shadow-lg shadow-destructive/20 font-bold uppercase tracking-tighter">
+                 <Plus className="w-5 h-5" /> + AGGIUNGI USCITA
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="bg-card border-border sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-headline">Nuova Uscita</DialogTitle>
+                <DialogDescription>Inserisci i dettagli della prossima uscita organizzata.</DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-2">
+                <div className="grid gap-2">
+                  <Label htmlFor="title">Titolo dell'Uscita</Label>
+                  <Input id="title" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="bg-background" placeholder="es: Passo del Terminillo" />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
-                    <Label htmlFor="title">Titolo dell'Uscita</Label>
-                    <Input id="title" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="bg-background" placeholder="es: Passo del Terminillo" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="date">Data</Label>
-                      <Input id="date" type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="bg-background" />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="time">Orario</Label>
-                      <Input id="time" type="time" value={formData.time} onChange={e => setFormData({...formData, time: e.target.value})} className="bg-background" />
-                    </div>
+                    <Label htmlFor="date">Data</Label>
+                    <Input id="date" type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="bg-background" />
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="location">Luogo di Ritrovo</Label>
-                    <Input id="location" value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} className="bg-background" placeholder="es: Comando VVF via Genova" />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="weatherLocation">Località Meteo</Label>
-                    <Input id="weatherLocation" value={formData.weatherLocation} onChange={e => setFormData({...formData, weatherLocation: e.target.value})} className="bg-background" placeholder="es: Terminillo" />
-                    <p className="text-[10px] text-muted-foreground italic">Inserisci solo il comune o la vetta per previsioni precise.</p>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="mapUrl">Link Percorso (Google Maps)</Label>
-                    <Input id="mapUrl" value={formData.mapUrl} onChange={e => setFormData({...formData, mapUrl: e.target.value})} className="bg-background" placeholder="Incolla l'URL del percorso con tappe" />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="description">Descrizione / Percorso</Label>
-                    <Textarea id="description" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="bg-background min-h-[100px]" placeholder="Dettagli sul percorso e tappe previste..." />
+                    <Label htmlFor="time">Orario</Label>
+                    <Input id="time" type="time" value={formData.time} onChange={e => setFormData({...formData, time: e.target.value})} className="bg-background" />
                   </div>
                 </div>
-                <DialogFooter>
-                  <Button variant="ghost" onClick={() => setIsAdding(false)}>Annulla</Button>
-                  <Button onClick={handleSaveEvent} className="bg-primary text-white font-bold">Crea Uscita</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          )}
+                <div className="grid gap-2">
+                  <Label htmlFor="location">Luogo di Ritrovo</Label>
+                  <Input id="location" value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} className="bg-background" placeholder="es: Comando VVF via Genova" />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="weatherLocation">Località Meteo</Label>
+                  <Input id="weatherLocation" value={formData.weatherLocation} onChange={e => setFormData({...formData, weatherLocation: e.target.value})} className="bg-background" placeholder="es: Terminillo" />
+                  <p className="text-[10px] text-muted-foreground italic">Inserisci solo il comune o la vetta per previsioni precise.</p>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="mapUrl">URL Google Maps (Percorso con tappe)</Label>
+                  <Input id="mapUrl" value={formData.mapUrl} onChange={e => setFormData({...formData, mapUrl: e.target.value})} className="bg-background" placeholder="Incolla l'URL del percorso con tappe" />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="description">Descrizione / Percorso</Label>
+                  <Textarea id="description" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="bg-background min-h-[100px]" placeholder="Dettagli sul percorso e tappe previste..." />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="ghost" onClick={() => setIsAdding(false)}>Annulla</Button>
+                <Button onClick={handleSaveEvent} className="bg-primary text-white font-bold">Crea Uscita</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -292,46 +291,42 @@ export default function EventsPage() {
 
                   <div className="flex items-center justify-between pt-5 border-t border-border mt-auto">
                     <div className="flex gap-2">
-                      {isAdmin && (
-                        <>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => openEditDialog(event)}
+                        className="h-9 w-9 text-accent hover:bg-accent/10"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
                           <Button 
                             variant="ghost" 
-                            size="icon" 
-                            onClick={() => openEditDialog(event)}
-                            className="h-9 w-9 text-accent hover:bg-accent/10"
+                            size="icon"
+                            className="h-9 w-9 text-destructive hover:bg-destructive/10"
                           >
-                            <Edit className="w-4 h-4" />
+                            <Trash2 className="w-4 h-4" />
                           </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button 
-                                variant="ghost" 
-                                size="icon"
-                                className="h-9 w-9 text-destructive hover:bg-destructive/10"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent className="bg-card border-border text-foreground">
-                              <AlertDialogHeader>
-                                <AlertDialogTitle className="text-xl font-headline">Conferma Eliminazione</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Vuoi davvero eliminare l'uscita "{event.title}"? Tutti i dati andranno persi.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel className="bg-background border-border">Annulla</AlertDialogCancel>
-                                <AlertDialogAction 
-                                  onClick={() => handleDeleteEvent(event.id)} 
-                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                >
-                                  Elimina
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </>
-                      )}
+                        </AlertDialogTrigger>
+                        <AlertDialogContent className="bg-card border-border text-foreground">
+                          <AlertDialogHeader>
+                            <AlertDialogTitle className="text-xl font-headline">Conferma Eliminazione</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Vuoi davvero eliminare l'uscita "{event.title}"? Tutti i dati andranno persi.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel className="bg-background border-border">Annulla</AlertDialogCancel>
+                            <AlertDialogAction 
+                              onClick={() => handleDeleteEvent(event.id)} 
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Elimina
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                     <Button variant="link" asChild className="text-primary p-0 h-auto font-bold group-hover:translate-x-1 transition-transform">
                       <Link href={`/events/${event.id}`}>Dettagli <ArrowRight className="ml-1 w-4 h-4" /></Link>
@@ -383,7 +378,7 @@ export default function EventsPage() {
                   <p className="text-[10px] text-muted-foreground italic">Inserisci solo il comune o la vetta per previsioni precise.</p>
                 </div>
                 <div className="grid gap-2">
-                    <Label htmlFor="edit-mapUrl">Link Percorso (Google Maps)</Label>
+                    <Label htmlFor="edit-mapUrl">URL Google Maps (Percorso con tappe)</Label>
                     <Input id="edit-mapUrl" value={formData.mapUrl} onChange={e => setFormData({...formData, mapUrl: e.target.value})} className="bg-background" placeholder="Incolla l'URL di Maps" />
                 </div>
                 <div className="grid gap-2">
