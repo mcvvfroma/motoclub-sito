@@ -219,6 +219,7 @@ export default function EventsPage() {
             const isPast = isEventPast(event.date)
             const weather = getMockWeather(event.date)
             const WeatherIcon = weather.icon
+            const searchLocation = event.location.split(',')[0].split(' ore')[0].trim()
 
             return (
               <Card key={event.id} className={cn(
@@ -243,13 +244,20 @@ export default function EventsPage() {
                     {event.type}
                   </Badge>
 
-                  {/* Weather Overlay */}
-                  <div className="absolute bottom-4 right-4 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-2">
+                  {/* Weather Overlay Cliccabile */}
+                  <a 
+                    href={`https://www.ilmeteo.it/meteo/${encodeURIComponent(searchLocation)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="absolute bottom-4 right-4 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-2 hover:bg-black/80 hover:scale-110 transition-all cursor-pointer z-10"
+                    title={`Vedi meteo per ${searchLocation}`}
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <WeatherIcon className={cn("w-4 h-4", (weather as any).color || "text-accent")} />
                     <span className="text-[10px] font-bold text-white uppercase tracking-tighter">
-                      {weather.temp ? `${weather.temp} | ${event.location.split(',')[0]}` : weather.text}
+                      {weather.temp ? `${weather.temp} | ${searchLocation}` : weather.text}
                     </span>
-                  </div>
+                  </a>
                 </div>
                 <CardContent className="p-6 flex-1 flex flex-col">
                   <div className="flex items-center gap-2 text-accent text-sm mb-3 font-bold uppercase tracking-wider">
