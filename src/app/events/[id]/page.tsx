@@ -1,3 +1,4 @@
+
 import Image from "next/image"
 import Link from "next/link"
 import { Navbar } from "@/components/Navbar"
@@ -75,7 +76,7 @@ export default async function EventDetailPage({ params }: { params: { id: string
 
           <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle>Informazioni sul Giro</CardTitle>
+              <CardTitle>Informazioni sull'Uscita</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <p className="text-muted-foreground leading-relaxed">{event.description}</p>

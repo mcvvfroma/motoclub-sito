@@ -1,3 +1,4 @@
+
 import Image from "next/image"
 import Link from "next/link"
 import { Navbar } from "@/components/Navbar"
@@ -84,7 +85,7 @@ export default function Home() {
         {/* Upcoming Section */}
         <section>
           <div className="flex items-center justify-between mb-8">
-            <h2 className="text-3xl font-headline font-bold border-l-4 border-primary pl-4 text-foreground">Prossimi Giri</h2>
+            <h2 className="text-3xl font-headline font-bold border-l-4 border-primary pl-4 text-foreground">Prossime Uscite</h2>
             <Link href="/events" className="text-primary flex items-center gap-1 hover:underline font-bold">
               Tutti gli eventi <ArrowRight className="w-4 h-4" />
             </Link>

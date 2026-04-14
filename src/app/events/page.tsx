@@ -21,11 +21,11 @@ import { cn } from "@/lib/utils"
 const initialEvents = [
   {
     id: 1,
-    title: "Giro di Roma",
+    title: "Uscita di Roma",
     date: "2026-05-29",
     time: "08:30",
     location: "Caserma VVF Roma",
-    description: "Partenza dalla Caserma per un giro istituzionale tra i monumenti della Capitale.",
+    description: "Partenza dalla Caserma per un'uscita istituzionale tra i monumenti della Capitale.",
     type: "Touring",
     difficulty: "Easy",
     image: PlaceHolderImages.find(img => img.id === "event-1")?.imageUrl
@@ -79,7 +79,6 @@ export default function EventsPage() {
 
   const isAdmin = user?.status === "admin"
 
-  // Logica di ordinamento e filtraggio
   const sortedEvents = useMemo(() => {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
@@ -91,11 +90,9 @@ export default function EventsPage() {
       const isPastA = dateA < today.getTime()
       const isPastB = dateB < today.getTime()
 
-      // Gli eventi futuri vanno prima di quelli passati
       if (!isPastA && isPastB) return -1
       if (isPastA && !isPastB) return 1
 
-      // Entrambi futuri o entrambi passati: ordina cronologicamente
       return dateA - dateB
     })
   }, [events])
@@ -123,7 +120,7 @@ export default function EventsPage() {
         image: "https://picsum.photos/seed/" + Math.random() + "/600/400"
       }
       setEvents([newEvent, ...events])
-      toast({ title: "Evento creato", description: "Il nuovo giro è stato aggiunto al calendario." })
+      toast({ title: "Evento creato", description: "La nuova uscita è stata aggiunta al calendario." })
       setIsAdding(false)
     }
     
@@ -148,7 +145,7 @@ export default function EventsPage() {
         <header className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
             <Badge className="mb-4 bg-accent/10 text-accent border-none font-bold uppercase tracking-widest">Calendario Uscite</Badge>
-            <h1 className="text-4xl font-headline font-bold mb-2 text-foreground uppercase tracking-tighter">Eventi & Giri</h1>
+            <h1 className="text-4xl font-headline font-bold mb-2 text-foreground uppercase tracking-tighter">Eventi & Uscite</h1>
             <p className="text-muted-foreground max-w-2xl">Partecipa alle nostre uscite programmate e agli incontri sociali del club.</p>
           </div>
           
@@ -156,17 +153,17 @@ export default function EventsPage() {
             <Dialog open={isAdding} onOpenChange={setIsAdding}>
               <DialogTrigger asChild>
                 <Button className="bg-destructive hover:bg-destructive/90 gap-2 h-12 px-6 rounded-full shadow-lg shadow-destructive/20 font-bold uppercase tracking-tighter">
-                   <Plus className="w-5 h-5" /> + AGGIUNGI EVENTO
+                   <Plus className="w-5 h-5" /> + AGGIUNGI USCITA
                 </Button>
               </DialogTrigger>
               <DialogContent className="bg-card border-border sm:max-w-[500px]">
                 <DialogHeader>
-                  <DialogTitle className="text-2xl font-headline">Nuovo Evento</DialogTitle>
-                  <DialogDescription>Inserisci i dettagli del prossimo giro organizzato.</DialogDescription>
+                  <DialogTitle className="text-2xl font-headline">Nuova Uscita</DialogTitle>
+                  <DialogDescription>Inserisci i dettagli della prossima uscita organizzata.</DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                   <div className="grid gap-2">
-                    <Label htmlFor="title">Titolo del Giro</Label>
+                    <Label htmlFor="title">Titolo dell'Uscita</Label>
                     <Input id="title" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="bg-background" placeholder="es: Passo del Terminillo" />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
@@ -190,7 +187,7 @@ export default function EventsPage() {
                 </div>
                 <DialogFooter>
                   <Button variant="ghost" onClick={() => setIsAdding(false)}>Annulla</Button>
-                  <Button onClick={handleSaveEvent} className="bg-primary text-white font-bold">Crea Evento</Button>
+                  <Button onClick={handleSaveEvent} className="bg-primary text-white font-bold">Crea Uscita</Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
@@ -216,7 +213,7 @@ export default function EventsPage() {
                     </Badge>
                   ) : (
                     <Badge className="absolute top-4 left-4 bg-primary text-white border-none font-bold animate-pulse">
-                      PROSSIMO GIRO
+                      PROSSIMA USCITA
                     </Badge>
                   )}
                   <Badge className="absolute top-4 right-4 bg-background/90 backdrop-blur-sm text-foreground border-accent/20">
@@ -309,7 +306,7 @@ export default function EventsPage() {
           <Dialog open={!!editingEvent} onOpenChange={(open) => !open && setEditingEvent(null)}>
             <DialogContent className="bg-card border-border sm:max-w-[500px] text-foreground">
               <DialogHeader>
-                <DialogTitle className="text-2xl font-headline">Modifica Evento</DialogTitle>
+                <DialogTitle className="text-2xl font-headline">Modifica Uscita</DialogTitle>
                 <DialogDescription>Aggiorna le informazioni per "{editingEvent.title}".</DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">

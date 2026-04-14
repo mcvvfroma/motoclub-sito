@@ -1,3 +1,4 @@
+
 import { Navbar } from "@/components/Navbar"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -35,7 +36,7 @@ const conventions = [
     title: "Regole e Condotta dei Soci",
     description: "Linee guida per la partecipazione attiva e l'interazione nella comunità.",
     points: [
-      "Rispettare tutte le norme del codice della strada durante i giri di gruppo.",
+      "Rispettare tutte le norme del codice della strada durante le uscite di gruppo.",
       "Mantenere una comunicazione attiva sui canali ufficiali del club.",
       "Partecipare ad almeno una riunione del club a trimestre.",
       "Mantenere le proprietà e l'attrezzatura del club in buone condizioni."
@@ -43,11 +44,11 @@ const conventions = [
   },
   {
     id: "ride-safety",
-    title: "Protocollo Sicurezza Giri",
+    title: "Protocollo Sicurezza Uscite",
     description: "Standard di sicurezza obbligatori per ogni uscita organizzata dal Motoclub.",
     points: [
       "L'abbigliamento protettivo completo è obbligatorio per tutti i partecipanti.",
-      "Politica rigorosa 'alcol zero' prima e durante i giri.",
+      "Politica rigorosa 'alcol zero' prima e durante le uscite.",
       "Seguire sempre le istruzioni del Capofila e del Chiudifila.",
       "Formazione sfalsata obbligatoria sui tratti rettilinei per massima visibilità."
     ]
