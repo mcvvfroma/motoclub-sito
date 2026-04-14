@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { Navbar } from "@/components/Navbar"
@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
-import { Calendar, MapPin, Users, Filter, ArrowRight, Plus, Edit, Trash2, Clock, Info } from "lucide-react"
+import { Calendar, MapPin, Users, Filter, ArrowRight, Plus, Edit, Trash2, Clock, Info, CheckCircle } from "lucide-react"
 import { PlaceHolderImages } from "@/lib/placeholder-images"
 import { cn } from "@/lib/utils"
 
@@ -40,6 +40,17 @@ const initialEvents = [
     type: "Social",
     difficulty: "Easy",
     image: PlaceHolderImages.find(img => img.id === "event-2")?.imageUrl
+  },
+  {
+    id: 3,
+    title: "Raduno Nazionale VVF 2026",
+    date: "2026-09-12",
+    time: "09:00",
+    location: "Piazza del Popolo, Roma",
+    description: "Il grande raduno biennale di tutti i motoclub dei Vigili del Fuoco d'Italia.",
+    type: "Raduno",
+    difficulty: "Medium",
+    image: PlaceHolderImages.find(img => img.id === "hero-ride")?.imageUrl
   }
 ]
 
@@ -67,6 +78,33 @@ export default function EventsPage() {
   }, [])
 
   const isAdmin = user?.status === "admin"
+
+  // Logica di ordinamento e filtraggio
+  const sortedEvents = useMemo(() => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    return [...events].sort((a, b) => {
+      const dateA = new Date(a.date).getTime()
+      const dateB = new Date(b.date).getTime()
+      
+      const isPastA = dateA < today.getTime()
+      const isPastB = dateB < today.getTime()
+
+      // Gli eventi futuri vanno prima di quelli passati
+      if (!isPastA && isPastB) return -1
+      if (isPastA && !isPastB) return 1
+
+      // Entrambi futuri o entrambi passati: ordina cronologicamente
+      return dateA - dateB
+    })
+  }, [events])
+
+  const isEventPast = (dateStr: string) => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    return new Date(dateStr).getTime() < today.getTime()
+  }
 
   const handleSaveEvent = () => {
     if (!formData.title || !formData.date || !formData.location) {
@@ -103,7 +141,7 @@ export default function EventsPage() {
   }
 
   return (
-    <div className="min-h-screen pb-20 md:pb-0 md:pt-16 bg-background">
+    <div className="min-h-screen pb-20 md:pb-0 md:pt-16 bg-background text-foreground">
       <Navbar />
       
       <main className="max-w-7xl mx-auto px-4 py-8">
@@ -160,88 +198,103 @@ export default function EventsPage() {
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {events.map((event) => (
-            <Card key={event.id} className="bg-card border-border overflow-hidden hover:shadow-2xl hover:shadow-primary/5 transition-all group flex flex-col">
-              <div className="relative h-48">
-                {event.image && (
-                  <Image src={event.image} alt={event.title} fill className="object-cover transition-transform group-hover:scale-105 duration-500" />
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-                <Badge className="absolute top-4 right-4 bg-background/90 backdrop-blur-sm text-foreground border-accent/20">
-                  {event.type}
-                </Badge>
-              </div>
-              <CardContent className="p-6 flex-1 flex flex-col">
-                <div className="flex items-center gap-2 text-accent text-sm mb-3 font-bold uppercase tracking-wider">
-                  <Calendar className="w-4 h-4" />
-                  {event.date} {event.time && `• ${event.time}`}
+          {sortedEvents.map((event) => {
+            const isPast = isEventPast(event.date)
+            return (
+              <Card key={event.id} className={cn(
+                "bg-card border-border overflow-hidden transition-all group flex flex-col",
+                isPast ? "opacity-60 grayscale-[0.5] hover:opacity-100 hover:grayscale-0" : "hover:shadow-2xl hover:shadow-primary/5"
+              )}>
+                <div className="relative h-48">
+                  {event.image && (
+                    <Image src={event.image} alt={event.title} fill className="object-cover transition-transform group-hover:scale-105 duration-500" />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                  {isPast ? (
+                    <Badge className="absolute top-4 left-4 bg-muted/80 backdrop-blur-sm text-muted-foreground border-none font-bold">
+                      <CheckCircle className="w-3 h-3 mr-1" /> CONCLUSO
+                    </Badge>
+                  ) : (
+                    <Badge className="absolute top-4 left-4 bg-primary text-white border-none font-bold animate-pulse">
+                      PROSSIMO GIRO
+                    </Badge>
+                  )}
+                  <Badge className="absolute top-4 right-4 bg-background/90 backdrop-blur-sm text-foreground border-accent/20">
+                    {event.type}
+                  </Badge>
                 </div>
-                <CardTitle className="text-2xl mb-3 leading-tight font-headline group-hover:text-primary transition-colors">{event.title}</CardTitle>
-                
-                <div className="space-y-3 mb-6 flex-1">
-                  <div className="flex items-start text-sm text-muted-foreground">
-                    <MapPin className="w-4 h-4 mr-2 text-primary shrink-0 mt-0.5" />
-                    {event.location}
+                <CardContent className="p-6 flex-1 flex flex-col">
+                  <div className="flex items-center gap-2 text-accent text-sm mb-3 font-bold uppercase tracking-wider">
+                    <Calendar className="w-4 h-4" />
+                    {new Date(event.date).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })} {event.time && `• ${event.time}`}
                   </div>
-                  <p className="text-sm text-muted-foreground line-clamp-3 italic leading-relaxed">
-                    "{event.description}"
-                  </p>
-                </div>
+                  <CardTitle className="text-2xl mb-3 leading-tight font-headline group-hover:text-primary transition-colors">{event.title}</CardTitle>
+                  
+                  <div className="space-y-3 mb-6 flex-1">
+                    <div className="flex items-start text-sm text-muted-foreground">
+                      <MapPin className="w-4 h-4 mr-2 text-primary shrink-0 mt-0.5" />
+                      {event.location}
+                    </div>
+                    <p className="text-sm text-muted-foreground line-clamp-3 italic leading-relaxed">
+                      "{event.description}"
+                    </p>
+                  </div>
 
-                <div className="flex items-center justify-between pt-5 border-t border-border mt-auto">
-                  <div className="flex gap-2">
-                    {isAdmin ? (
-                      <>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={() => openEditDialog(event)}
-                          className="h-9 w-9 text-accent hover:bg-accent/10"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button 
-                              variant="ghost" 
-                              size="icon"
-                              className="h-9 w-9 text-destructive hover:bg-destructive/10"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent className="bg-card border-border">
-                            <AlertDialogHeader>
-                              <AlertDialogTitle className="text-xl font-headline">Conferma Eliminazione</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Vuoi davvero eliminare l'evento "{event.title}"? Tutti i dati andranno persi.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel className="bg-background border-border">Annulla</AlertDialogCancel>
-                              <AlertDialogAction 
-                                onClick={() => handleDeleteEvent(event.id)} 
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  <div className="flex items-center justify-between pt-5 border-t border-border mt-auto">
+                    <div className="flex gap-2">
+                      {isAdmin ? (
+                        <>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => openEditDialog(event)}
+                            className="h-9 w-9 text-accent hover:bg-accent/10"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button 
+                                variant="ghost" 
+                                size="icon"
+                                className="h-9 w-9 text-destructive hover:bg-destructive/10"
                               >
-                                Elimina
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </>
-                    ) : (
-                      <Badge variant="outline" className="border-muted-foreground/30 text-[10px] uppercase font-bold tracking-widest text-muted-foreground">
-                        {event.difficulty}
-                      </Badge>
-                    )}
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent className="bg-card border-border text-foreground">
+                              <AlertDialogHeader>
+                                <AlertDialogTitle className="text-xl font-headline">Conferma Eliminazione</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Vuoi davvero eliminare l'evento "{event.title}"? Tutti i dati andranno persi.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel className="bg-background border-border">Annulla</AlertDialogCancel>
+                                <AlertDialogAction 
+                                  onClick={() => handleDeleteEvent(event.id)} 
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  Elimina
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </>
+                      ) : (
+                        <Badge variant="outline" className="border-muted-foreground/30 text-[10px] uppercase font-bold tracking-widest text-muted-foreground">
+                          {event.difficulty}
+                        </Badge>
+                      )}
+                    </div>
+                    <Button variant="link" asChild className="text-primary p-0 h-auto font-bold group-hover:translate-x-1 transition-transform">
+                      <Link href={`/events/${event.id}`}>Dettagli <ArrowRight className="ml-1 w-4 h-4" /></Link>
+                    </Button>
                   </div>
-                  <Button variant="link" asChild className="text-primary p-0 h-auto font-bold group-hover:translate-x-1 transition-transform">
-                    <Link href={`/events/${event.id}`}>Dettagli <ArrowRight className="ml-1 w-4 h-4" /></Link>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            )
+          })}
           
           {events.length === 0 && (
             <div className="col-span-full py-20 text-center bg-card/50 rounded-3xl border-2 border-dashed border-border">
@@ -254,7 +307,7 @@ export default function EventsPage() {
         {/* Edit Dialog (Hidden) */}
         {editingEvent && (
           <Dialog open={!!editingEvent} onOpenChange={(open) => !open && setEditingEvent(null)}>
-            <DialogContent className="bg-card border-border sm:max-w-[500px]">
+            <DialogContent className="bg-card border-border sm:max-w-[500px] text-foreground">
               <DialogHeader>
                 <DialogTitle className="text-2xl font-headline">Modifica Evento</DialogTitle>
                 <DialogDescription>Aggiorna le informazioni per "{editingEvent.title}".</DialogDescription>
