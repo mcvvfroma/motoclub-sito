@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect } from "react"
@@ -13,13 +12,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
-import { ShieldCheck, Zap, Info, FileText, CheckCircle2, Wrench, ShoppingBag, Plus, Edit, Trash2 } from "lucide-react"
+import { ShieldCheck, Zap, Info, FileText, CheckCircle2, Wrench, ShoppingBag, Plus, Edit, Trash2, Bike } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const categoryIcons: Record<string, any> = {
   "Officina": { icon: Wrench, color: "text-primary", bg: "bg-primary/10" },
   "Assicurazione": { icon: ShieldCheck, color: "text-accent", bg: "bg-accent/10" },
   "Abbigliamento": { icon: ShoppingBag, color: "text-yellow-600", bg: "bg-yellow-500/10" },
+  "Concessionario": { icon: Bike, color: "text-blue-400", bg: "bg-blue-400/10" },
   "Altro": { icon: Zap, color: "text-blue-500", bg: "bg-blue-500/10" }
 }
 
@@ -60,7 +60,6 @@ export default function ConventionsPage() {
     description: ""
   })
 
-  // Caricamento dati iniziali e utente
   useEffect(() => {
     const storedUser = localStorage.getItem("vvf_user")
     if (storedUser) {
@@ -79,7 +78,6 @@ export default function ConventionsPage() {
     }
   }, [])
 
-  // Salvataggio su localStorage ogni volta che i benefits cambiano
   useEffect(() => {
     if (benefits.length > 0) {
       localStorage.setItem("vvf_conventions", JSON.stringify(benefits))
@@ -160,6 +158,7 @@ export default function ConventionsPage() {
                           <SelectItem value="Officina">Officina</SelectItem>
                           <SelectItem value="Assicurazione">Assicurazione</SelectItem>
                           <SelectItem value="Abbigliamento">Abbigliamento</SelectItem>
+                          <SelectItem value="Concessionario">Concessionario</SelectItem>
                           <SelectItem value="Altro">Altro</SelectItem>
                         </SelectContent>
                       </Select>
@@ -317,6 +316,7 @@ export default function ConventionsPage() {
                         <SelectItem value="Officina">Officina</SelectItem>
                         <SelectItem value="Assicurazione">Assicurazione</SelectItem>
                         <SelectItem value="Abbigliamento">Abbigliamento</SelectItem>
+                        <SelectItem value="Concessionario">Concessionario</SelectItem>
                         <SelectItem value="Altro">Altro</SelectItem>
                       </SelectContent>
                     </Select>
