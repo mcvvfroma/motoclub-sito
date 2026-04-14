@@ -40,7 +40,6 @@ export function Navbar() {
   const navItems = [
     { name: "Home", href: "/", icon: Home },
     { name: "Eventi", href: "/events", icon: Calendar },
-    // Link visibile solo per Admin
     ...(isAdmin ? [{ name: "Soci", href: "/members", icon: Users }] : []),
     { name: "Galleria", href: "/gallery", icon: ImageIcon },
     { name: "Convenzioni", href: "/conventions", icon: FileText },
@@ -49,22 +48,20 @@ export function Navbar() {
   return (
     <nav className="fixed top-0 left-0 right-0 z-[100] bg-card/80 backdrop-blur-lg border-b border-border h-16">
       <div className="max-w-7xl mx-auto px-4 h-full flex items-center justify-between">
-        {/* Mobile: Hamburger Button */}
         <div className="flex md:hidden">
           <Button 
             variant="ghost" 
             size="icon" 
             onClick={toggleSidebar}
-            className="text-[#FFD700] hover:bg-white/10"
+            className="text-accent hover:bg-white/10"
           >
             <Menu className="w-8 h-8" />
             <span className="sr-only">Apri menu</span>
           </Button>
         </div>
 
-        {/* Logo Section */}
         <Link href="/" className="flex items-center gap-2">
-          <div className="relative w-10 h-10">
+          <div className="relative w-12 h-12">
             <Image 
               src="/logo_motoclub.gif" 
               alt="Logo Motoclub VVF Roma" 
@@ -74,12 +71,11 @@ export function Navbar() {
             />
           </div>
           <div className="flex flex-col">
-            <span className="font-headline font-bold text-lg leading-none tracking-tight">Motoclub VVF</span>
+            <span className="font-headline font-bold text-lg leading-none tracking-tight text-foreground">Motoclub VVF</span>
             <span className="text-[10px] font-bold text-accent uppercase tracking-wider">Roma</span>
           </div>
         </Link>
 
-        {/* Desktop: Navigation Links */}
         <div className="hidden md:flex flex-1 justify-center gap-6">
           {navItems.map((item) => {
             const Icon = item.icon
@@ -100,7 +96,6 @@ export function Navbar() {
           })}
         </div>
 
-        {/* User Area */}
         <div className="hidden md:flex items-center gap-4">
           {user ? (
             <>
@@ -119,7 +114,6 @@ export function Navbar() {
           </div>
         </div>
 
-        {/* Mobile Spacer */}
         <div className="flex md:hidden w-10" />
       </div>
     </nav>
