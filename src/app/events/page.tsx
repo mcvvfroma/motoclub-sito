@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
@@ -116,7 +117,6 @@ export default function EventsPage() {
     if (diffDays < 0) return { status: 'concluso', icon: CheckCircle, text: 'Evento concluso', temp: '' }
     if (diffDays > 10) return { status: 'n/d', icon: Clock, text: 'Meteo', temp: '' }
 
-    // Simula meteo realistico per i prossimi 10 giorni
     const weathers = [
       { icon: Sun, temp: '24°', color: 'text-accent' },
       { icon: Cloud, temp: '21°', color: 'text-muted-foreground' },
@@ -206,7 +206,7 @@ export default function EventsPage() {
                   <div className="grid gap-2">
                     <Label htmlFor="weatherLocation">Località Meteo</Label>
                     <Input id="weatherLocation" value={formData.weatherLocation} onChange={e => setFormData({...formData, weatherLocation: e.target.value})} className="bg-background" placeholder="es: Terminillo" />
-                    <p className="text-[10px] text-muted-foreground italic">Inserisci solo il comune o la vetta (es: Terminillo) per previsioni precise.</p>
+                    <p className="text-[10px] text-muted-foreground italic">Inserisci solo il comune o la vetta per previsioni precise.</p>
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="description">Descrizione / Percorso</Label>
@@ -244,7 +244,7 @@ export default function EventsPage() {
                       <CheckCircle className="w-3 h-3 mr-1" /> CONCLUSO
                     </Badge>
                   ) : (
-                    <Badge className="absolute top-4 left-4 bg-primary text-white border-none font-bold animate-pulse">
+                    <Badge className="absolute top-4 left-4 bg-primary text-white border-none font-bold">
                       PROSSIMA USCITA
                     </Badge>
                   )}
@@ -252,7 +252,6 @@ export default function EventsPage() {
                     {event.type}
                   </Badge>
 
-                  {/* Weather Overlay Cliccabile */}
                   <a 
                     href={`https://www.ilmeteo.it/meteo/${encodeURIComponent(weatherKey)}`}
                     target="_blank"
@@ -286,7 +285,7 @@ export default function EventsPage() {
 
                   <div className="flex items-center justify-between pt-5 border-t border-border mt-auto">
                     <div className="flex gap-2">
-                      {isAdmin ? (
+                      {isAdmin && (
                         <>
                           <Button 
                             variant="ghost" 
@@ -325,10 +324,6 @@ export default function EventsPage() {
                             </AlertDialogContent>
                           </AlertDialog>
                         </>
-                      ) : (
-                        <Badge variant="outline" className="border-muted-foreground/30 text-[10px] uppercase font-bold tracking-widest text-muted-foreground">
-                          {event.difficulty}
-                        </Badge>
                       )}
                     </div>
                     <Button variant="link" asChild className="text-primary p-0 h-auto font-bold group-hover:translate-x-1 transition-transform">

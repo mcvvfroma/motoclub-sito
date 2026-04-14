@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useEffect, useState } from "react"
@@ -79,7 +80,6 @@ export default function Home() {
               priority
               data-ai-hint={heroImage.imageHint}
             />
-            {/* Dark Filter Overlay for readability on image */}
             <div className="absolute inset-0 bg-black/40 z-[1]" />
           </>
         )}
@@ -140,7 +140,6 @@ export default function Home() {
                       </Badge>
                     </div>
 
-                    {/* Weather Badge Interattivo rivolto alla destinazione */}
                     <a 
                       href={`https://www.ilmeteo.it/meteo/${encodeURIComponent(weatherKey)}`}
                       target="_blank"
@@ -157,7 +156,7 @@ export default function Home() {
 
                     <div className="absolute bottom-4 left-4">
                       <p className="text-accent text-xs font-bold uppercase tracking-widest mb-1">
-                        {new Date(event.date).toLocaleDateString('it-IT', { day: 'numeric', month: 'long' })}
+                        {new Date(event.date).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}
                       </p>
                       <CardTitle className="text-2xl text-white font-headline leading-tight">{event.title}</CardTitle>
                     </div>
@@ -168,10 +167,10 @@ export default function Home() {
                       <span className="line-clamp-1">{event.location}</span>
                     </div>
                     <div className="grid grid-cols-2 gap-3 mt-auto">
-                      <Button asChild variant="secondary" className="hover:bg-primary hover:text-white transition-colors py-6 font-bold uppercase tracking-tighter text-xs">
+                      <Button asChild variant="secondary" className="hover:bg-primary hover:text-white transition-colors py-6 font-bold uppercase tracking-tighter text-xs text-center">
                         <Link href={`/events/${event.id}`}>Dettagli</Link>
                       </Button>
-                      <Button asChild variant="outline" className="border-accent/50 text-accent hover:bg-accent hover:text-white transition-colors py-6 font-bold uppercase tracking-tighter text-xs">
+                      <Button asChild variant="outline" className="border-accent/50 text-accent hover:bg-accent hover:text-white transition-colors py-6 font-bold uppercase tracking-tighter text-xs text-center">
                         <a href={event.mapUrl} target="_blank" rel="noopener noreferrer">
                           <MapPinned className="mr-2 w-4 h-4" /> Percorso
                         </a>
@@ -184,7 +183,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Quick Stats / Info */}
         <section className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           <div className="bg-card p-8 rounded-2xl border border-border text-center hover:border-accent/50 transition-colors shadow-sm group">
             <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
