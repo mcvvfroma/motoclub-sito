@@ -1,18 +1,22 @@
 
+"use client"
+
+import { useEffect, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { Navbar } from "@/components/Navbar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, ArrowRight, Map, Image as ImageIcon, User, MapPinned, FileText, CheckCircle } from "lucide-react"
+import { Calendar, ArrowRight, Map, Image as ImageIcon, User, MapPinned, FileText, Sun, Cloud, CloudRain, Clock, CheckCircle } from "lucide-react"
 import { PlaceHolderImages } from "@/lib/placeholder-images"
+import { cn } from "@/lib/utils"
 
 const upcomingEvents = [
   {
     id: 1,
     title: "Uscita di Roma",
-    date: "29 Maggio, 2026",
+    date: "2026-05-29",
     location: "Caserma VVF Roma ore 08:30",
     image: PlaceHolderImages.find(img => img.id === "event-1")?.imageUrl,
     mapUrl: "https://www.google.com/maps/search/?api=1&query=Caserma+VVF+Roma"
@@ -20,7 +24,7 @@ const upcomingEvents = [
   {
     id: 2,
     title: "Passo del Terminillo",
-    date: "14 Giugno, 2026",
+    date: "2026-06-14",
     location: "Comando VVF via Genova, ore 09:00",
     image: PlaceHolderImages.find(img => img.id === "gallery-3")?.imageUrl,
     mapUrl: "https://www.google.com/maps/dir/Roma/Monte+Terminillo"
@@ -28,7 +32,7 @@ const upcomingEvents = [
   {
     id: 3,
     title: "Raduno Nazionale VVF 2026",
-    date: "12 Settembre, 2026",
+    date: "2026-09-12",
     location: "Piazza del Popolo, Roma",
     image: PlaceHolderImages.find(img => img.id === "hero-ride")?.imageUrl,
     mapUrl: "https://www.google.com/maps/search/?api=1&query=Piazza+del+Popolo+Roma"
@@ -37,6 +41,25 @@ const upcomingEvents = [
 
 export default function Home() {
   const heroImage = PlaceHolderImages.find(img => img.id === "hero-ride")
+
+  // Weather Mock Function
+  const getMockWeather = (dateStr: string) => {
+    const eventDate = new Date(dateStr)
+    const today = new Date()
+    const diffTime = eventDate.getTime() - today.getTime()
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+
+    if (diffDays < 0) return { icon: CheckCircle, text: 'Concluso', temp: '', color: 'text-muted-foreground' }
+    if (diffDays > 10) return { icon: Clock, text: 'N/D', temp: '', color: 'text-muted-foreground' }
+
+    const weathers = [
+      { icon: Sun, temp: '24°', color: 'text-accent' },
+      { icon: Cloud, temp: '21°', color: 'text-white' },
+      { icon: CloudRain, temp: '18°', color: 'text-blue-400' }
+    ]
+    const seed = eventDate.getDate() % 3
+    return { ...weathers[seed] }
+  }
 
   return (
     <div className="min-h-screen pb-20 md:pb-0 md:pt-16">
@@ -92,46 +115,62 @@ export default function Home() {
             </Link>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {upcomingEvents.map(event => (
-              <Card key={event.id} className="overflow-hidden border-border bg-card hover:border-primary/50 transition-all group shadow-md hover:shadow-xl flex flex-col">
-                <div className="relative h-56 w-full">
-                  {event.image && (
-                    <Image 
-                      src={event.image} 
-                      alt={event.title} 
-                      fill 
-                      className="object-cover transition-transform group-hover:scale-105" 
-                    />
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
-                  <div className="absolute top-4 left-4">
-                    <Badge className="bg-primary text-white border-none font-bold text-[10px] tracking-widest uppercase py-1">
-                      PROSSIMA USCITA
-                    </Badge>
+            {upcomingEvents.map(event => {
+              const weather = getMockWeather(event.date)
+              const WeatherIcon = weather.icon
+              
+              return (
+                <Card key={event.id} className="overflow-hidden border-border bg-card hover:border-primary/50 transition-all group shadow-md hover:shadow-xl flex flex-col">
+                  <div className="relative h-56 w-full">
+                    {event.image && (
+                      <Image 
+                        src={event.image} 
+                        alt={event.title} 
+                        fill 
+                        className="object-cover transition-transform group-hover:scale-105" 
+                      />
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+                    <div className="absolute top-4 left-4">
+                      <Badge className="bg-primary text-white border-none font-bold text-[10px] tracking-widest uppercase py-1">
+                        PROSSIMA USCITA
+                      </Badge>
+                    </div>
+
+                    {/* Weather Badge in Home */}
+                    <div className="absolute top-4 right-4 bg-black/50 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-2">
+                      <WeatherIcon className={cn("w-3.5 h-3.5", weather.color)} />
+                      <span className="text-[10px] font-bold text-white uppercase tracking-widest">
+                        {weather.temp || weather.text}
+                      </span>
+                    </div>
+
+                    <div className="absolute bottom-4 left-4">
+                      <p className="text-accent text-xs font-bold uppercase tracking-widest mb-1">
+                        {new Date(event.date).toLocaleDateString('it-IT', { day: 'numeric', month: 'long' })}
+                      </p>
+                      <CardTitle className="text-2xl text-white font-headline leading-tight">{event.title}</CardTitle>
+                    </div>
                   </div>
-                  <div className="absolute bottom-4 left-4">
-                    <p className="text-accent text-xs font-bold uppercase tracking-widest mb-1">{event.date}</p>
-                    <CardTitle className="text-2xl text-white font-headline leading-tight">{event.title}</CardTitle>
-                  </div>
-                </div>
-                <CardContent className="p-6 flex-1 flex flex-col">
-                  <div className="flex items-center text-muted-foreground text-sm mb-6">
-                    <Map className="w-4 h-4 mr-2 text-primary shrink-0" />
-                    <span className="line-clamp-1">{event.location}</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3 mt-auto">
-                    <Button asChild variant="secondary" className="hover:bg-primary hover:text-white transition-colors py-6 font-bold uppercase tracking-tighter text-xs">
-                      <Link href={`/events/${event.id}`}>Dettagli</Link>
-                    </Button>
-                    <Button asChild variant="outline" className="border-accent/50 text-accent hover:bg-accent hover:text-white transition-colors py-6 font-bold uppercase tracking-tighter text-xs">
-                      <a href={event.mapUrl} target="_blank" rel="noopener noreferrer">
-                        <MapPinned className="mr-2 w-4 h-4" /> Percorso
-                      </a>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  <CardContent className="p-6 flex-1 flex flex-col">
+                    <div className="flex items-center text-muted-foreground text-sm mb-6">
+                      <Map className="w-4 h-4 mr-2 text-primary shrink-0" />
+                      <span className="line-clamp-1">{event.location}</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 mt-auto">
+                      <Button asChild variant="secondary" className="hover:bg-primary hover:text-white transition-colors py-6 font-bold uppercase tracking-tighter text-xs">
+                        <Link href={`/events/${event.id}`}>Dettagli</Link>
+                      </Button>
+                      <Button asChild variant="outline" className="border-accent/50 text-accent hover:bg-accent hover:text-white transition-colors py-6 font-bold uppercase tracking-tighter text-xs">
+                        <a href={event.mapUrl} target="_blank" rel="noopener noreferrer">
+                          <MapPinned className="mr-2 w-4 h-4" /> Percorso
+                        </a>
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            })}
           </div>
         </section>
 

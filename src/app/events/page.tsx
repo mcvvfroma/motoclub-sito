@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
-import { Calendar, MapPin, Users, Filter, ArrowRight, Plus, Edit, Trash2, Clock, Info, CheckCircle } from "lucide-react"
+import { Calendar, MapPin, Users, Filter, ArrowRight, Plus, Edit, Trash2, Clock, Info, CheckCircle, Sun, Cloud, CloudRain, Thermometer } from "lucide-react"
 import { PlaceHolderImages } from "@/lib/placeholder-images"
 import { cn } from "@/lib/utils"
 
@@ -103,6 +103,26 @@ export default function EventsPage() {
     return new Date(dateStr).getTime() < today.getTime()
   }
 
+  // Weather Mock Function
+  const getMockWeather = (dateStr: string) => {
+    const eventDate = new Date(dateStr)
+    const today = new Date()
+    const diffTime = eventDate.getTime() - today.getTime()
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+
+    if (diffDays < 0) return { status: 'concluso', icon: CheckCircle, text: 'Evento concluso', temp: '' }
+    if (diffDays > 10) return { status: 'n/d', icon: Clock, text: 'Meteo N/D', temp: '' }
+
+    // Simula meteo realistico per i prossimi 10 giorni
+    const weathers = [
+      { icon: Sun, temp: '24°', color: 'text-accent' },
+      { icon: Cloud, temp: '21°', color: 'text-muted-foreground' },
+      { icon: CloudRain, temp: '18°', color: 'text-blue-400' }
+    ]
+    const seed = eventDate.getDate() % 3
+    return { status: 'ok', ...weathers[seed] }
+  }
+
   const handleSaveEvent = () => {
     if (!formData.title || !formData.date || !formData.location) {
       toast({ variant: "destructive", title: "Errore", description: "Compila i campi obbligatori (Titolo, Data, Luogo)." })
@@ -111,7 +131,7 @@ export default function EventsPage() {
 
     if (editingEvent) {
       setEvents(events.map(e => e.id === editingEvent.id ? { ...formData, id: e.id, image: e.image } : e))
-      toast({ title: "Evento aggiornato", description: "Le modifiche sono state salvate correttamente." })
+      toast({ title: "Uscita aggiornata", description: "Le modifiche sono state salvate correttamente." })
       setEditingEvent(null)
     } else {
       const newEvent = {
@@ -120,7 +140,7 @@ export default function EventsPage() {
         image: "https://picsum.photos/seed/" + Math.random() + "/600/400"
       }
       setEvents([newEvent, ...events])
-      toast({ title: "Evento creato", description: "La nuova uscita è stata aggiunta al calendario." })
+      toast({ title: "Uscita creata", description: "La nuova uscita è stata aggiunta al calendario." })
       setIsAdding(false)
     }
     
@@ -129,7 +149,7 @@ export default function EventsPage() {
 
   const handleDeleteEvent = (id: number) => {
     setEvents(events.filter(e => e.id !== id))
-    toast({ title: "Evento rimosso", description: "L'evento è stato eliminato con successo." })
+    toast({ title: "Uscita rimossa", description: "L'uscita è stata eliminata con successo." })
   }
 
   const openEditDialog = (event: any) => {
@@ -197,6 +217,9 @@ export default function EventsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {sortedEvents.map((event) => {
             const isPast = isEventPast(event.date)
+            const weather = getMockWeather(event.date)
+            const WeatherIcon = weather.icon
+
             return (
               <Card key={event.id} className={cn(
                 "bg-card border-border overflow-hidden transition-all group flex flex-col",
@@ -219,6 +242,14 @@ export default function EventsPage() {
                   <Badge className="absolute top-4 right-4 bg-background/90 backdrop-blur-sm text-foreground border-accent/20">
                     {event.type}
                   </Badge>
+
+                  {/* Weather Overlay */}
+                  <div className="absolute bottom-4 right-4 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-2">
+                    <WeatherIcon className={cn("w-4 h-4", (weather as any).color || "text-accent")} />
+                    <span className="text-[10px] font-bold text-white uppercase tracking-tighter">
+                      {weather.temp ? `${weather.temp} | ${event.location.split(',')[0]}` : weather.text}
+                    </span>
+                  </div>
                 </div>
                 <CardContent className="p-6 flex-1 flex flex-col">
                   <div className="flex items-center gap-2 text-accent text-sm mb-3 font-bold uppercase tracking-wider">
@@ -263,7 +294,7 @@ export default function EventsPage() {
                               <AlertDialogHeader>
                                 <AlertDialogTitle className="text-xl font-headline">Conferma Eliminazione</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  Vuoi davvero eliminare l'evento "{event.title}"? Tutti i dati andranno persi.
+                                  Vuoi davvero eliminare l'uscita "{event.title}"? Tutti i dati andranno persi.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
@@ -296,7 +327,7 @@ export default function EventsPage() {
           {events.length === 0 && (
             <div className="col-span-full py-20 text-center bg-card/50 rounded-3xl border-2 border-dashed border-border">
               <Info className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-20" />
-              <p className="text-muted-foreground font-medium">Nessun evento programmato al momento.</p>
+              <p className="text-muted-foreground font-medium">Nessuna uscita programmata al momento.</p>
             </div>
           )}
         </div>
