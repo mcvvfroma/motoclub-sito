@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
-import { Calendar, MapPin, Users, Filter, ArrowRight, Plus, Edit, Trash2, Clock, Info, CheckCircle, Sun, Cloud, CloudRain, Thermometer } from "lucide-react"
+import { Calendar, MapPin, Users, Filter, ArrowRight, Plus, Edit, Trash2, Clock, Info, CheckCircle, Sun, Cloud, CloudRain, MapPinned } from "lucide-react"
 import { PlaceHolderImages } from "@/lib/placeholder-images"
 import { cn } from "@/lib/utils"
 
@@ -26,6 +26,7 @@ const initialEvents = [
     time: "08:30",
     location: "Caserma VVF Roma",
     weatherLocation: "Roma",
+    mapUrl: "https://www.google.com/maps/search/?api=1&query=Caserma+VVF+Roma",
     description: "Partenza dalla Caserma per un'uscita istituzionale tra i monumenti della Capitale.",
     type: "Touring",
     difficulty: "Easy",
@@ -38,6 +39,7 @@ const initialEvents = [
     time: "09:00",
     location: "Comando VVF via Genova",
     weatherLocation: "Terminillo",
+    mapUrl: "https://www.google.com/maps/dir/Roma/Monte+Terminillo",
     description: "La classica scalata alla 'Montagna di Roma'. Curve mozzafiato e aria fresca.",
     type: "Touring",
     difficulty: "Medium",
@@ -50,6 +52,7 @@ const initialEvents = [
     time: "09:00",
     location: "Piazza del Popolo, Roma",
     weatherLocation: "Roma",
+    mapUrl: "https://www.google.com/maps/search/?api=1&query=Piazza+del+Popolo+Roma",
     description: "Il grande raduno biennale di tutti i motoclub dei Vigili del Fuoco d'Italia.",
     type: "Raduno",
     difficulty: "Medium",
@@ -69,6 +72,7 @@ export default function EventsPage() {
     time: "",
     location: "",
     weatherLocation: "",
+    mapUrl: "",
     description: "",
     type: "Touring",
     difficulty: "Medium"
@@ -107,7 +111,6 @@ export default function EventsPage() {
     return new Date(dateStr).getTime() < today.getTime()
   }
 
-  // Weather Mock Function
   const getMockWeather = (dateStr: string) => {
     const eventDate = new Date(dateStr)
     const today = new Date()
@@ -147,7 +150,7 @@ export default function EventsPage() {
       setIsAdding(false)
     }
     
-    setFormData({ title: "", date: "", time: "", location: "", weatherLocation: "", description: "", type: "Touring", difficulty: "Medium" })
+    setFormData({ title: "", date: "", time: "", location: "", weatherLocation: "", mapUrl: "", description: "", type: "Touring", difficulty: "Medium" })
   }
 
   const handleDeleteEvent = (id: number) => {
@@ -184,7 +187,7 @@ export default function EventsPage() {
                   <DialogTitle className="text-2xl font-headline">Nuova Uscita</DialogTitle>
                   <DialogDescription>Inserisci i dettagli della prossima uscita organizzata.</DialogDescription>
                 </DialogHeader>
-                <div className="grid gap-4 py-4">
+                <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-2">
                   <div className="grid gap-2">
                     <Label htmlFor="title">Titolo dell'Uscita</Label>
                     <Input id="title" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="bg-background" placeholder="es: Passo del Terminillo" />
@@ -207,6 +210,10 @@ export default function EventsPage() {
                     <Label htmlFor="weatherLocation">Località Meteo</Label>
                     <Input id="weatherLocation" value={formData.weatherLocation} onChange={e => setFormData({...formData, weatherLocation: e.target.value})} className="bg-background" placeholder="es: Terminillo" />
                     <p className="text-[10px] text-muted-foreground italic">Inserisci solo il comune o la vetta per previsioni precise.</p>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="mapUrl">Link Percorso (Google Maps)</Label>
+                    <Input id="mapUrl" value={formData.mapUrl} onChange={e => setFormData({...formData, mapUrl: e.target.value})} className="bg-background" placeholder="Incolla l'URL del percorso con tappe" />
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="description">Descrizione / Percorso</Label>
@@ -351,7 +358,7 @@ export default function EventsPage() {
                 <DialogTitle className="text-2xl font-headline">Modifica Uscita</DialogTitle>
                 <DialogDescription>Aggiorna le informazioni per "{editingEvent.title}".</DialogDescription>
               </DialogHeader>
-              <div className="grid gap-4 py-4">
+              <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-2">
                 <div className="grid gap-2">
                   <Label htmlFor="edit-title">Titolo</Label>
                   <Input id="edit-title" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="bg-background" />
@@ -374,6 +381,10 @@ export default function EventsPage() {
                   <Label htmlFor="edit-weatherLocation">Località Meteo</Label>
                   <Input id="edit-weatherLocation" value={formData.weatherLocation} onChange={e => setFormData({...formData, weatherLocation: e.target.value})} className="bg-background" placeholder="es: Terminillo" />
                   <p className="text-[10px] text-muted-foreground italic">Inserisci solo il comune o la vetta per previsioni precise.</p>
+                </div>
+                <div className="grid gap-2">
+                    <Label htmlFor="edit-mapUrl">Link Percorso (Google Maps)</Label>
+                    <Input id="edit-mapUrl" value={formData.mapUrl} onChange={e => setFormData({...formData, mapUrl: e.target.value})} className="bg-background" placeholder="Incolla l'URL di Maps" />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="edit-description">Descrizione</Label>

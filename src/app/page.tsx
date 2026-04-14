@@ -121,6 +121,7 @@ export default function Home() {
               const weather = getMockWeather(event.date)
               const WeatherIcon = weather.icon
               const weatherKey = event.weatherLocation || "Roma"
+              const mapUrl = event.mapUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.weatherLocation || event.title)}`
               
               return (
                 <Card key={event.id} className="overflow-hidden border-border bg-card hover:border-primary/50 transition-all group shadow-md hover:shadow-xl flex flex-col">
@@ -171,7 +172,7 @@ export default function Home() {
                         <Link href={`/events/${event.id}`}>Dettagli</Link>
                       </Button>
                       <Button asChild variant="outline" className="border-accent/50 text-accent hover:bg-accent hover:text-white transition-colors py-6 font-bold uppercase tracking-tighter text-xs text-center">
-                        <a href={event.mapUrl} target="_blank" rel="noopener noreferrer">
+                        <a href={mapUrl} target="_blank" rel="noopener noreferrer">
                           <MapPinned className="mr-2 w-4 h-4" /> Percorso
                         </a>
                       </Button>
