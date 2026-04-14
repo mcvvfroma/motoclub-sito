@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
 import { Calendar, MapPin, Users, Filter, ArrowRight, Plus, Edit, Trash2, Clock, Info, CheckCircle, Sun, Cloud, CloudRain, Thermometer } from "lucide-react"
 import { PlaceHolderImages } from "@/lib/placeholder-images"
@@ -219,7 +219,12 @@ export default function EventsPage() {
             const isPast = isEventPast(event.date)
             const weather = getMockWeather(event.date)
             const WeatherIcon = weather.icon
-            const searchLocation = event.location.split(',')[0].split(' ore')[0].trim()
+            // Pulisce il titolo per la ricerca meteo (es. "Uscita di Roma" -> "Roma")
+            const searchDestination = event.title
+              .replace(/Uscita di /g, '')
+              .replace(/Raduno Nazionale /g, '')
+              .replace(/ 2026/g, '')
+              .trim()
 
             return (
               <Card key={event.id} className={cn(
@@ -244,18 +249,18 @@ export default function EventsPage() {
                     {event.type}
                   </Badge>
 
-                  {/* Weather Overlay Cliccabile */}
+                  {/* Weather Overlay Cliccabile rivolto alla destinazione */}
                   <a 
-                    href={`https://www.ilmeteo.it/meteo/${encodeURIComponent(searchLocation)}`}
+                    href={`https://www.ilmeteo.it/meteo/${encodeURIComponent(searchDestination)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="absolute bottom-4 right-4 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-2 hover:bg-black/80 hover:scale-110 transition-all cursor-pointer z-10"
-                    title={`Vedi meteo per ${searchLocation}`}
+                    title={`Vedi meteo per ${searchDestination}`}
                     onClick={(e) => e.stopPropagation()}
                   >
                     <WeatherIcon className={cn("w-4 h-4", (weather as any).color || "text-accent")} />
                     <span className="text-[10px] font-bold text-white uppercase tracking-tighter">
-                      {weather.temp ? `${weather.temp} | ${searchLocation}` : weather.text}
+                      {weather.temp ? `${weather.temp} | ${searchDestination}` : weather.text}
                     </span>
                   </a>
                 </div>
