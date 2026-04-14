@@ -21,25 +21,25 @@ import { cn } from "@/lib/utils"
 const initialEvents = [
   {
     id: 1,
-    title: "Giro dei Castelli Romani",
-    date: "2024-05-20",
+    title: "Giro di Roma",
+    date: "2026-05-29",
     time: "08:30",
-    location: "Caserma VVF Roma ore 09:00",
-    description: "Un classico intramontabile tra le curve e i sapori dei Castelli Romani.",
+    location: "Caserma VVF Roma",
+    description: "Partenza dalla Caserma per un giro istituzionale tra i monumenti della Capitale.",
     type: "Touring",
     difficulty: "Easy",
     image: PlaceHolderImages.find(img => img.id === "event-1")?.imageUrl
   },
   {
     id: 2,
-    title: "Litorale al Tramonto",
-    date: "2024-06-05",
-    time: "17:00",
-    location: "Ostia - Riva di Traiano",
-    description: "Aperitivo in moto guardando il mare, partenza dal Comando via Genova.",
-    type: "Social",
-    difficulty: "Easy",
-    image: PlaceHolderImages.find(img => img.id === "event-2")?.imageUrl
+    title: "Passo del Terminillo",
+    date: "2026-06-14",
+    time: "09:00",
+    location: "Comando VVF via Genova",
+    description: "La classica scalata alla 'Montagna di Roma'. Curve mozzafiato e aria fresca.",
+    type: "Touring",
+    difficulty: "Medium",
+    image: PlaceHolderImages.find(img => img.id === "gallery-3")?.imageUrl
   },
   {
     id: 3,
