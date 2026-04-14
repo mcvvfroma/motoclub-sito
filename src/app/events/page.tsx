@@ -114,7 +114,7 @@ export default function EventsPage() {
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
 
     if (diffDays < 0) return { status: 'concluso', icon: CheckCircle, text: 'Evento concluso', temp: '' }
-    if (diffDays > 10) return { status: 'n/d', icon: Clock, text: 'Meteo N/D', temp: '' }
+    if (diffDays > 10) return { status: 'n/d', icon: Clock, text: 'Meteo', temp: '' }
 
     // Simula meteo realistico per i prossimi 10 giorni
     const weathers = [
@@ -227,11 +227,7 @@ export default function EventsPage() {
             const isPast = isEventPast(event.date)
             const weather = getMockWeather(event.date)
             const WeatherIcon = weather.icon
-            const weatherKey = event.weatherLocation || event.title
-              .replace(/Uscita di /g, '')
-              .replace(/Raduno Nazionale /g, '')
-              .replace(/ 2026/g, '')
-              .trim()
+            const weatherKey = event.weatherLocation || "Roma"
 
             return (
               <Card key={event.id} className={cn(

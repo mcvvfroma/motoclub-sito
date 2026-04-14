@@ -52,7 +52,7 @@ export default function Home() {
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
 
     if (diffDays < 0) return { icon: CheckCircle, text: 'Concluso', temp: '', color: 'text-muted-foreground' }
-    if (diffDays > 10) return { icon: Clock, text: 'N/D', temp: '', color: 'text-muted-foreground' }
+    if (diffDays > 10) return { icon: Clock, text: 'Meteo', temp: '', color: 'text-white/70' }
 
     const weathers = [
       { icon: Sun, temp: '24°', color: 'text-accent' },
@@ -120,11 +120,7 @@ export default function Home() {
             {upcomingEvents.map(event => {
               const weather = getMockWeather(event.date)
               const WeatherIcon = weather.icon
-              const weatherKey = event.weatherLocation || event.title
-                .replace(/Uscita di /g, '')
-                .replace(/Raduno Nazionale /g, '')
-                .replace(/ 2026/g, '')
-                .trim()
+              const weatherKey = event.weatherLocation || "Roma"
               
               return (
                 <Card key={event.id} className="overflow-hidden border-border bg-card hover:border-primary/50 transition-all group shadow-md hover:shadow-xl flex flex-col">
@@ -149,13 +145,13 @@ export default function Home() {
                       href={`https://www.ilmeteo.it/meteo/${encodeURIComponent(weatherKey)}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="absolute top-4 right-4 bg-black/50 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-2 hover:bg-black/80 hover:scale-110 transition-all cursor-pointer z-10"
+                      className="absolute top-4 right-4 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-2 hover:bg-black/80 hover:scale-110 transition-all cursor-pointer z-10"
                       title={`Vedi meteo per ${weatherKey}`}
                       onClick={(e) => e.stopPropagation()}
                     >
                       <WeatherIcon className={cn("w-3.5 h-3.5", weather.color)} />
                       <span className="text-[10px] font-bold text-white uppercase tracking-widest">
-                        {weather.temp || weather.text}
+                        {weather.temp ? `${weather.temp} | ${weatherKey}` : weather.text}
                       </span>
                     </a>
 
