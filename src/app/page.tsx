@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useEffect, useState } from "react"
@@ -18,6 +17,7 @@ const upcomingEvents = [
     title: "Uscita di Roma",
     date: "2026-05-29",
     location: "Caserma VVF Roma ore 08:30",
+    weatherLocation: "Roma",
     image: PlaceHolderImages.find(img => img.id === "event-1")?.imageUrl,
     mapUrl: "https://www.google.com/maps/search/?api=1&query=Caserma+VVF+Roma"
   },
@@ -26,6 +26,7 @@ const upcomingEvents = [
     title: "Passo del Terminillo",
     date: "2026-06-14",
     location: "Comando VVF via Genova, ore 09:00",
+    weatherLocation: "Terminillo",
     image: PlaceHolderImages.find(img => img.id === "gallery-3")?.imageUrl,
     mapUrl: "https://www.google.com/maps/dir/Roma/Monte+Terminillo"
   },
@@ -34,6 +35,7 @@ const upcomingEvents = [
     title: "Raduno Nazionale VVF 2026",
     date: "2026-09-12",
     location: "Piazza del Popolo, Roma",
+    weatherLocation: "Roma",
     image: PlaceHolderImages.find(img => img.id === "hero-ride")?.imageUrl,
     mapUrl: "https://www.google.com/maps/search/?api=1&query=Piazza+del+Popolo+Roma"
   }
@@ -118,8 +120,7 @@ export default function Home() {
             {upcomingEvents.map(event => {
               const weather = getMockWeather(event.date)
               const WeatherIcon = weather.icon
-              // Pulisce il titolo per la ricerca meteo (es. "Uscita di Roma" -> "Roma")
-              const searchDestination = event.title
+              const weatherKey = event.weatherLocation || event.title
                 .replace(/Uscita di /g, '')
                 .replace(/Raduno Nazionale /g, '')
                 .replace(/ 2026/g, '')
@@ -145,11 +146,11 @@ export default function Home() {
 
                     {/* Weather Badge Interattivo rivolto alla destinazione */}
                     <a 
-                      href={`https://www.ilmeteo.it/meteo/${encodeURIComponent(searchDestination)}`}
+                      href={`https://www.ilmeteo.it/meteo/${encodeURIComponent(weatherKey)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="absolute top-4 right-4 bg-black/50 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-2 hover:bg-black/80 hover:scale-110 transition-all cursor-pointer z-10"
-                      title={`Vedi meteo per ${searchDestination}`}
+                      title={`Vedi meteo per ${weatherKey}`}
                       onClick={(e) => e.stopPropagation()}
                     >
                       <WeatherIcon className={cn("w-3.5 h-3.5", weather.color)} />

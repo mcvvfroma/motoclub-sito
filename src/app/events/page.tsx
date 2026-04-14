@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
@@ -25,6 +24,7 @@ const initialEvents = [
     date: "2026-05-29",
     time: "08:30",
     location: "Caserma VVF Roma",
+    weatherLocation: "Roma",
     description: "Partenza dalla Caserma per un'uscita istituzionale tra i monumenti della Capitale.",
     type: "Touring",
     difficulty: "Easy",
@@ -36,6 +36,7 @@ const initialEvents = [
     date: "2026-06-14",
     time: "09:00",
     location: "Comando VVF via Genova",
+    weatherLocation: "Terminillo",
     description: "La classica scalata alla 'Montagna di Roma'. Curve mozzafiato e aria fresca.",
     type: "Touring",
     difficulty: "Medium",
@@ -47,6 +48,7 @@ const initialEvents = [
     date: "2026-09-12",
     time: "09:00",
     location: "Piazza del Popolo, Roma",
+    weatherLocation: "Roma",
     description: "Il grande raduno biennale di tutti i motoclub dei Vigili del Fuoco d'Italia.",
     type: "Raduno",
     difficulty: "Medium",
@@ -65,6 +67,7 @@ export default function EventsPage() {
     date: "",
     time: "",
     location: "",
+    weatherLocation: "",
     description: "",
     type: "Touring",
     difficulty: "Medium"
@@ -144,7 +147,7 @@ export default function EventsPage() {
       setIsAdding(false)
     }
     
-    setFormData({ title: "", date: "", time: "", location: "", description: "", type: "Touring", difficulty: "Medium" })
+    setFormData({ title: "", date: "", time: "", location: "", weatherLocation: "", description: "", type: "Touring", difficulty: "Medium" })
   }
 
   const handleDeleteEvent = (id: number) => {
@@ -201,6 +204,11 @@ export default function EventsPage() {
                     <Input id="location" value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} className="bg-background" placeholder="es: Comando VVF via Genova" />
                   </div>
                   <div className="grid gap-2">
+                    <Label htmlFor="weatherLocation">Località Meteo</Label>
+                    <Input id="weatherLocation" value={formData.weatherLocation} onChange={e => setFormData({...formData, weatherLocation: e.target.value})} className="bg-background" placeholder="es: Terminillo" />
+                    <p className="text-[10px] text-muted-foreground italic">Inserisci solo il comune o la vetta (es: Terminillo) per previsioni precise.</p>
+                  </div>
+                  <div className="grid gap-2">
                     <Label htmlFor="description">Descrizione / Percorso</Label>
                     <Textarea id="description" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="bg-background min-h-[100px]" placeholder="Dettagli sul percorso e tappe previste..." />
                   </div>
@@ -219,8 +227,7 @@ export default function EventsPage() {
             const isPast = isEventPast(event.date)
             const weather = getMockWeather(event.date)
             const WeatherIcon = weather.icon
-            // Pulisce il titolo per la ricerca meteo (es. "Uscita di Roma" -> "Roma")
-            const searchDestination = event.title
+            const weatherKey = event.weatherLocation || event.title
               .replace(/Uscita di /g, '')
               .replace(/Raduno Nazionale /g, '')
               .replace(/ 2026/g, '')
@@ -249,18 +256,18 @@ export default function EventsPage() {
                     {event.type}
                   </Badge>
 
-                  {/* Weather Overlay Cliccabile rivolto alla destinazione */}
+                  {/* Weather Overlay Cliccabile */}
                   <a 
-                    href={`https://www.ilmeteo.it/meteo/${encodeURIComponent(searchDestination)}`}
+                    href={`https://www.ilmeteo.it/meteo/${encodeURIComponent(weatherKey)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="absolute bottom-4 right-4 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-2 hover:bg-black/80 hover:scale-110 transition-all cursor-pointer z-10"
-                    title={`Vedi meteo per ${searchDestination}`}
+                    title={`Vedi meteo per ${weatherKey}`}
                     onClick={(e) => e.stopPropagation()}
                   >
                     <WeatherIcon className={cn("w-4 h-4", (weather as any).color || "text-accent")} />
                     <span className="text-[10px] font-bold text-white uppercase tracking-tighter">
-                      {weather.temp ? `${weather.temp} | ${searchDestination}` : weather.text}
+                      {weather.temp ? `${weather.temp} | ${weatherKey}` : weather.text}
                     </span>
                   </a>
                 </div>
@@ -345,7 +352,7 @@ export default function EventsPage() {
           )}
         </div>
 
-        {/* Edit Dialog (Hidden) */}
+        {/* Edit Dialog */}
         {editingEvent && (
           <Dialog open={!!editingEvent} onOpenChange={(open) => !open && setEditingEvent(null)}>
             <DialogContent className="bg-card border-border sm:max-w-[500px] text-foreground">
@@ -369,8 +376,13 @@ export default function EventsPage() {
                   </div>
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="edit-location">Luogo</Label>
+                  <Label htmlFor="edit-location">Luogo di Ritrovo</Label>
                   <Input id="edit-location" value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} className="bg-background" />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-weatherLocation">Località Meteo</Label>
+                  <Input id="edit-weatherLocation" value={formData.weatherLocation} onChange={e => setFormData({...formData, weatherLocation: e.target.value})} className="bg-background" placeholder="es: Terminillo" />
+                  <p className="text-[10px] text-muted-foreground italic">Inserisci solo il comune o la vetta per previsioni precise.</p>
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="edit-description">Descrizione</Label>
