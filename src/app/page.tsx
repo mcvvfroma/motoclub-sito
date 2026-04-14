@@ -4,33 +4,34 @@ import Link from "next/link"
 import { Navbar } from "@/components/Navbar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Calendar, ArrowRight, Map, Image as ImageIcon, User, MapPinned, FileText } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Calendar, ArrowRight, Map, Image as ImageIcon, User, MapPinned, FileText, CheckCircle } from "lucide-react"
 import { PlaceHolderImages } from "@/lib/placeholder-images"
 
 const upcomingEvents = [
   {
-    id: 3,
-    title: "Uscita al Terminillo",
-    date: "25 Maggio, 2024",
-    location: "Caserma VVF Roma ore 09:00",
+    id: 1,
+    title: "Uscita di Roma",
+    date: "29 Maggio, 2026",
+    location: "Caserma VVF Roma ore 08:30",
+    image: PlaceHolderImages.find(img => img.id === "event-1")?.imageUrl,
+    mapUrl: "https://www.google.com/maps/search/?api=1&query=Caserma+VVF+Roma"
+  },
+  {
+    id: 2,
+    title: "Passo del Terminillo",
+    date: "14 Giugno, 2026",
+    location: "Comando VVF via Genova, ore 09:00",
     image: PlaceHolderImages.find(img => img.id === "gallery-3")?.imageUrl,
     mapUrl: "https://www.google.com/maps/dir/Roma/Monte+Terminillo"
   },
   {
-    id: 1,
-    title: "Giro dei Castelli Romani",
-    date: "15 Giugno, 2024",
-    location: "Partenza: Comando via Genova, Roma",
-    image: PlaceHolderImages.find(img => img.id === "event-1")?.imageUrl,
-    mapUrl: "https://www.google.com/maps/dir/Via+Genova,+Roma/Castel+Gandolfo"
-  },
-  {
-    id: 2,
-    title: "Litorale Laziale al Tramonto",
-    date: "30 Giugno, 2024",
-    location: "Ostia - Riva di Traiano",
-    image: PlaceHolderImages.find(img => img.id === "event-2")?.imageUrl,
-    mapUrl: "https://www.google.com/maps/dir/Roma/Riva+di+Traiano"
+    id: 3,
+    title: "Raduno Nazionale VVF 2026",
+    date: "12 Settembre, 2026",
+    location: "Piazza del Popolo, Roma",
+    image: PlaceHolderImages.find(img => img.id === "hero-ride")?.imageUrl,
+    mapUrl: "https://www.google.com/maps/search/?api=1&query=Piazza+del+Popolo+Roma"
   }
 ]
 
@@ -85,14 +86,14 @@ export default function Home() {
         {/* Upcoming Section */}
         <section>
           <div className="flex items-center justify-between mb-8">
-            <h2 className="text-3xl font-headline font-bold border-l-4 border-primary pl-4 text-foreground">Prossime Uscite</h2>
-            <Link href="/events" className="text-primary flex items-center gap-1 hover:underline font-bold">
-              Tutti gli eventi <ArrowRight className="w-4 h-4" />
+            <h2 className="text-3xl font-headline font-bold border-l-4 border-primary pl-4 text-foreground uppercase tracking-tighter">Prossime Uscite</h2>
+            <Link href="/events" className="text-primary flex items-center gap-1 hover:underline font-bold uppercase text-sm tracking-tighter">
+              Calendario completo <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {upcomingEvents.map(event => (
-              <Card key={event.id} className="overflow-hidden border-border bg-card hover:border-primary/50 transition-all group shadow-md hover:shadow-xl">
+              <Card key={event.id} className="overflow-hidden border-border bg-card hover:border-primary/50 transition-all group shadow-md hover:shadow-xl flex flex-col">
                 <div className="relative h-56 w-full">
                   {event.image && (
                     <Image 
@@ -103,23 +104,28 @@ export default function Home() {
                     />
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+                  <div className="absolute top-4 left-4">
+                    <Badge className="bg-primary text-white border-none font-bold text-[10px] tracking-widest uppercase py-1">
+                      PROSSIMA USCITA
+                    </Badge>
+                  </div>
                   <div className="absolute bottom-4 left-4">
-                    <p className="text-accent text-sm font-bold uppercase tracking-widest">{event.date}</p>
-                    <CardTitle className="text-2xl text-white">{event.title}</CardTitle>
+                    <p className="text-accent text-xs font-bold uppercase tracking-widest mb-1">{event.date}</p>
+                    <CardTitle className="text-2xl text-white font-headline leading-tight">{event.title}</CardTitle>
                   </div>
                 </div>
-                <CardContent className="p-6">
+                <CardContent className="p-6 flex-1 flex flex-col">
                   <div className="flex items-center text-muted-foreground text-sm mb-6">
-                    <Map className="w-4 h-4 mr-2 text-primary" />
-                    {event.location}
+                    <Map className="w-4 h-4 mr-2 text-primary shrink-0" />
+                    <span className="line-clamp-1">{event.location}</span>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <Button asChild variant="secondary" className="hover:bg-primary hover:text-white transition-colors py-6">
+                  <div className="grid grid-cols-2 gap-3 mt-auto">
+                    <Button asChild variant="secondary" className="hover:bg-primary hover:text-white transition-colors py-6 font-bold uppercase tracking-tighter text-xs">
                       <Link href={`/events/${event.id}`}>Dettagli</Link>
                     </Button>
-                    <Button asChild variant="outline" className="border-accent/50 text-accent hover:bg-accent hover:text-white transition-colors py-6">
+                    <Button asChild variant="outline" className="border-accent/50 text-accent hover:bg-accent hover:text-white transition-colors py-6 font-bold uppercase tracking-tighter text-xs">
                       <a href={event.mapUrl} target="_blank" rel="noopener noreferrer">
-                        <MapPinned className="mr-2 w-4 h-4" /> Apri Percorso
+                        <MapPinned className="mr-2 w-4 h-4" /> Percorso
                       </a>
                     </Button>
                   </div>
@@ -131,26 +137,26 @@ export default function Home() {
 
         {/* Quick Stats / Info */}
         <section className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          <div className="bg-card p-8 rounded-2xl border border-border text-center hover:border-accent/50 transition-colors shadow-sm">
-            <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center mx-auto mb-4">
+          <div className="bg-card p-8 rounded-2xl border border-border text-center hover:border-accent/50 transition-colors shadow-sm group">
+            <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
               <Calendar className="w-6 h-6" />
             </div>
             <h3 className="text-3xl font-bold font-headline mb-1 text-foreground">12</h3>
-            <p className="text-muted-foreground uppercase text-xs font-bold tracking-widest">Eventi Attivi</p>
+            <p className="text-muted-foreground uppercase text-xs font-bold tracking-widest">Uscite in programma</p>
           </div>
-          <div className="bg-card p-8 rounded-2xl border border-border text-center hover:border-accent/50 transition-colors shadow-sm">
-            <div className="w-12 h-12 bg-accent/10 text-accent rounded-xl flex items-center justify-center mx-auto mb-4">
+          <div className="bg-card p-8 rounded-2xl border border-border text-center hover:border-accent/50 transition-colors shadow-sm group">
+            <div className="w-12 h-12 bg-accent/10 text-accent rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
               <User className="w-6 h-6" />
             </div>
             <h3 className="text-3xl font-bold font-headline mb-1 text-foreground">256</h3>
             <p className="text-muted-foreground uppercase text-xs font-bold tracking-widest">Soci Iscritti</p>
           </div>
-          <div className="bg-card p-8 rounded-2xl border border-border text-center hover:border-accent/50 transition-colors shadow-sm">
-            <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center mx-auto mb-4">
+          <div className="bg-card p-8 rounded-2xl border border-border text-center hover:border-accent/50 transition-colors shadow-sm group">
+            <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
               <ImageIcon className="w-6 h-6" />
             </div>
             <h3 className="text-3xl font-bold font-headline mb-1 text-foreground">1.2k</h3>
-            <p className="text-muted-foreground uppercase text-xs font-bold tracking-widest">Foto Condivise</p>
+            <p className="text-muted-foreground uppercase text-xs font-bold tracking-widest">Foto Gallery</p>
           </div>
         </section>
 
