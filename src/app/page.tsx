@@ -63,6 +63,7 @@ export default function Home() {
   const [user, setUser] = useState<any>(null)
   const [editingEvent, setEditingEvent] = useState<any>(null)
   const [isAddingPhoto, setIsAddingPhoto] = useState<number | null>(null)
+  const [photoUrlInput, setPhotoUrlInput] = useState("")
   const [formData, setFormData] = useState<any>({
     title: "",
     date: "",
@@ -132,26 +133,21 @@ export default function Home() {
     toast({ title: "Uscita aggiornata", description: "Le modifiche sono state salvate correttamente." })
   }
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+  const handleAddPhotoSubmit = () => {
+    if (!photoUrlInput) return
 
-    const reader = new FileReader()
-    reader.onloadend = () => {
-      const base64String = reader.result as string
-      const allEvents = JSON.parse(localStorage.getItem("vvf_all_events") || "[]")
-      const updatedAll = allEvents.map((event: any) => {
-        if (event.id === isAddingPhoto) {
-          return { ...event, photos: [...(event.photos || []), base64String] }
-        }
-        return event
-      })
-      localStorage.setItem("vvf_all_events", JSON.stringify(updatedAll))
-      setEvents(updatedAll.slice(0, 3))
-      setIsAddingPhoto(null)
-      toast({ title: "Foto aggiunta", description: "La foto è stata salvata nella gallery dell'uscita." })
-    }
-    reader.readAsDataURL(file)
+    const allEvents = JSON.parse(localStorage.getItem("vvf_all_events") || "[]")
+    const updatedAll = allEvents.map((event: any) => {
+      if (event.id === isAddingPhoto) {
+        return { ...event, photos: [...(event.photos || []), photoUrlInput] }
+      }
+      return event
+    })
+    localStorage.setItem("vvf_all_events", JSON.stringify(updatedAll))
+    setEvents(updatedAll.slice(0, 3))
+    setIsAddingPhoto(null)
+    setPhotoUrlInput("")
+    toast({ title: "Foto aggiunta", description: "La foto è stata salvata correttamente." })
   }
 
   const heroImage = PlaceHolderImages.find(img => img.id === "hero-ride")
@@ -295,20 +291,21 @@ export default function Home() {
         <DialogContent className="bg-card border-border text-foreground">
           <DialogHeader>
             <DialogTitle className="font-headline text-2xl">Condividi una Foto</DialogTitle>
-            <DialogDescription>Seleziona una foto scattata durante l'uscita per aggiungerla alla gallery.</DialogDescription>
+            <DialogDescription>Incolla l'URL di un'immagine per aggiungerla alla gallery dell'uscita.</DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            <Label htmlFor="photo-file" className="block mb-2">Seleziona File (JPG/PNG)</Label>
+            <Label htmlFor="photo-url" className="block mb-2">URL Immagine</Label>
             <Input 
-              id="photo-file"
-              type="file" 
-              accept="image/*"
-              onChange={handleFileChange} 
-              className="bg-background cursor-pointer"
+              id="photo-url"
+              placeholder="https://images.unsplash.com/..."
+              value={photoUrlInput}
+              onChange={(e) => setPhotoUrlInput(e.target.value)}
+              className="bg-background"
             />
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setIsAddingPhoto(null)}>Annulla</Button>
+            <Button onClick={handleAddPhotoSubmit} className="bg-primary text-white font-bold">Aggiungi</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

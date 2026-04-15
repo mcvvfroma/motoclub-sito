@@ -63,6 +63,7 @@ export default function EventsPage() {
   const [isAdding, setIsAdding] = useState(false)
   const [editingEvent, setEditingEvent] = useState<any>(null)
   const [isAddingPhoto, setIsAddingPhoto] = useState<number | null>(null)
+  const [photoUrlInput, setPhotoUrlInput] = useState("")
   const [formData, setFormData] = useState({
     title: "",
     date: "",
@@ -159,23 +160,18 @@ export default function EventsPage() {
     toast({ title: "Uscita rimossa", description: "L'uscita è stata eliminata." })
   }
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+  const handleAddPhotoSubmit = () => {
+    if (!photoUrlInput) return
 
-    const reader = new FileReader()
-    reader.onloadend = () => {
-      const base64String = reader.result as string
-      setEvents(events.map(event => {
-        if (event.id === isAddingPhoto) {
-          return { ...event, photos: [...(event.photos || []), base64String] }
-        }
-        return event
-      }))
-      setIsAddingPhoto(null)
-      toast({ title: "Foto aggiunta", description: "La foto è stata salvata nell'archivio dell'uscita." })
-    }
-    reader.readAsDataURL(file)
+    setEvents(events.map(event => {
+      if (event.id === isAddingPhoto) {
+        return { ...event, photos: [...(event.photos || []), photoUrlInput] }
+      }
+      return event
+    }))
+    setIsAddingPhoto(null)
+    setPhotoUrlInput("")
+    toast({ title: "Foto aggiunta", description: "La foto è stata salvata correttamente." })
   }
 
   return (
@@ -354,20 +350,21 @@ export default function EventsPage() {
           <DialogContent className="bg-card border-border text-foreground">
             <DialogHeader>
               <DialogTitle className="font-headline text-2xl">Condividi una Foto</DialogTitle>
-              <DialogDescription>Seleziona un'immagine JPG o PNG da caricare.</DialogDescription>
+              <DialogDescription>Incolla l'URL di un'immagine (es. Unsplash) da aggiungere all'uscita.</DialogDescription>
             </DialogHeader>
             <div className="py-4">
-              <Label htmlFor="file-input" className="block mb-2">Seleziona File</Label>
+              <Label htmlFor="photo-url" className="block mb-2">URL Immagine</Label>
               <Input 
-                id="file-input"
-                type="file" 
-                accept="image/*"
-                onChange={handleFileChange} 
-                className="bg-background cursor-pointer"
+                id="photo-url"
+                placeholder="https://images.unsplash.com/..."
+                value={photoUrlInput}
+                onChange={(e) => setPhotoUrlInput(e.target.value)}
+                className="bg-background"
               />
             </div>
             <DialogFooter>
               <Button variant="ghost" onClick={() => setIsAddingPhoto(null)}>Annulla</Button>
+              <Button onClick={handleAddPhotoSubmit} className="bg-primary text-white font-bold">Aggiungi</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
