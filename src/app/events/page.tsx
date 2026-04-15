@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
-import { Calendar, MapPin, ArrowRight, Plus, Edit, Trash2, Clock, CheckCircle, Sun, Cloud, CloudRain, Camera } from "lucide-react"
+import { Calendar, MapPin, ArrowRight, Plus, Edit, Trash2, Clock, CheckCircle, Sun, Cloud, CloudRain, Camera, Map as MapIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const initialEvents = [
@@ -63,7 +63,6 @@ export default function EventsPage() {
   const [isAdding, setIsAdding] = useState(false)
   const [editingEvent, setEditingEvent] = useState<any>(null)
   const [isAddingPhoto, setIsAddingPhoto] = useState<number | null>(null)
-  const [newPhotoUrl, setNewPhotoUrl] = useState("")
   const [formData, setFormData] = useState({
     title: "",
     date: "",
@@ -137,7 +136,7 @@ export default function EventsPage() {
 
   const handleSaveEvent = () => {
     if (!formData.title || !formData.date || !formData.location) {
-      toast({ variant: "destructive", title: "Errore", description: "Compila i campi obbligatori (Titolo, Data, Luogo)." })
+      toast({ variant: "destructive", title: "Errore", description: "Compila i campi obbligatori." })
       return
     }
 
@@ -160,18 +159,23 @@ export default function EventsPage() {
     toast({ title: "Uscita rimossa", description: "L'uscita è stata eliminata." })
   }
 
-  const handleAddPhoto = () => {
-    if (!newPhotoUrl) return
-    const updated = events.map(e => {
-      if (e.id === isAddingPhoto) {
-        return { ...e, photos: [...(e.photos || []), newPhotoUrl] }
-      }
-      return e
-    })
-    setEvents(updated)
-    setNewPhotoUrl("")
-    setIsAddingPhoto(null)
-    toast({ title: "Foto aggiunta", description: "La foto è stata salvata nell'archivio dell'uscita." })
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      const base64String = reader.result as string
+      setEvents(events.map(event => {
+        if (event.id === isAddingPhoto) {
+          return { ...event, photos: [...(event.photos || []), base64String] }
+        }
+        return event
+      }))
+      setIsAddingPhoto(null)
+      toast({ title: "Foto aggiunta", description: "La foto è stata salvata nell'archivio dell'uscita." })
+    }
+    reader.readAsDataURL(file)
   }
 
   return (
@@ -200,34 +204,34 @@ export default function EventsPage() {
                 </DialogHeader>
                 <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-2 text-foreground">
                   <div className="grid gap-2">
-                    <Label htmlFor="title">Titolo dell'Uscita</Label>
-                    <Input id="title" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="bg-background" />
+                    <Label>Titolo dell'Uscita</Label>
+                    <Input value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="bg-background" />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
-                      <Label htmlFor="date">Data</Label>
-                      <Input id="date" type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="bg-background" />
+                      <Label>Data</Label>
+                      <Input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="bg-background" />
                     </div>
                     <div className="grid gap-2">
-                      <Label htmlFor="time">Orario Ritrovo</Label>
-                      <Input id="time" type="time" value={formData.time} onChange={e => setFormData({...formData, time: e.target.value})} className="bg-background" />
+                      <Label>Orario Ritrovo</Label>
+                      <Input type="time" value={formData.time} onChange={e => setFormData({...formData, time: e.target.value})} className="bg-background" />
                     </div>
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="location">Luogo di Ritrovo</Label>
-                    <Input id="location" value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} className="bg-background" />
+                    <Label>Luogo di Ritrovo</Label>
+                    <Input value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} className="bg-background" />
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="weatherLocation">Località Meteo</Label>
-                    <Input id="weatherLocation" value={formData.weatherLocation} onChange={e => setFormData({...formData, weatherLocation: e.target.value})} className="bg-background" />
+                    <Label>Località Meteo</Label>
+                    <Input value={formData.weatherLocation} onChange={e => setFormData({...formData, weatherLocation: e.target.value})} className="bg-background" />
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="mapUrl">URL Google Maps (Percorso)</Label>
-                    <Input id="mapUrl" value={formData.mapUrl} onChange={e => setFormData({...formData, mapUrl: e.target.value})} className="bg-background" />
+                    <Label>URL Percorso Google Maps</Label>
+                    <Input value={formData.mapUrl} onChange={e => setFormData({...formData, mapUrl: e.target.value})} className="bg-background" />
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="description">Descrizione / Tappe</Label>
-                    <Textarea id="description" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="bg-background min-h-[100px]" />
+                    <Label>Descrizione / Tappe</Label>
+                    <Textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="bg-background min-h-[100px]" />
                   </div>
                 </div>
                 <DialogFooter>
@@ -259,7 +263,7 @@ export default function EventsPage() {
                     fill 
                     className="object-cover transition-transform group-hover:scale-105 duration-500"
                     priority
-                    unoptimized={imageUrl.startsWith('http')}
+                    unoptimized={imageUrl.startsWith('data:') || imageUrl.startsWith('http')}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
                   <Badge className={cn("absolute top-4 left-4 border-none font-bold", isPast ? "bg-muted text-muted-foreground" : "bg-primary text-white")}>
@@ -304,7 +308,7 @@ export default function EventsPage() {
                       <div className="flex gap-2">
                         {isAdmin && (
                           <>
-                            <Button variant="ghost" size="icon" onClick={() => setEditingEvent(event)} className="h-9 w-9 text-accent hover:bg-accent/10">
+                            <Button variant="ghost" size="icon" onClick={() => { setEditingEvent(event); setFormData({...event}) }} className="h-9 w-9 text-accent hover:bg-accent/10">
                               <Edit className="w-4 h-4" />
                             </Button>
                             <AlertDialog>
@@ -350,20 +354,20 @@ export default function EventsPage() {
           <DialogContent className="bg-card border-border text-foreground">
             <DialogHeader>
               <DialogTitle className="font-headline text-2xl">Condividi una Foto</DialogTitle>
-              <DialogDescription>Incolla l'URL di una foto scattata durante l'uscita.</DialogDescription>
+              <DialogDescription>Seleziona un'immagine JPG o PNG da caricare.</DialogDescription>
             </DialogHeader>
             <div className="py-4">
-              <Label>Link Immagine</Label>
+              <Label htmlFor="file-input" className="block mb-2">Seleziona File</Label>
               <Input 
-                value={newPhotoUrl} 
-                onChange={e => setNewPhotoUrl(e.target.value)} 
-                placeholder="https://..." 
-                className="bg-background"
+                id="file-input"
+                type="file" 
+                accept="image/*"
+                onChange={handleFileChange} 
+                className="bg-background cursor-pointer"
               />
             </div>
             <DialogFooter>
               <Button variant="ghost" onClick={() => setIsAddingPhoto(null)}>Annulla</Button>
-              <Button onClick={handleAddPhoto} className="bg-primary text-white font-bold">CARICA</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -399,7 +403,7 @@ export default function EventsPage() {
                   <Input value={formData.weatherLocation} onChange={e => setFormData({...formData, weatherLocation: e.target.value})} className="bg-background" />
                 </div>
                 <div className="grid gap-2">
-                  <Label>Link Percorso Maps</Label>
+                  <Label>URL Percorso Google Maps</Label>
                   <Input value={formData.mapUrl} onChange={e => setFormData({...formData, mapUrl: e.target.value})} className="bg-background" />
                 </div>
                 <div className="grid gap-2">

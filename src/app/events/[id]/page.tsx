@@ -1,59 +1,67 @@
 
+"use client"
+
+import { useEffect, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
+import { useParams } from "next/navigation"
 import { Navbar } from "@/components/Navbar"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { MapPin, Clock, Calendar, ShieldCheck, Thermometer, Wind, CloudRain, AlertTriangle, CheckCircle2, Camera } from "lucide-react"
-import { PlaceHolderImages } from "@/lib/placeholder-images"
 import { aiRideConditionAdvisory } from "@/ai/flows/ai-ride-condition-advisory"
 import { cn } from "@/lib/utils"
 
-export default async function EventDetailPage({ params }: { params: { id: string } }) {
-  const eventId = (await params).id
+export default function EventDetailPage() {
+  const params = useParams()
+  const eventId = params.id as string
   
-  // In un'app reale caricheremmo da Firestore
-  // Qui simuliamo i dati dell'evento
-  const event = {
-    title: "Mountain Pass Adventure",
-    date: "2026-05-20",
-    time: "08:30 AM",
-    location: "Alps - Milan Base",
-    weatherLocation: "Stelvio",
-    description: "A breathtaking journey through the Stelvio Pass. We'll start from our Milan base early in the morning and navigate the serpentines of the Alps.",
-    route: "Milan -> Lecco -> Bormio -> Stelvio Pass -> Bolzano",
-    distance: "280km",
-    duration: "6 hours",
-    photos: [
-      "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?q=80&w=1000",
-      "https://images.unsplash.com/photo-1444491741275-3747c53c99b4?q=80&w=1000"
-    ],
-    map: PlaceHolderImages.find(img => img.id === "map-placeholder")?.imageUrl
+  const [event, setEvent] = useState<any>(null)
+  const [advisory, setAdvisory] = useState<any>(null)
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    const storedEvents = localStorage.getItem("vvf_all_events")
+    const allEvents = storedEvents ? JSON.parse(storedEvents) : []
+    const foundEvent = allEvents.find((e: any) => e.id.toString() === eventId)
+    
+    if (foundEvent) {
+      setEvent(foundEvent)
+      
+      // Simulate weather analysis
+      const mockWeatherData = JSON.stringify({
+        temperature: { min: 12, max: 22, unit: "C" },
+        precipitation_chance: 5,
+        wind_speed: 15,
+        visibility: "Ottima"
+      })
+
+      aiRideConditionAdvisory({
+        locationDescription: `${foundEvent.location} il ${foundEvent.date}`,
+        weatherData: mockWeatherData
+      }).then(res => {
+        setAdvisory(res)
+        setIsLoading(false)
+      })
+    }
+  }, [eventId])
+
+  if (!event || isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background text-foreground">
+        <p className="font-headline animate-pulse">Caricamento dettagli uscita...</p>
+      </div>
+    )
   }
-
-  // Simulated weather data for AI input
-  const mockWeatherData = JSON.stringify({
-    temperature: { min: 8, max: 18, unit: "C" },
-    precipitation_chance: 15,
-    wind_speed: 25,
-    visibility: "Excellent",
-    forecast: "Cloudy with sunny intervals."
-  })
-
-  // Call GenAI Flow
-  const advisory = await aiRideConditionAdvisory({
-    locationDescription: `${event.location} on ${event.date}`,
-    weatherData: mockWeatherData
-  })
 
   const coverImage = event.photos?.length > 0 ? event.photos[event.photos.length - 1] : "/cascovigili.jpg"
 
   return (
-    <div className="min-h-screen pb-20 md:pb-0 md:pt-16">
+    <div className="min-h-screen pb-20 md:pb-0 md:pt-16 bg-background">
       <Navbar />
       
-      <main className="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <main className="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-3 gap-8 text-foreground">
         
         {/* Left: Main Content */}
         <div className="lg:col-span-2 space-y-8">
@@ -69,7 +77,7 @@ export default async function EventDetailPage({ params }: { params: { id: string
                 <Calendar className="w-4 h-4 text-primary" /> {new Date(event.date).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}
               </span>
               <span className="flex items-center gap-1 bg-secondary px-3 py-1 rounded-full">
-                <Clock className="w-4 h-4 text-primary" /> {event.time}
+                <Clock className="w-4 h-4 text-primary" /> {event.time || "Orario N/D"}
               </span>
               <span className="flex items-center gap-1 bg-secondary px-3 py-1 rounded-full">
                 <MapPin className="w-4 h-4 text-primary" /> {event.location}
@@ -77,39 +85,29 @@ export default async function EventDetailPage({ params }: { params: { id: string
             </div>
           </header>
 
-          <div className="relative h-80 rounded-2xl overflow-hidden">
+          <div className="relative h-80 rounded-2xl overflow-hidden border border-border shadow-xl">
             <Image 
               src={coverImage} 
               alt={event.title} 
               fill 
               className="object-cover"
-              unoptimized={coverImage.startsWith('http')}
+              unoptimized={coverImage.startsWith('data:') || coverImage.startsWith('http')}
             />
           </div>
 
           <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle>Informazioni sull'Uscita</CardTitle>
+              <CardTitle className="text-xl">Informazioni sull'Uscita</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <p className="text-muted-foreground leading-relaxed">{event.description}</p>
+              <p className="text-muted-foreground leading-relaxed">{event.description || "Nessuna descrizione disponibile."}</p>
               
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 rounded-xl bg-secondary/50 border border-border">
-                  <p className="text-xs text-muted-foreground uppercase font-bold mb-1">Distanza Totale</p>
-                  <p className="text-lg font-headline font-bold">{event.distance}</p>
-                </div>
-                <div className="p-4 rounded-xl bg-secondary/50 border border-border">
-                  <p className="text-xs text-muted-foreground uppercase font-bold mb-1">Tempo Stimato</p>
-                  <p className="text-lg font-headline font-bold">{event.duration}</p>
-                </div>
-              </div>
-
               <div>
-                <h4 className="font-headline font-bold mb-2">Percorso Pianificato</h4>
-                <p className="text-sm bg-background p-4 rounded-lg border border-border font-mono">
-                  {event.route}
-                </p>
+                <h4 className="font-headline font-bold mb-2">Punto di Ritrovo</h4>
+                <div className="p-4 rounded-xl bg-secondary/50 border border-border flex items-center gap-3">
+                   <MapPin className="w-5 h-5 text-primary" />
+                   <p className="text-sm font-medium">{event.location}</p>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -120,14 +118,20 @@ export default async function EventDetailPage({ params }: { params: { id: string
               <Camera className="w-6 h-6 text-accent" /> Gallery Evento
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {event.photos.map((photo, i) => (
-                <div key={i} className="relative aspect-square rounded-xl overflow-hidden border border-border group">
-                  <Image src={photo} alt={`Foto ${i}`} fill className="object-cover transition-transform group-hover:scale-110" unoptimized />
+              {event.photos && event.photos.map((photo: string, i: number) => (
+                <div key={i} className="relative aspect-square rounded-xl overflow-hidden border border-border group shadow-sm">
+                  <Image 
+                    src={photo} 
+                    alt={`Foto ${i}`} 
+                    fill 
+                    className="object-cover transition-transform group-hover:scale-110" 
+                    unoptimized 
+                  />
                 </div>
               ))}
-              {event.photos.length === 0 && (
+              {(!event.photos || event.photos.length === 0) && (
                 <div className="col-span-full py-12 text-center text-muted-foreground italic border-2 border-dashed border-border rounded-xl">
-                  Nessuna foto caricata per questo evento.
+                  Nessuna foto caricata dai soci per questa uscita.
                 </div>
               )}
             </div>
@@ -135,13 +139,18 @@ export default async function EventDetailPage({ params }: { params: { id: string
 
           <Card className="bg-card border-border overflow-hidden">
              <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Mappa del Percorso</CardTitle>
-              <Button size="sm" variant="outline" className="border-primary text-primary">Apri Mappe</Button>
+              <CardTitle>Percorso Pianificato</CardTitle>
+              {event.mapUrl && (
+                <Button size="sm" variant="outline" className="border-primary text-primary" asChild>
+                  <Link href={event.mapUrl} target="_blank">Apri in Maps</Link>
+                </Button>
+              )}
             </CardHeader>
-            <div className="relative h-64 w-full">
-              {event.map && <Image src={event.map} alt="Map" fill className="object-cover" />}
-              <div className="absolute inset-0 bg-primary/10 pointer-events-none"></div>
-            </div>
+            <CardContent>
+              <p className="text-sm text-muted-foreground bg-background p-4 rounded-lg border border-border italic">
+                {event.mapUrl ? "Mappa interattiva disponibile tramite il pulsante in alto." : "Nessun URL percorso inserito per questa uscita."}
+              </p>
+            </CardContent>
           </Card>
         </div>
 
@@ -153,70 +162,72 @@ export default async function EventDetailPage({ params }: { params: { id: string
                 <ShieldCheck className="w-5 h-5" />
                 <span className="text-xs font-bold uppercase tracking-widest">AI Ride Advisor</span>
               </div>
-              <CardTitle className="text-2xl">Consigli di Sicurezza</CardTitle>
-              <CardDescription>Generato per il {new Date(event.date).toLocaleDateString('it-IT', { day: 'numeric', month: 'long' })}</CardDescription>
+              <CardTitle className="text-2xl">Sicurezza</CardTitle>
+              <CardDescription>Consulenza basata sul meteo locale</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className={cn(
-                "p-4 rounded-xl flex items-start gap-3",
-                advisory.isSafeToRide ? "bg-green-500/10 border border-green-500/20" : "bg-red-500/10 border border-red-500/20"
-              )}>
-                {advisory.isSafeToRide ? <CheckCircle2 className="w-6 h-6 text-green-500" /> : <AlertTriangle className="w-6 h-6 text-red-500" />}
-                <div>
-                  <p className="font-bold text-sm">{advisory.isSafeToRide ? "Pronti a Partire" : "Attenzione Consigliata"}</p>
-                  <p className="text-xs text-muted-foreground">{advisory.overallAdvisory}</p>
-                </div>
-              </div>
+              {advisory ? (
+                <>
+                  <div className={cn(
+                    "p-4 rounded-xl flex items-start gap-3",
+                    advisory.isSafeToRide ? "bg-green-500/10 border border-green-500/20" : "bg-red-500/10 border border-red-500/20"
+                  )}>
+                    {advisory.isSafeToRide ? <CheckCircle2 className="w-6 h-6 text-green-500" /> : <AlertTriangle className="w-6 h-6 text-red-500" />}
+                    <div>
+                      <p className="font-bold text-sm">{advisory.isSafeToRide ? "Pronti a Partire" : "Attenzione"}</p>
+                      <p className="text-xs text-muted-foreground">{advisory.overallAdvisory}</p>
+                    </div>
+                  </div>
 
-              <div className="space-y-3">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="flex items-center gap-2 text-muted-foreground"><Thermometer className="w-4 h-4" /> Temperatura</span>
-                  <span className="font-medium">{advisory.temperatureRange}</span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="flex items-center gap-2 text-muted-foreground"><CloudRain className="w-4 h-4" /> Rischio Pioggia</span>
-                  <span className="font-medium">{advisory.precipitationRisk}</span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="flex items-center gap-2 text-muted-foreground"><Wind className="w-4 h-4" /> Vento</span>
-                  <span className="font-medium">{advisory.windConditions}</span>
-                </div>
-              </div>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="flex items-center gap-2 text-muted-foreground"><Thermometer className="w-4 h-4" /> Temp. Prevista</span>
+                      <span className="font-medium">{advisory.temperatureRange}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="flex items-center gap-2 text-muted-foreground"><CloudRain className="w-4 h-4" /> Rischio Pioggia</span>
+                      <span className="font-medium">{advisory.precipitationRisk}</span>
+                    </div>
+                  </div>
 
-              <div className="pt-4 border-t border-border">
-                <h4 className="text-sm font-bold mb-3 flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4 text-accent" /> Raccomandazioni degli Esperti
-                </h4>
-                <ul className="text-xs space-y-2 text-muted-foreground">
-                  {advisory.recommendations.map((rec, i) => (
-                    <li key={i} className="flex items-start gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-accent mt-1 shrink-0" />
-                      {rec}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+                  <div className="pt-4 border-t border-border">
+                    <h4 className="text-sm font-bold mb-3 flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4 text-accent" /> Raccomandazioni
+                    </h4>
+                    <ul className="text-xs space-y-2 text-muted-foreground">
+                      {advisory.recommendations.map((rec: string, i: number) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-accent mt-1 shrink-0" />
+                          {rec}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </>
+              ) : (
+                <p className="text-xs italic text-muted-foreground">Analisi in corso...</p>
+              )}
             </CardContent>
           </Card>
 
           <Card className="bg-primary text-primary-foreground border-none">
             <CardHeader>
-              <CardTitle>Presenze</CardTitle>
-              <CardDescription className="text-primary-foreground/70">Assicurati un posto per questa uscita</CardDescription>
+              <CardTitle>Stato Iscrizioni</CardTitle>
+              <CardDescription className="text-primary-foreground/70">Posti disponibili per i soci</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex justify-between items-end">
                 <div>
-                  <p className="text-3xl font-headline font-bold">14</p>
-                  <p className="text-xs opacity-70">Partecipanti</p>
+                  <p className="text-3xl font-headline font-bold">12</p>
+                  <p className="text-xs opacity-70">Presenti</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-lg font-bold">6</p>
-                  <p className="text-xs opacity-70">Posti rimasti</p>
+                  <p className="text-lg font-bold">8</p>
+                  <p className="text-xs opacity-70">Liberi</p>
                 </div>
               </div>
               <div className="h-2 w-full bg-white/20 rounded-full overflow-hidden">
-                <div className="h-full bg-white w-[70%]" />
+                <div className="h-full bg-white w-[60%]" />
               </div>
               <Button className="w-full bg-white text-primary hover:bg-white/90 font-bold py-6 rounded-xl">
                 Parteciperò

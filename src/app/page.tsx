@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
-import { Calendar, ArrowRight, MapPin, Sun, Cloud, CloudRain, Clock, CheckCircle, Edit, Trash2, Camera, Plus } from "lucide-react"
+import { Calendar, ArrowRight, MapPin, Sun, Cloud, CloudRain, Clock, CheckCircle, Edit, Trash2, Camera, Plus, Map as MapIcon } from "lucide-react"
 import { PlaceHolderImages } from "@/lib/placeholder-images"
 import { cn } from "@/lib/utils"
 
@@ -63,7 +63,6 @@ export default function Home() {
   const [user, setUser] = useState<any>(null)
   const [editingEvent, setEditingEvent] = useState<any>(null)
   const [isAddingPhoto, setIsAddingPhoto] = useState<number | null>(null)
-  const [newPhotoUrl, setNewPhotoUrl] = useState("")
   const [formData, setFormData] = useState<any>({
     title: "",
     date: "",
@@ -79,19 +78,13 @@ export default function Home() {
     const storedUser = localStorage.getItem("vvf_user")
     if (storedUser) setUser(JSON.parse(storedUser))
 
-    const storedEvents = localStorage.getItem("vvf_home_events")
+    const storedEvents = localStorage.getItem("vvf_all_events")
     if (storedEvents) {
-      setEvents(JSON.parse(storedEvents))
+      setEvents(JSON.parse(storedEvents).slice(0, 3))
     } else {
       setEvents(initialUpcomingEvents)
     }
   }, [])
-
-  useEffect(() => {
-    if (events.length > 0) {
-      localStorage.setItem("vvf_home_events", JSON.stringify(events))
-    }
-  }, [events])
 
   const isAdmin = user?.status === "admin"
 
@@ -114,8 +107,11 @@ export default function Home() {
   }
 
   const handleDelete = (id: number) => {
-    setEvents(events.filter(e => e.id !== id))
-    toast({ title: "Uscita rimossa", description: "L'uscita è stata eliminata dalla Home." })
+    const allEvents = JSON.parse(localStorage.getItem("vvf_all_events") || "[]")
+    const updatedAll = allEvents.filter((e: any) => e.id !== id)
+    localStorage.setItem("vvf_all_events", JSON.stringify(updatedAll))
+    setEvents(updatedAll.slice(0, 3))
+    toast({ title: "Uscita rimossa", description: "L'uscita è stata eliminata correttamente." })
   }
 
   const openEdit = (event: any) => {
@@ -128,29 +124,40 @@ export default function Home() {
       toast({ variant: "destructive", title: "Errore", description: "Titolo e Data sono obbligatori." })
       return
     }
-    setEvents(events.map(e => e.id === editingEvent.id ? { ...formData } : e))
+    const allEvents = JSON.parse(localStorage.getItem("vvf_all_events") || "[]")
+    const updatedAll = allEvents.map((e: any) => e.id === editingEvent.id ? { ...formData } : e)
+    localStorage.setItem("vvf_all_events", JSON.stringify(updatedAll))
+    setEvents(updatedAll.slice(0, 3))
     setEditingEvent(null)
     toast({ title: "Uscita aggiornata", description: "Le modifiche sono state salvate correttamente." })
   }
 
-  const handleAddPhoto = () => {
-    if (!newPhotoUrl) return
-    const updated = events.map(e => {
-      if (e.id === isAddingPhoto) {
-        return { ...e, photos: [...(e.photos || []), newPhotoUrl] }
-      }
-      return e
-    })
-    setEvents(updated)
-    setNewPhotoUrl("")
-    setIsAddingPhoto(null)
-    toast({ title: "Foto aggiunta", description: "La foto è stata salvata nell'archivio dell'uscita." })
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      const base64String = reader.result as string
+      const allEvents = JSON.parse(localStorage.getItem("vvf_all_events") || "[]")
+      const updatedAll = allEvents.map((event: any) => {
+        if (event.id === isAddingPhoto) {
+          return { ...event, photos: [...(event.photos || []), base64String] }
+        }
+        return event
+      })
+      localStorage.setItem("vvf_all_events", JSON.stringify(updatedAll))
+      setEvents(updatedAll.slice(0, 3))
+      setIsAddingPhoto(null)
+      toast({ title: "Foto aggiunta", description: "La foto è stata salvata nella gallery dell'uscita." })
+    }
+    reader.readAsDataURL(file)
   }
 
   const heroImage = PlaceHolderImages.find(img => img.id === "hero-ride")
 
   return (
-    <div className="min-h-screen pb-20 md:pb-0 md:pt-16">
+    <div className="min-h-screen pb-20 md:pb-0 md:pt-16 bg-background">
       <Navbar />
       
       <section className="relative h-[60vh] w-full flex items-center justify-center overflow-hidden px-6 pt-16 md:pt-0">
@@ -203,7 +210,7 @@ export default function Home() {
                       fill 
                       className="object-cover transition-transform group-hover:scale-105" 
                       priority
-                      unoptimized={imageUrl.startsWith('http')}
+                      unoptimized={imageUrl.startsWith('data:') || imageUrl.startsWith('http')}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
                     <Badge className="absolute top-4 left-4 bg-primary text-white border-none font-bold uppercase py-1 text-[10px]">
@@ -259,7 +266,7 @@ export default function Home() {
                                 <AlertDialogContent className="bg-card border-border text-foreground">
                                   <AlertDialogHeader>
                                     <AlertDialogTitle className="text-xl font-headline">Rimuovi Uscita</AlertDialogTitle>
-                                    <AlertDialogDescription className="text-muted-foreground">Vuoi davvero togliere questa uscita dalla vetrina Home?</AlertDialogDescription>
+                                    <AlertDialogDescription className="text-muted-foreground">Vuoi davvero eliminare questa uscita?</AlertDialogDescription>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>
                                     <AlertDialogCancel className="bg-background border-border">No</AlertDialogCancel>
@@ -288,20 +295,20 @@ export default function Home() {
         <DialogContent className="bg-card border-border text-foreground">
           <DialogHeader>
             <DialogTitle className="font-headline text-2xl">Condividi una Foto</DialogTitle>
-            <DialogDescription>Incolla l'URL di una foto scattata durante l'uscita. Diventerà l'anteprima principale.</DialogDescription>
+            <DialogDescription>Seleziona una foto scattata durante l'uscita per aggiungerla alla gallery.</DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            <Label>Link Immagine</Label>
+            <Label htmlFor="photo-file" className="block mb-2">Seleziona File (JPG/PNG)</Label>
             <Input 
-              value={newPhotoUrl} 
-              onChange={e => setNewPhotoUrl(e.target.value)} 
-              placeholder="https://images.unsplash.com/..." 
-              className="bg-background"
+              id="photo-file"
+              type="file" 
+              accept="image/*"
+              onChange={handleFileChange} 
+              className="bg-background cursor-pointer"
             />
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setIsAddingPhoto(null)}>Annulla</Button>
-            <Button onClick={handleAddPhoto} className="bg-primary text-white font-bold">CARICA</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -337,7 +344,7 @@ export default function Home() {
                 <Input value={formData.weatherLocation} onChange={e => setFormData({...formData, weatherLocation: e.target.value})} className="bg-background" />
               </div>
               <div className="grid gap-2">
-                <Label>Link Percorso Maps</Label>
+                <Label>URL Percorso Google Maps</Label>
                 <Input value={formData.mapUrl} onChange={e => setFormData({...formData, mapUrl: e.target.value})} className="bg-background" />
               </div>
               <div className="grid gap-2">
