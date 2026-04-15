@@ -25,8 +25,8 @@ const initialEvents = [
     time: "08:30",
     location: "Caserma VVF Roma",
     weatherLocation: "Roma",
-    mapUrl: "https://www.google.com/maps/search/?api=1&query=Caserma+VVF+Roma",
-    image: "/cascovigili.jpg",
+    mapUrl: "",
+    image: "",
     description: "Partenza dalla Caserma per un'uscita istituzionale tra i monumenti della Capitale.",
     type: "Touring"
   },
@@ -37,8 +37,8 @@ const initialEvents = [
     time: "09:00",
     location: "Comando VVF via Genova",
     weatherLocation: "Terminillo",
-    mapUrl: "https://www.google.com/maps/dir/Roma/Monte+Terminillo",
-    image: "/cascovigili.jpg",
+    mapUrl: "",
+    image: "",
     description: "La classica scalata alla 'Montagna di Roma'. Curve mozzafiato e aria fresca.",
     type: "Touring"
   },
@@ -49,8 +49,8 @@ const initialEvents = [
     time: "09:00",
     location: "Piazza del Popolo, Roma",
     weatherLocation: "Roma",
-    mapUrl: "https://www.google.com/maps/search/?api=1&query=Piazza+del+Popolo+Roma",
-    image: "/cascovigili.jpg",
+    mapUrl: "",
+    image: "",
     description: "Il grande raduno biennale di tutti i motoclub dei Vigili del Fuoco d'Italia.",
     type: "Raduno"
   }
@@ -186,7 +186,7 @@ export default function EventsPage() {
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="weatherLocation">Località Meteo</Label>
-                  <Input id="weatherLocation" value={formData.weatherLocation} onChange={e => setFormData({...formData, weatherLocation: e.target.value})} className="bg-background" />
+                  <Input id="weatherLocation" value={formData.weatherLocation} onChange={e => setFormData({...formData, weatherLocation: e.target.value})} className="bg-background" placeholder="es: Terminillo" />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="image">Link Foto Manuale (opzionale)</Label>
@@ -216,9 +216,8 @@ export default function EventsPage() {
             const WeatherIcon = weather.icon
             const weatherKey = event.weatherLocation || "Roma"
             
-            // Gerarchia Immagine: 1. Manuale, 2. Unsplash Locale, 3. Casco VVF
-            const unsplashUrl = `https://source.unsplash.com/featured/1600x900/?motorcycle,landscape,${encodeURIComponent(weatherKey)}`
-            const imageUrl = event.image || unsplashUrl || "/cascovigili.jpg"
+            const unsplashUrl = `https://source.unsplash.com/featured/1600x900/?motorcycle,${encodeURIComponent(weatherKey)}`
+            const imageUrl = event.image || unsplashUrl
 
             return (
               <Card key={event.id} className={cn(
@@ -231,7 +230,7 @@ export default function EventsPage() {
                     alt={event.title} 
                     fill 
                     className="object-cover transition-transform group-hover:scale-105 duration-500"
-                    onError={(e: any) => { e.target.src = "/cascovigili.jpg" }}
+                    onError={(e: any) => { e.currentTarget.src = "/cascovigili.jpg" }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
                   <Badge className={cn("absolute top-4 left-4 border-none font-bold", isPast ? "bg-muted text-muted-foreground" : "bg-primary text-white")}>
@@ -239,7 +238,7 @@ export default function EventsPage() {
                   </Badge>
 
                   <a 
-                    href={`https://www.ilmeteo.it/meteo/${encodeURIComponent(weatherKey)}`}
+                    href={`https://www.meteoam.it/it/meteo-citta/${encodeURIComponent(weatherKey)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="absolute bottom-4 right-4 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-2 hover:bg-black/80 hover:scale-110 transition-all cursor-pointer z-10"

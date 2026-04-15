@@ -26,8 +26,8 @@ const initialUpcomingEvents = [
     time: "08:30",
     location: "Caserma VVF Roma",
     weatherLocation: "Roma",
-    mapUrl: "https://www.google.com/maps/search/?api=1&query=Caserma+VVF+Roma",
-    image: "/cascovigili.jpg",
+    mapUrl: "",
+    image: "",
     description: "Partenza dalla Caserma per un'uscita istituzionale tra i monumenti della Capitale.",
     type: "Touring"
   },
@@ -38,8 +38,8 @@ const initialUpcomingEvents = [
     time: "09:00",
     location: "Comando VVF via Genova",
     weatherLocation: "Terminillo",
-    mapUrl: "https://www.google.com/maps/dir/Roma/Monte+Terminillo",
-    image: "/cascovigili.jpg",
+    mapUrl: "",
+    image: "",
     description: "La classica scalata alla 'Montagna di Roma'. Curve mozzafiato e aria fresca.",
     type: "Touring"
   },
@@ -50,8 +50,8 @@ const initialUpcomingEvents = [
     time: "09:00",
     location: "Piazza del Popolo, Roma",
     weatherLocation: "Roma",
-    mapUrl: "https://www.google.com/maps/search/?api=1&query=Piazza+del+Popolo+Roma",
-    image: "/cascovigili.jpg",
+    mapUrl: "",
+    image: "",
     description: "Il grande raduno biennale di tutti i motoclub dei Vigili del Fuoco d'Italia.",
     type: "Raduno"
   }
@@ -155,11 +155,10 @@ export default function Home() {
               const weather = getMockWeather(event.date)
               const WeatherIcon = weather.icon
               const weatherKey = event.weatherLocation || "Roma"
-              const mapUrl = event.mapUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(weatherKey)}`
+              const mapUrl = event.mapUrl || `https://www.meteoam.it/it/meteo-citta/${encodeURIComponent(weatherKey)}`
               
-              // Gerarchia Immagine: 1. Manuale, 2. Unsplash Locale, 3. Casco VVF
-              const unsplashUrl = `https://source.unsplash.com/featured/1600x900/?motorcycle,landscape,${encodeURIComponent(weatherKey)}`
-              const imageUrl = event.image || unsplashUrl || "/cascovigili.jpg"
+              const unsplashUrl = `https://source.unsplash.com/featured/1600x900/?motorcycle,${encodeURIComponent(weatherKey)}`
+              const imageUrl = event.image || unsplashUrl
               
               return (
                 <Card key={event.id} className="overflow-hidden border-border bg-card hover:border-primary/50 transition-all group flex flex-col">
@@ -169,7 +168,7 @@ export default function Home() {
                       alt={event.title} 
                       fill 
                       className="object-cover transition-transform group-hover:scale-105" 
-                      onError={(e: any) => { e.target.src = "/cascovigili.jpg" }}
+                      onError={(e: any) => { e.currentTarget.src = "/cascovigili.jpg" }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
                     <Badge className="absolute top-4 left-4 bg-primary text-white border-none font-bold uppercase py-1 text-[10px]">
@@ -177,7 +176,7 @@ export default function Home() {
                     </Badge>
 
                     <a 
-                      href={`https://www.ilmeteo.it/meteo/${encodeURIComponent(weatherKey)}`}
+                      href={`https://www.meteoam.it/it/meteo-citta/${encodeURIComponent(weatherKey)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="absolute bottom-4 right-4 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-2 hover:bg-black/80 hover:scale-110 transition-all z-10"
