@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
-import { Calendar, MapPin, Users, Filter, ArrowRight, Plus, Edit, Trash2, Clock, Info, CheckCircle, Sun, Cloud, CloudRain, MapPinned, ImageIcon } from "lucide-react"
+import { Calendar, MapPin, ArrowRight, Plus, Edit, Trash2, Clock, CheckCircle, Sun, Cloud, CloudRain } from "lucide-react"
 import { PlaceHolderImages } from "@/lib/placeholder-images"
 import { cn } from "@/lib/utils"
 
@@ -29,7 +29,6 @@ const initialEvents = [
     mapUrl: "https://www.google.com/maps/search/?api=1&query=Caserma+VVF+Roma",
     description: "Partenza dalla Caserma per un'uscita istituzionale tra i monumenti della Capitale.",
     type: "Touring",
-    difficulty: "Easy",
     image: PlaceHolderImages.find(img => img.id === "event-1")?.imageUrl
   },
   {
@@ -42,7 +41,6 @@ const initialEvents = [
     mapUrl: "https://www.google.com/maps/dir/Roma/Monte+Terminillo",
     description: "La classica scalata alla 'Montagna di Roma'. Curve mozzafiato e aria fresca.",
     type: "Touring",
-    difficulty: "Medium",
     image: PlaceHolderImages.find(img => img.id === "gallery-3")?.imageUrl
   },
   {
@@ -55,7 +53,6 @@ const initialEvents = [
     mapUrl: "https://www.google.com/maps/search/?api=1&query=Piazza+del+Popolo+Roma",
     description: "Il grande raduno biennale di tutti i motoclub dei Vigili del Fuoco d'Italia.",
     type: "Raduno",
-    difficulty: "Medium",
     image: PlaceHolderImages.find(img => img.id === "hero-ride")?.imageUrl
   }
 ]
@@ -74,12 +71,8 @@ export default function EventsPage() {
     mapUrl: "",
     description: "",
     image: "",
-    type: "Touring",
-    difficulty: "Medium"
+    type: "Touring"
   })
-
-  // Per lo sviluppo i tasti sono sempre attivi
-  const isAdmin = true 
 
   const sortedEvents = useMemo(() => {
     const today = new Date()
@@ -88,13 +81,10 @@ export default function EventsPage() {
     return [...events].sort((a, b) => {
       const dateA = new Date(a.date).getTime()
       const dateB = new Date(b.date).getTime()
-      
       const isPastA = dateA < today.getTime()
       const isPastB = dateB < today.getTime()
-
       if (!isPastA && isPastB) return -1
       if (isPastA && !isPastB) return 1
-
       return dateA - dateB
     })
   }, [events])
@@ -111,16 +101,16 @@ export default function EventsPage() {
     const diffTime = eventDate.getTime() - today.getTime()
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
 
-    if (diffDays < 0) return { status: 'concluso', icon: CheckCircle, text: 'Evento concluso', temp: '' }
-    if (diffDays > 10) return { status: 'n/d', icon: Clock, text: 'Meteo', temp: '' }
+    if (diffDays < 0) return { icon: CheckCircle, text: 'concluso', temp: '', color: 'text-muted-foreground' }
+    if (diffDays > 10) return { icon: Clock, text: 'Meteo', temp: '', color: 'text-white/70' }
 
     const weathers = [
       { icon: Sun, temp: '24°', color: 'text-accent' },
-      { icon: Cloud, temp: '21°', color: 'text-muted-foreground' },
+      { icon: Cloud, temp: '21°', color: 'text-white' },
       { icon: CloudRain, temp: '18°', color: 'text-blue-400' }
     ]
     const seed = eventDate.getDate() % 3
-    return { status: 'ok', ...weathers[seed] }
+    return { ...weathers[seed] }
   }
 
   const handleSaveEvent = () => {
@@ -129,30 +119,26 @@ export default function EventsPage() {
       return
     }
 
-    // Immagine di fallback se non inserita manualmente
-    const finalImage = formData.image || `https://picsum.photos/seed/${formData.weatherLocation || formData.title}/600/400`
+    const seed = formData.weatherLocation || formData.title || "motorcycle"
+    const finalImage = formData.image || `https://picsum.photos/seed/${encodeURIComponent(seed)}/800/600`
 
     if (editingEvent) {
       setEvents(events.map(e => e.id === editingEvent.id ? { ...formData, id: e.id, image: finalImage } : e))
       toast({ title: "Uscita aggiornata", description: "Le modifiche sono state salvate correttamente." })
       setEditingEvent(null)
     } else {
-      const newEvent = {
-        ...formData,
-        id: Date.now(),
-        image: finalImage
-      }
+      const newEvent = { ...formData, id: Date.now(), image: finalImage }
       setEvents([newEvent, ...events])
       toast({ title: "Uscita creata", description: "La nuova uscita è stata aggiunta al calendario." })
       setIsAdding(false)
     }
     
-    setFormData({ title: "", date: "", time: "", location: "", weatherLocation: "", mapUrl: "", description: "", image: "", type: "Touring", difficulty: "Medium" })
+    setFormData({ title: "", date: "", time: "", location: "", weatherLocation: "", mapUrl: "", description: "", image: "", type: "Touring" })
   }
 
   const handleDeleteEvent = (id: number) => {
     setEvents(events.filter(e => e.id !== id))
-    toast({ title: "Uscita rimossa", description: "L'uscita è stata eliminata con successo." })
+    toast({ title: "Uscita rimossa", description: "L'uscita è stata eliminata." })
   }
 
   const openEditDialog = (event: any) => {
@@ -161,7 +147,7 @@ export default function EventsPage() {
   }
 
   return (
-    <div className="min-h-screen pb-20 md:pb-0 md:pt-16 bg-background text-foreground">
+    <div className="min-h-screen pb-20 md:pb-0 md:pt-16 bg-background">
       <Navbar />
       
       <main className="max-w-7xl mx-auto px-4 py-8">
@@ -169,7 +155,7 @@ export default function EventsPage() {
           <div>
             <Badge className="mb-4 bg-accent/10 text-accent border-none font-bold uppercase tracking-widest">Calendario Uscite</Badge>
             <h1 className="text-4xl font-headline font-bold mb-2 text-foreground uppercase tracking-tighter">Eventi & Uscite</h1>
-            <p className="text-muted-foreground max-w-2xl">Partecipa alle nostre uscite programmate e agli incontri sociali del club.</p>
+            <p className="text-muted-foreground max-w-2xl">Partecipa alle nostre uscite programmate del Motoclub VVF Roma.</p>
           </div>
           
           <Dialog open={isAdding} onOpenChange={setIsAdding}>
@@ -180,13 +166,13 @@ export default function EventsPage() {
             </DialogTrigger>
             <DialogContent className="bg-card border-border sm:max-w-[500px]">
               <DialogHeader>
-                <DialogTitle className="text-2xl font-headline">Nuova Uscita</DialogTitle>
-                <DialogDescription>Inserisci i dettagli della prossima uscita organizzata.</DialogDescription>
+                <DialogTitle className="text-2xl font-headline text-foreground">Nuova Uscita</DialogTitle>
+                <DialogDescription className="text-muted-foreground">Compila tutti i dettagli per pubblicare l'uscita.</DialogDescription>
               </DialogHeader>
-              <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-2">
+              <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-2 text-foreground">
                 <div className="grid gap-2">
                   <Label htmlFor="title">Titolo dell'Uscita</Label>
-                  <Input id="title" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="bg-background" placeholder="es: Passo del Terminillo" />
+                  <Input id="title" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="bg-background" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
@@ -194,35 +180,35 @@ export default function EventsPage() {
                     <Input id="date" type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="bg-background" />
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="time">Orario</Label>
+                    <Label htmlFor="time">Orario Ritrovo</Label>
                     <Input id="time" type="time" value={formData.time} onChange={e => setFormData({...formData, time: e.target.value})} className="bg-background" />
                   </div>
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="location">Luogo di Ritrovo</Label>
-                  <Input id="location" value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} className="bg-background" placeholder="es: Comando VVF via Genova" />
+                  <Label htmlFor="location">Luogo di Ritrovo (Indirizzo)</Label>
+                  <Input id="location" value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} className="bg-background" />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="weatherLocation">Località Meteo</Label>
+                  <Label htmlFor="weatherLocation">Località Meteo (Meta finale)</Label>
                   <Input id="weatherLocation" value={formData.weatherLocation} onChange={e => setFormData({...formData, weatherLocation: e.target.value})} className="bg-background" placeholder="es: Terminillo" />
-                  <p className="text-[10px] text-muted-foreground italic">Usato per previsioni e immagini automatiche.</p>
+                  <p className="text-[10px] text-muted-foreground italic">Inserisci solo il comune o la vetta per foto e meteo precisi.</p>
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="image">Link Immagine (opzionale)</Label>
-                  <Input id="image" value={formData.image} onChange={e => setFormData({...formData, image: e.target.value})} className="bg-background" placeholder="Incolla l'URL di una foto" />
+                  <Label htmlFor="image">Link Foto Manuale (opzionale)</Label>
+                  <Input id="image" value={formData.image} onChange={e => setFormData({...formData, image: e.target.value})} className="bg-background" />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="mapUrl">URL Google Maps (Percorso con tappe)</Label>
-                  <Input id="mapUrl" value={formData.mapUrl} onChange={e => setFormData({...formData, mapUrl: e.target.value})} className="bg-background" placeholder="Incolla l'URL del percorso con tappe" />
+                  <Label htmlFor="mapUrl">Link Google Maps (Percorso)</Label>
+                  <Input id="mapUrl" value={formData.mapUrl} onChange={e => setFormData({...formData, mapUrl: e.target.value})} className="bg-background" />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="description">Descrizione / Percorso</Label>
-                  <Textarea id="description" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="bg-background min-h-[100px]" placeholder="Dettagli sul percorso e tappe previste..." />
+                  <Label htmlFor="description">Descrizione / Tappe</Label>
+                  <Textarea id="description" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="bg-background min-h-[100px]" />
                 </div>
               </div>
               <DialogFooter>
                 <Button variant="ghost" onClick={() => setIsAdding(false)}>Annulla</Button>
-                <Button onClick={handleSaveEvent} className="bg-primary text-white font-bold">Crea Uscita</Button>
+                <Button onClick={handleSaveEvent} className="bg-primary text-white font-bold">Salva Uscita</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -238,35 +224,25 @@ export default function EventsPage() {
             return (
               <Card key={event.id} className={cn(
                 "bg-card border-border overflow-hidden transition-all group flex flex-col",
-                isPast ? "opacity-60 grayscale-[0.5] hover:opacity-100 hover:grayscale-0" : "hover:shadow-2xl hover:shadow-primary/5"
+                isPast ? "opacity-60 grayscale-[0.5]" : "hover:shadow-2xl hover:shadow-primary/5"
               )}>
                 <div className="relative h-48">
-                  {event.image && (
-                    <Image 
-                      src={event.image} 
-                      alt={event.title} 
-                      fill 
-                      className="object-cover transition-transform group-hover:scale-105 duration-500"
-                      data-ai-hint={event.weatherLocation || event.title}
-                    />
-                  )}
+                  <Image 
+                    src={event.image || `https://picsum.photos/seed/${encodeURIComponent(weatherKey)}/800/600`} 
+                    alt={event.title} 
+                    fill 
+                    className="object-cover transition-transform group-hover:scale-105 duration-500"
+                  />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-                  {isPast ? (
-                    <Badge className="absolute top-4 left-4 bg-muted/80 backdrop-blur-sm text-muted-foreground border-none font-bold">
-                      <CheckCircle className="w-3 h-3 mr-1" /> CONCLUSO
-                    </Badge>
-                  ) : (
-                    <Badge className="absolute top-4 left-4 bg-primary text-white border-none font-bold">
-                      PROSSIMA USCITA
-                    </Badge>
-                  )}
+                  <Badge className={cn("absolute top-4 left-4 border-none font-bold", isPast ? "bg-muted text-muted-foreground" : "bg-primary text-white")}>
+                    {isPast ? "CONCLUSO" : "PROSSIMA USCITA"}
+                  </Badge>
 
                   <a 
                     href={`https://www.ilmeteo.it/meteo/${encodeURIComponent(weatherKey)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="absolute bottom-4 right-4 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-2 hover:bg-black/80 hover:scale-110 transition-all cursor-pointer z-10"
-                    title={`Vedi meteo per ${weatherKey}`}
                     onClick={(e) => e.stopPropagation()}
                   >
                     <WeatherIcon className={cn("w-4 h-4", (weather as any).color || "text-accent")} />
@@ -280,60 +256,48 @@ export default function EventsPage() {
                     <Calendar className="w-4 h-4" />
                     {new Date(event.date).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })} {event.time && `• ${event.time}`}
                   </div>
-                  <CardTitle className="text-2xl mb-3 leading-tight font-headline group-hover:text-primary transition-colors">{event.title}</CardTitle>
-                  
-                  <div className="space-y-3 mb-6 flex-1">
-                    <div className="flex items-start text-sm text-muted-foreground">
-                      <MapPin className="w-4 h-4 mr-2 text-primary shrink-0 mt-0.5" />
-                      {event.location}
-                    </div>
-                    <p className="text-sm text-muted-foreground line-clamp-3 italic leading-relaxed">
-                      "{event.description}"
-                    </p>
+                  <CardTitle className="text-2xl mb-3 leading-tight font-headline text-foreground">{event.title}</CardTitle>
+                  <div className="flex items-center text-muted-foreground text-sm mb-4">
+                    <MapPin className="w-4 h-4 mr-2 text-primary shrink-0" />
+                    <span className="line-clamp-1">{event.location}</span>
                   </div>
+                  <p className="text-sm text-muted-foreground line-clamp-2 mb-6 italic">"{event.description}"</p>
 
                   <div className="flex items-center justify-between pt-5 border-t border-border mt-auto">
                     <div className="flex gap-2">
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={() => openEditDialog(event)}
-                        className="h-9 w-9 text-accent hover:bg-accent/10"
-                      >
+                      <Button variant="ghost" size="icon" onClick={() => openEditDialog(event)} className="h-9 w-9 text-accent hover:bg-accent/10">
                         <Edit className="w-4 h-4" />
                       </Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button 
-                            variant="ghost" 
-                            size="icon"
-                            className="h-9 w-9 text-destructive hover:bg-destructive/10"
-                          >
+                          <Button variant="ghost" size="icon" className="h-9 w-9 text-destructive hover:bg-destructive/10">
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent className="bg-card border-border text-foreground">
                           <AlertDialogHeader>
                             <AlertDialogTitle className="text-xl font-headline">Conferma Eliminazione</AlertDialogTitle>
-                            <AlertDialogDescription>
+                            <AlertDialogDescription className="text-muted-foreground">
                               Vuoi davvero eliminare l'uscita "{event.title}"? Tutti i dati andranno persi.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel className="bg-background border-border">Annulla</AlertDialogCancel>
-                            <AlertDialogAction 
-                              onClick={() => handleDeleteEvent(event.id)} 
-                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                            >
-                              Elimina
-                            </AlertDialogAction>
+                            <AlertDialogAction onClick={() => handleDeleteEvent(event.id)} className="bg-destructive text-white">Elimina</AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>
                     </div>
-                    <Button variant="link" asChild className="text-primary p-0 h-auto font-bold group-hover:translate-x-1 transition-transform">
-                      <Link href={`/events/${event.id}`}>Dettagli <ArrowRight className="ml-1 w-4 h-4" /></Link>
-                    </Button>
+                    <div className="flex gap-4">
+                      {event.mapUrl && (
+                        <Button variant="link" asChild className="text-accent p-0 h-auto font-bold text-xs uppercase tracking-tighter">
+                          <a href={event.mapUrl} target="_blank" rel="noopener noreferrer">Percorso</a>
+                        </Button>
+                      )}
+                      <Button variant="link" asChild className="text-primary p-0 h-auto font-bold text-xs uppercase tracking-tighter">
+                        <Link href={`/events/${event.id}`}>Dettagli <ArrowRight className="ml-1 w-3 h-3" /></Link>
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -341,54 +305,52 @@ export default function EventsPage() {
           })}
         </div>
 
-        {/* Edit Dialog */}
         {editingEvent && (
           <Dialog open={!!editingEvent} onOpenChange={(open) => !open && setEditingEvent(null)}>
             <DialogContent className="bg-card border-border sm:max-w-[500px] text-foreground">
               <DialogHeader>
                 <DialogTitle className="text-2xl font-headline">Modifica Uscita</DialogTitle>
-                <DialogDescription>Aggiorna le informazioni per "{editingEvent.title}".</DialogDescription>
+                <DialogDescription className="text-muted-foreground">Aggiorna le informazioni per "{editingEvent.title}".</DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-2">
                 <div className="grid gap-2">
-                  <Label htmlFor="edit-title">Titolo</Label>
-                  <Input id="edit-title" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="bg-background" />
+                  <Label>Titolo</Label>
+                  <Input value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="bg-background" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
-                    <Label htmlFor="edit-date">Data</Label>
-                    <Input id="edit-date" type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="bg-background" />
+                    <Label>Data</Label>
+                    <Input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="bg-background" />
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="edit-time">Orario</Label>
-                    <Input id="edit-time" type="time" value={formData.time} onChange={e => setFormData({...formData, time: e.target.value})} className="bg-background" />
+                    <Label>Orario</Label>
+                    <Input type="time" value={formData.time} onChange={e => setFormData({...formData, time: e.target.value})} className="bg-background" />
                   </div>
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="edit-location">Luogo di Ritrovo</Label>
-                  <Input id="edit-location" value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} className="bg-background" />
+                  <Label>Luogo Ritrovo</Label>
+                  <Input value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} className="bg-background" />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="edit-weatherLocation">Località Meteo</Label>
-                  <Input id="edit-weatherLocation" value={formData.weatherLocation} onChange={e => setFormData({...formData, weatherLocation: e.target.value})} className="bg-background" placeholder="es: Terminillo" />
-                  <p className="text-[10px] text-muted-foreground italic">Usato per previsioni e immagini automatiche.</p>
+                  <Label>Località Meteo</Label>
+                  <Input value={formData.weatherLocation} onChange={e => setFormData({...formData, weatherLocation: e.target.value})} className="bg-background" />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="edit-image">Link Immagine (opzionale)</Label>
-                  <Input id="edit-image" value={formData.image} onChange={e => setFormData({...formData, image: e.target.value})} className="bg-background" />
+                  <Label>Link Foto (opzionale)</Label>
+                  <Input value={formData.image} onChange={e => setFormData({...formData, image: e.target.value})} className="bg-background" />
                 </div>
                 <div className="grid gap-2">
-                    <Label htmlFor="edit-mapUrl">URL Google Maps (Percorso con tappe)</Label>
-                    <Input id="edit-mapUrl" value={formData.mapUrl} onChange={e => setFormData({...formData, mapUrl: e.target.value})} className="bg-background" placeholder="Incolla l'URL di Maps" />
+                  <Label>Link Percorso Maps</Label>
+                  <Input value={formData.mapUrl} onChange={e => setFormData({...formData, mapUrl: e.target.value})} className="bg-background" />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="edit-description">Descrizione / Percorso</Label>
-                  <Textarea id="edit-description" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="bg-background min-h-[100px]" />
+                  <Label>Descrizione</Label>
+                  <Textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="bg-background min-h-[100px]" />
                 </div>
               </div>
               <DialogFooter>
                 <Button variant="ghost" onClick={() => setEditingEvent(null)}>Annulla</Button>
-                <Button onClick={handleSaveEvent} className="bg-accent text-accent-foreground font-bold">Salva Modifiche</Button>
+                <Button onClick={handleSaveEvent} className="bg-accent text-accent-foreground font-bold">Salva</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
