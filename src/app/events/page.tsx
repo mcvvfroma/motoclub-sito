@@ -14,8 +14,89 @@ import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
-import { Calendar, MapPin, ArrowRight, Plus, Edit, Trash2, Clock, CheckCircle, Sun, Cloud, CloudRain, Camera, Map as MapIcon } from "lucide-react"
+import { Calendar, MapPin, ArrowRight, Plus, Edit, Trash2, Clock, CheckCircle, Sun, Cloud, CloudRain, Camera, Thermometer, AlertTriangle } from "lucide-react"
 import { cn } from "@/lib/utils"
+
+// Componente Badge Meteo Dinamico
+function DynamicWeatherBadge({ location, date }: { location: string; date: string }) {
+  const [weatherData, setWeatherData] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchWeather() {
+      if (!location || !date) return
+      
+      const eventDate = new Date(date)
+      const today = new Date()
+      const diffDays = Math.ceil((eventDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+
+      // Open-Meteo fornisce previsioni fino a 16 giorni
+      if (diffDays < 0 || diffDays > 14) {
+        setLoading(false)
+        return
+      }
+
+      try {
+        // 1. Geocoding per ottenere lat/lon
+        const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(location)}&count=1&language=it&format=json`)
+        const geoData = await geoRes.json()
+        
+        if (!geoData.results?.[0]) throw new Error("Città non trovata")
+        
+        const { latitude, longitude } = geoData.results[0]
+
+        // 2. Fetch Meteo
+        const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=weathercode,temperature_2m_max,precipitation_probability_max&timezone=auto`)
+        const weather = await weatherRes.json()
+
+        // Trova l'indice della data corretta
+        const dateStr = eventDate.toISOString().split('T')[0]
+        const dateIndex = weather.daily.time.indexOf(dateStr)
+
+        if (dateIndex !== -1) {
+          setWeatherData({
+            temp: Math.round(weather.daily.temperature_2m_max[dateIndex]),
+            prob: weather.daily.precipitation_probability_max[dateIndex],
+            code: weather.daily.weathercode[dateIndex]
+          })
+        }
+      } catch (e) {
+        console.error("Errore meteo:", e)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchWeather()
+  }, [location, date])
+
+  if (loading) return <Badge variant="outline" className="bg-black/40 text-[10px] animate-pulse">Analisi Meteo...</Badge>
+  
+  if (!weatherData) return (
+    <Badge variant="outline" className="bg-black/40 text-white/50 text-[10px] uppercase tracking-tighter">
+      Meteo non disponibile
+    </Badge>
+  )
+
+  const isRainy = weatherData.prob > 50
+  const Icon = weatherData.code <= 3 ? Sun : (weatherData.code <= 67 ? Cloud : CloudRain)
+
+  return (
+    <a 
+      href={`https://www.ilmeteo.it/meteo/${encodeURIComponent(location)}`}
+      target="_blank"
+      className={cn(
+        "flex items-center gap-1.5 px-3 py-1.5 rounded-full border backdrop-blur-md transition-all hover:scale-105",
+        isRainy ? "bg-red-600 border-red-400 text-white" : "bg-black/60 border-white/10 text-white"
+      )}
+    >
+      <Icon className={cn("w-3.5 h-3.5", !isRainy && "text-accent")} />
+      <span className="text-[10px] font-bold uppercase tracking-widest">
+        {isRainy ? "Rischio Pioggia" : `${weatherData.temp}°C`} | {location}
+      </span>
+    </a>
+  )
+}
 
 const initialEvents = [
   {
@@ -36,7 +117,7 @@ const initialEvents = [
     date: "2026-06-14",
     time: "09:00",
     location: "Comando VVF via Genova",
-    weatherLocation: "Terminillo",
+    weatherLocation: "Rieti",
     mapUrl: "",
     photos: [],
     description: "La classica scalata alla 'Montagna di Roma'. Curve mozzafiato e aria fresca.",
@@ -97,47 +178,12 @@ export default function EventsPage() {
   const isAdmin = user?.status === "admin"
 
   const sortedEvents = useMemo(() => {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-
-    return [...events].sort((a, b) => {
-      const dateA = new Date(a.date).getTime()
-      const dateB = new Date(b.date).getTime()
-      const isPastA = dateA < today.getTime()
-      const isPastB = dateB < today.getTime()
-      if (!isPastA && isPastB) return -1
-      if (isPastA && !isPastB) return 1
-      return dateA - dateB
-    })
+    return [...events].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
   }, [events])
 
-  const isEventPast = (dateStr: string) => {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    return new Date(dateStr).getTime() < today.getTime()
-  }
-
-  const getMockWeather = (dateStr: string) => {
-    const eventDate = new Date(dateStr)
-    const today = new Date()
-    const diffTime = eventDate.getTime() - today.getTime()
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-
-    if (diffDays < 0) return { icon: CheckCircle, text: 'concluso', temp: '', color: 'text-muted-foreground' }
-    if (diffDays > 10) return { icon: Clock, text: 'Meteo', temp: '', color: 'text-white/70' }
-
-    const weathers = [
-      { icon: Sun, temp: '24°', color: 'text-accent' },
-      { icon: Cloud, temp: '21°', color: 'text-white' },
-      { icon: CloudRain, temp: '18°', color: 'text-blue-400' }
-    ]
-    const seed = eventDate.getDate() % 3
-    return { ...weathers[seed] }
-  }
-
   const handleSaveEvent = () => {
-    if (!formData.title || !formData.date || !formData.location) {
-      toast({ variant: "destructive", title: "Errore", description: "Compila i campi obbligatori." })
+    if (!formData.title || !formData.date || !formData.location || !formData.weatherLocation) {
+      toast({ variant: "destructive", title: "Errore", description: "Compila tutti i campi, inclusa la Località Meteo." })
       return
     }
 
@@ -162,7 +208,6 @@ export default function EventsPage() {
 
   const handleAddPhotoSubmit = () => {
     if (!photoUrlInput) return
-
     setEvents(events.map(event => {
       if (event.id === isAddingPhoto) {
         return { ...event, photos: [...(event.photos || []), photoUrlInput] }
@@ -189,14 +234,13 @@ export default function EventsPage() {
           {isAdmin && (
             <Dialog open={isAdding} onOpenChange={setIsAdding}>
               <DialogTrigger asChild>
-                <Button className="bg-destructive hover:bg-destructive/90 gap-2 h-12 px-6 rounded-full shadow-lg shadow-destructive/20 font-bold uppercase tracking-tighter">
-                   <Plus className="w-5 h-5" /> + AGGIUNGI USCITA
+                <Button className="bg-primary hover:bg-primary/90 gap-2 h-12 px-6 rounded-full shadow-lg shadow-primary/20 font-bold">
+                   <Plus className="w-5 h-5" /> AGGIUNGI USCITA
                 </Button>
               </DialogTrigger>
               <DialogContent className="bg-card border-border sm:max-w-[500px]">
                 <DialogHeader>
                   <DialogTitle className="text-2xl font-headline text-foreground">Nuova Uscita</DialogTitle>
-                  <DialogDescription className="text-muted-foreground">Compila tutti i dettagli per pubblicare l'uscita.</DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-2 text-foreground">
                   <div className="grid gap-2">
@@ -218,15 +262,15 @@ export default function EventsPage() {
                     <Input value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} className="bg-background" />
                   </div>
                   <div className="grid gap-2">
-                    <Label>Località Meteo</Label>
-                    <Input value={formData.weatherLocation} onChange={e => setFormData({...formData, weatherLocation: e.target.value})} className="bg-background" />
+                    <Label>Località Meteo (Città per previsioni)</Label>
+                    <Input value={formData.weatherLocation} onChange={e => setFormData({...formData, weatherLocation: e.target.value})} className="bg-background" placeholder="es: Roma" />
                   </div>
                   <div className="grid gap-2">
                     <Label>URL Percorso Google Maps</Label>
                     <Input value={formData.mapUrl} onChange={e => setFormData({...formData, mapUrl: e.target.value})} className="bg-background" />
                   </div>
                   <div className="grid gap-2">
-                    <Label>Descrizione / Tappe</Label>
+                    <Label>Descrizione</Label>
                     <Textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="bg-background min-h-[100px]" />
                   </div>
                 </div>
@@ -241,11 +285,9 @@ export default function EventsPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {sortedEvents.map((event) => {
-            const isPast = isEventPast(event.date)
-            const weather = getMockWeather(event.date)
-            const WeatherIcon = weather.icon
-            const weatherKey = event.weatherLocation || "Roma"
             const imageUrl = event.photos?.length > 0 ? event.photos[event.photos.length - 1] : "/cascovigili.jpg"
+            const eventDate = new Date(event.date)
+            const isPast = eventDate.getTime() < new Date().setHours(0,0,0,0)
 
             return (
               <Card key={event.id} className={cn(
@@ -258,7 +300,6 @@ export default function EventsPage() {
                     alt={event.title} 
                     fill 
                     className="object-cover transition-transform group-hover:scale-105 duration-500"
-                    priority
                     unoptimized={imageUrl.startsWith('data:') || imageUrl.startsWith('http')}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
@@ -266,23 +307,14 @@ export default function EventsPage() {
                     {isPast ? "CONCLUSO" : "PROSSIMA USCITA"}
                   </Badge>
 
-                  <a 
-                    href={`https://www.ilmeteo.it/meteo/${encodeURIComponent(weatherKey)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="absolute bottom-4 right-4 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-2 hover:bg-black/80 hover:scale-110 transition-all cursor-pointer z-10"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <WeatherIcon className={cn("w-4 h-4", (weather as any).color || "text-accent")} />
-                    <span className="text-[10px] font-bold text-white uppercase tracking-tighter">
-                      {weather.temp ? `${weather.temp} | ${weatherKey}` : weather.text}
-                    </span>
-                  </a>
+                  <div className="absolute bottom-4 right-4 z-10">
+                    <DynamicWeatherBadge location={event.weatherLocation} date={event.date} />
+                  </div>
                 </div>
                 <CardContent className="p-6 flex-1 flex flex-col">
                   <div className="flex items-center gap-2 text-accent text-sm mb-3 font-bold uppercase tracking-wider">
                     <Calendar className="w-4 h-4" />
-                    {new Date(event.date).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })} {event.time && `• ${event.time}`}
+                    {eventDate.toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })} {event.time && `• ${event.time}`}
                   </div>
                   <CardTitle className="text-2xl mb-3 leading-tight font-headline text-foreground">{event.title}</CardTitle>
                   <div className="flex items-center text-muted-foreground text-sm mb-4">
@@ -315,10 +347,7 @@ export default function EventsPage() {
                               </AlertDialogTrigger>
                               <AlertDialogContent className="bg-card border-border text-foreground">
                                 <AlertDialogHeader>
-                                  <AlertDialogTitle className="text-xl font-headline">Conferma Eliminazione</AlertDialogTitle>
-                                  <AlertDialogDescription className="text-muted-foreground">
-                                    Vuoi davvero eliminare l'uscita "{event.title}"?
-                                  </AlertDialogDescription>
+                                  <AlertDialogTitle className="text-xl font-headline">Elimina Uscita</AlertDialogTitle>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                   <AlertDialogCancel className="bg-background border-border">Annulla</AlertDialogCancel>
@@ -329,14 +358,9 @@ export default function EventsPage() {
                           </>
                         )}
                       </div>
-                      <div className="flex gap-4">
-                        <Button variant="link" asChild className="text-accent p-0 h-auto font-bold text-xs uppercase tracking-tighter">
-                          <Link href={event.mapUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(weatherKey)}`} target="_blank">Percorso</Link>
-                        </Button>
-                        <Button variant="link" asChild className="text-primary p-0 h-auto font-bold text-xs uppercase tracking-tighter">
-                          <Link href={`/events/${event.id}`}>Dettagli <ArrowRight className="ml-1 w-3 h-3" /></Link>
-                        </Button>
-                      </div>
+                      <Button variant="link" asChild className="text-primary p-0 h-auto font-bold text-xs uppercase tracking-tighter">
+                        <Link href={`/events/${event.id}`}>Vedi Dettagli <ArrowRight className="ml-1 w-3 h-3" /></Link>
+                      </Button>
                     </div>
                   </div>
                 </CardContent>
@@ -350,13 +374,11 @@ export default function EventsPage() {
           <DialogContent className="bg-card border-border text-foreground">
             <DialogHeader>
               <DialogTitle className="font-headline text-2xl">Condividi una Foto</DialogTitle>
-              <DialogDescription>Incolla l'URL di un'immagine (es. Unsplash) da aggiungere all'uscita.</DialogDescription>
             </DialogHeader>
             <div className="py-4">
-              <Label htmlFor="photo-url" className="block mb-2">URL Immagine</Label>
+              <Label className="block mb-2">URL Immagine</Label>
               <Input 
-                id="photo-url"
-                placeholder="https://images.unsplash.com/..."
+                placeholder="https://..."
                 value={photoUrlInput}
                 onChange={(e) => setPhotoUrlInput(e.target.value)}
                 className="bg-background"
@@ -374,7 +396,6 @@ export default function EventsPage() {
             <DialogContent className="bg-card border-border sm:max-w-[500px] text-foreground">
               <DialogHeader>
                 <DialogTitle className="text-2xl font-headline">Modifica Uscita</DialogTitle>
-                <DialogDescription className="text-muted-foreground">Aggiorna le informazioni per "{editingEvent.title}".</DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-2">
                 <div className="grid gap-2">
@@ -400,7 +421,7 @@ export default function EventsPage() {
                   <Input value={formData.weatherLocation} onChange={e => setFormData({...formData, weatherLocation: e.target.value})} className="bg-background" />
                 </div>
                 <div className="grid gap-2">
-                  <Label>URL Percorso Google Maps</Label>
+                  <Label>URL Percorso</Label>
                   <Input value={formData.mapUrl} onChange={e => setFormData({...formData, mapUrl: e.target.value})} className="bg-background" />
                 </div>
                 <div className="grid gap-2">
