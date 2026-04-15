@@ -5,7 +5,7 @@ import { Navbar } from "@/components/Navbar"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { MapPin, Clock, Calendar, ShieldCheck, Thermometer, Wind, CloudRain, AlertTriangle, CheckCircle2 } from "lucide-react"
+import { MapPin, Clock, Calendar, ShieldCheck, Thermometer, Wind, CloudRain, AlertTriangle, CheckCircle2, Camera } from "lucide-react"
 import { PlaceHolderImages } from "@/lib/placeholder-images"
 import { aiRideConditionAdvisory } from "@/ai/flows/ai-ride-condition-advisory"
 import { cn } from "@/lib/utils"
@@ -13,18 +13,22 @@ import { cn } from "@/lib/utils"
 export default async function EventDetailPage({ params }: { params: { id: string } }) {
   const eventId = (await params).id
   
-  // Mock event data retrieval
+  // In un'app reale caricheremmo da Firestore
+  // Qui simuliamo i dati dell'evento
   const event = {
     title: "Mountain Pass Adventure",
     date: "2026-05-20",
     time: "08:30 AM",
     location: "Alps - Milan Base",
     weatherLocation: "Stelvio",
-    description: "A breathtaking journey through the Stelvio Pass. We'll start from our Milan base early in the morning and navigate the serpentines of the Alps. Expect tight hairpins and incredible vistas.",
+    description: "A breathtaking journey through the Stelvio Pass. We'll start from our Milan base early in the morning and navigate the serpentines of the Alps.",
     route: "Milan -> Lecco -> Bormio -> Stelvio Pass -> Bolzano",
     distance: "280km",
     duration: "6 hours",
-    image: null,
+    photos: [
+      "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?q=80&w=1000",
+      "https://images.unsplash.com/photo-1444491741275-3747c53c99b4?q=80&w=1000"
+    ],
     map: PlaceHolderImages.find(img => img.id === "map-placeholder")?.imageUrl
   }
 
@@ -34,7 +38,7 @@ export default async function EventDetailPage({ params }: { params: { id: string
     precipitation_chance: 15,
     wind_speed: 25,
     visibility: "Excellent",
-    forecast: "Cloudy with sunny intervals, high altitude sections might be colder and windy."
+    forecast: "Cloudy with sunny intervals."
   })
 
   // Call GenAI Flow
@@ -43,9 +47,7 @@ export default async function EventDetailPage({ params }: { params: { id: string
     weatherData: mockWeatherData
   })
 
-  // Gerarchia Immagine
-  const unsplashUrl = `https://source.unsplash.com/featured/1600x900/?motorcycle,landscape,${encodeURIComponent(event.weatherLocation || event.title)}`
-  const imageUrl = event.image || unsplashUrl || "/cascovigili.jpg"
+  const coverImage = event.photos?.length > 0 ? event.photos[event.photos.length - 1] : "/cascovigili.jpg"
 
   return (
     <div className="min-h-screen pb-20 md:pb-0 md:pt-16">
@@ -77,11 +79,11 @@ export default async function EventDetailPage({ params }: { params: { id: string
 
           <div className="relative h-80 rounded-2xl overflow-hidden">
             <Image 
-              src={imageUrl} 
+              src={coverImage} 
               alt={event.title} 
               fill 
-              className="object-cover" 
-              onError={(e: any) => { e.target.src = "/cascovigili.jpg" }}
+              className="object-cover"
+              unoptimized={coverImage.startsWith('http')}
             />
           </div>
 
@@ -111,6 +113,25 @@ export default async function EventDetailPage({ params }: { params: { id: string
               </div>
             </CardContent>
           </Card>
+
+          {/* Galleria Evento */}
+          <section>
+            <h3 className="text-2xl font-headline font-bold mb-6 flex items-center gap-2">
+              <Camera className="w-6 h-6 text-accent" /> Gallery Evento
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {event.photos.map((photo, i) => (
+                <div key={i} className="relative aspect-square rounded-xl overflow-hidden border border-border group">
+                  <Image src={photo} alt={`Foto ${i}`} fill className="object-cover transition-transform group-hover:scale-110" unoptimized />
+                </div>
+              ))}
+              {event.photos.length === 0 && (
+                <div className="col-span-full py-12 text-center text-muted-foreground italic border-2 border-dashed border-border rounded-xl">
+                  Nessuna foto caricata per questo evento.
+                </div>
+              )}
+            </div>
+          </section>
 
           <Card className="bg-card border-border overflow-hidden">
              <CardHeader className="flex flex-row items-center justify-between">

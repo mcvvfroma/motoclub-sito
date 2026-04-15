@@ -11,10 +11,10 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
-import { Calendar, ArrowRight, MapPin, Sun, Cloud, CloudRain, Clock, CheckCircle, Edit, Trash2 } from "lucide-react"
+import { Calendar, ArrowRight, MapPin, Sun, Cloud, CloudRain, Clock, CheckCircle, Edit, Trash2, Camera, Plus } from "lucide-react"
 import { PlaceHolderImages } from "@/lib/placeholder-images"
 import { cn } from "@/lib/utils"
 
@@ -27,7 +27,7 @@ const initialUpcomingEvents = [
     location: "Caserma VVF Roma",
     weatherLocation: "Roma",
     mapUrl: "",
-    image: "",
+    photos: [],
     description: "Partenza dalla Caserma per un'uscita istituzionale tra i monumenti della Capitale.",
     type: "Touring"
   },
@@ -39,7 +39,7 @@ const initialUpcomingEvents = [
     location: "Comando VVF via Genova",
     weatherLocation: "Terminillo",
     mapUrl: "",
-    image: "",
+    photos: [],
     description: "La classica scalata alla 'Montagna di Roma'. Curve mozzafiato e aria fresca.",
     type: "Touring"
   },
@@ -51,7 +51,7 @@ const initialUpcomingEvents = [
     location: "Piazza del Popolo, Roma",
     weatherLocation: "Roma",
     mapUrl: "",
-    image: "",
+    photos: [],
     description: "Il grande raduno biennale di tutti i motoclub dei Vigili del Fuoco d'Italia.",
     type: "Raduno"
   }
@@ -59,8 +59,11 @@ const initialUpcomingEvents = [
 
 export default function Home() {
   const { toast } = useToast()
-  const [events, setEvents] = useState(initialUpcomingEvents)
+  const [events, setEvents] = useState<any[]>([])
+  const [user, setUser] = useState<any>(null)
   const [editingEvent, setEditingEvent] = useState<any>(null)
+  const [isAddingPhoto, setIsAddingPhoto] = useState<number | null>(null)
+  const [newPhotoUrl, setNewPhotoUrl] = useState("")
   const [formData, setFormData] = useState<any>({
     title: "",
     date: "",
@@ -69,10 +72,28 @@ export default function Home() {
     weatherLocation: "",
     mapUrl: "",
     description: "",
-    image: ""
+    photos: []
   })
 
-  const heroImage = PlaceHolderImages.find(img => img.id === "hero-ride")
+  useEffect(() => {
+    const storedUser = localStorage.getItem("vvf_user")
+    if (storedUser) setUser(JSON.parse(storedUser))
+
+    const storedEvents = localStorage.getItem("vvf_home_events")
+    if (storedEvents) {
+      setEvents(JSON.parse(storedEvents))
+    } else {
+      setEvents(initialUpcomingEvents)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (events.length > 0) {
+      localStorage.setItem("vvf_home_events", JSON.stringify(events))
+    }
+  }, [events])
+
+  const isAdmin = user?.status === "admin"
 
   const getMockWeather = (dateStr: string) => {
     const eventDate = new Date(dateStr)
@@ -111,6 +132,22 @@ export default function Home() {
     setEditingEvent(null)
     toast({ title: "Uscita aggiornata", description: "Le modifiche sono state salvate correttamente." })
   }
+
+  const handleAddPhoto = () => {
+    if (!newPhotoUrl) return
+    const updated = events.map(e => {
+      if (e.id === isAddingPhoto) {
+        return { ...e, photos: [...(e.photos || []), newPhotoUrl] }
+      }
+      return e
+    })
+    setEvents(updated)
+    setNewPhotoUrl("")
+    setIsAddingPhoto(null)
+    toast({ title: "Foto aggiunta", description: "La foto è stata salvata nell'archivio dell'uscita." })
+  }
+
+  const heroImage = PlaceHolderImages.find(img => img.id === "hero-ride")
 
   return (
     <div className="min-h-screen pb-20 md:pb-0 md:pt-16">
@@ -155,7 +192,7 @@ export default function Home() {
               const weather = getMockWeather(event.date)
               const WeatherIcon = weather.icon
               const weatherKey = event.weatherLocation || "Roma"
-              const imageUrl = event.image || "/cascovigili.jpg"
+              const imageUrl = event.photos?.length > 0 ? event.photos[event.photos.length - 1] : "/cascovigili.jpg"
               
               return (
                 <Card key={event.id} className="overflow-hidden border-border bg-card hover:border-primary/50 transition-all group flex flex-col">
@@ -166,7 +203,7 @@ export default function Home() {
                       fill 
                       className="object-cover transition-transform group-hover:scale-105" 
                       priority
-                      unoptimized={!!event.image}
+                      unoptimized={imageUrl.startsWith('http')}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
                     <Badge className="absolute top-4 left-4 bg-primary text-white border-none font-bold uppercase py-1 text-[10px]">
@@ -174,7 +211,7 @@ export default function Home() {
                     </Badge>
 
                     <a 
-                      href="https://www.meteoam.it/it/previsioni-meteo-italia"
+                      href={`https://www.ilmeteo.it/meteo/${encodeURIComponent(weatherKey)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="absolute bottom-4 right-4 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-2 hover:bg-black/80 hover:scale-110 transition-all z-10"
@@ -196,32 +233,47 @@ export default function Home() {
                       <span className="line-clamp-1">{event.location}</span>
                     </div>
 
-                    <div className="flex items-center justify-between mt-auto pt-4 border-t border-border">
-                      <div className="flex gap-2">
-                        <Button variant="ghost" size="icon" onClick={() => openEdit(event)} className="h-8 w-8 text-accent hover:bg-accent/10">
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10">
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent className="bg-card border-border text-foreground">
-                            <AlertDialogHeader>
-                              <AlertDialogTitle className="text-xl font-headline">Rimuovi Uscita</AlertDialogTitle>
-                              <AlertDialogDescription className="text-muted-foreground">Vuoi davvero togliere questa uscita dalla vetrina Home?</AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel className="bg-background border-border">No</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDelete(event.id)} className="bg-destructive text-white font-bold">Sì, Rimuovi</AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                      <Button asChild variant="outline" className="h-9 text-xs border-accent text-accent font-bold uppercase">
-                        <Link href={`/events/${event.id}`}>Dettagli</Link>
+                    <div className="space-y-4 mt-auto">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="w-full gap-2 border-accent text-accent font-bold uppercase tracking-tighter"
+                        onClick={() => setIsAddingPhoto(event.id)}
+                      >
+                        <Camera className="w-4 h-4" /> AGGIUNGI FOTO
                       </Button>
+
+                      <div className="flex items-center justify-between pt-4 border-t border-border">
+                        <div className="flex gap-2">
+                          {isAdmin && (
+                            <>
+                              <Button variant="ghost" size="icon" onClick={() => openEdit(event)} className="h-8 w-8 text-accent hover:bg-accent/10">
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10">
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent className="bg-card border-border text-foreground">
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle className="text-xl font-headline">Rimuovi Uscita</AlertDialogTitle>
+                                    <AlertDialogDescription className="text-muted-foreground">Vuoi davvero togliere questa uscita dalla vetrina Home?</AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel className="bg-background border-border">No</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleDelete(event.id)} className="bg-destructive text-white font-bold">Sì, Rimuovi</AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </>
+                          )}
+                        </div>
+                        <Button asChild variant="outline" className="h-9 text-xs border-primary text-primary font-bold uppercase">
+                          <Link href={`/events/${event.id}`}>Dettagli</Link>
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -230,6 +282,29 @@ export default function Home() {
           </div>
         </section>
       </main>
+
+      {/* Dialog Aggiungi Foto */}
+      <Dialog open={isAddingPhoto !== null} onOpenChange={(open) => !open && setIsAddingPhoto(null)}>
+        <DialogContent className="bg-card border-border text-foreground">
+          <DialogHeader>
+            <DialogTitle className="font-headline text-2xl">Condividi una Foto</DialogTitle>
+            <DialogDescription>Incolla l'URL di una foto scattata durante l'uscita. Diventerà l'anteprima principale.</DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Label>Link Immagine</Label>
+            <Input 
+              value={newPhotoUrl} 
+              onChange={e => setNewPhotoUrl(e.target.value)} 
+              placeholder="https://images.unsplash.com/..." 
+              className="bg-background"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setIsAddingPhoto(null)}>Annulla</Button>
+            <Button onClick={handleAddPhoto} className="bg-primary text-white font-bold">CARICA</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {editingEvent && (
         <Dialog open={!!editingEvent} onOpenChange={(open) => !open && setEditingEvent(null)}>
@@ -260,10 +335,6 @@ export default function Home() {
               <div className="grid gap-2">
                 <Label>Località Meteo</Label>
                 <Input value={formData.weatherLocation} onChange={e => setFormData({...formData, weatherLocation: e.target.value})} className="bg-background" />
-              </div>
-              <div className="grid gap-2">
-                <Label>Link Foto Manuale (opzionale)</Label>
-                <Input value={formData.image} onChange={e => setFormData({...formData, image: e.target.value})} className="bg-background" placeholder="https://..." />
               </div>
               <div className="grid gap-2">
                 <Label>Link Percorso Maps</Label>
