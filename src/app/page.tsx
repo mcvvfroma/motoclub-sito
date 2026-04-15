@@ -12,69 +12,37 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
+import { 
+  AlertDialog, 
+  AlertDialogAction, 
+  AlertDialogCancel, 
+  AlertDialogContent, 
+  AlertDialogDescription, 
+  AlertDialogFooter, 
+  AlertDialogHeader, 
+  AlertDialogTitle, 
+  AlertDialogTrigger 
+} from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
 import { Calendar, ArrowRight, MapPin, Sun, Cloud, CloudRain, Clock, CheckCircle, Edit, Trash2, Camera, Plus } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-const initialUpcomingEvents = [
-  {
-    id: 1,
-    title: "Uscita di Roma",
-    date: "2026-05-29",
-    time: "08:30",
-    location: "Caserma VVF Roma",
-    weatherLocation: "Roma",
-    mapUrl: "",
-    photos: [],
-    description: "Partenza dalla Caserma per un'uscita istituzionale tra i monumenti della Capitale.",
-    type: "Touring"
-  },
-  {
-    id: 2,
-    title: "Passo del Terminillo",
-    date: "2026-06-14",
-    time: "09:00",
-    location: "Comando VVF via Genova",
-    weatherLocation: "Terminillo",
-    mapUrl: "",
-    photos: [],
-    description: "La classica scalata alla 'Montagna di Roma'. Curve mozzafiato e aria fresca.",
-    type: "Touring"
-  },
-  {
-    id: 3,
-    title: "Raduno Nazionale VVF 2026",
-    date: "2026-09-12",
-    time: "09:00",
-    location: "Piazza del Popolo, Roma",
-    weatherLocation: "Roma",
-    mapUrl: "",
-    photos: [],
-    description: "Il grande raduno biennale di tutti i motoclub dei Vigili del Fuoco d'Italia.",
-    type: "Raduno"
-  }
+// DATI FISSI RICHIESTI DALL'UTENTE
+const FORCED_EVENTS = [
+  { id: 1, title: 'Uscita di Roma', date: '29 MAGGIO 2026', location: 'Roma', image: '/cascovigili.jpg', weatherLocation: 'Roma' },
+  { id: 2, title: 'Passo del Terminillo', date: '14 GIUGNO 2026', location: 'Terminillo', image: '/cascovigili.jpg', weatherLocation: 'Terminillo' },
+  { id: 3, title: 'Raduno Nazionale VVF', date: '12 SETTEMBRE 2026', location: 'Roma', image: '/cascovigili.jpg', weatherLocation: 'Roma' }
 ]
 
 export default function Home() {
   const { toast } = useToast()
-  const [events, setEvents] = useState<any[]>([])
+  const [events, setEvents] = useState<any[]>(FORCED_EVENTS)
   const [user, setUser] = useState<any>(null)
-  const [editingEvent, setEditingEvent] = useState<any>(null)
   const [isAddingPhoto, setIsAddingPhoto] = useState<number | null>(null)
   const [photoUrlInput, setPhotoUrlInput] = useState("")
-  const [formData, setFormData] = useState<any>({
-    title: "",
-    date: "",
-    time: "",
-    location: "",
-    weatherLocation: "",
-    mapUrl: "",
-    description: "",
-    photos: []
-  })
 
   useEffect(() => {
+    // Gestione utente
     const storedUser = localStorage.getItem("vvf_user")
     if (storedUser) {
       try {
@@ -84,95 +52,65 @@ export default function Home() {
       }
     }
 
+    // Gestione eventi: Carichiamo dal localStorage se esistono, altrimenti usiamo i FORCED_EVENTS
     const storedEvents = localStorage.getItem("vvf_all_events")
     if (storedEvents) {
-      const allEvents = JSON.parse(storedEvents)
-      setEvents(allEvents.slice(0, 3))
+      try {
+        const parsed = JSON.parse(storedEvents)
+        if (parsed.length > 0) {
+          setEvents(parsed.slice(0, 3))
+        }
+      } catch (e) {
+        localStorage.setItem("vvf_all_events", JSON.stringify(FORCED_EVENTS))
+      }
     } else {
-      setEvents(initialUpcomingEvents)
-      localStorage.setItem("vvf_all_events", JSON.stringify(initialUpcomingEvents))
+      localStorage.setItem("vvf_all_events", JSON.stringify(FORCED_EVENTS))
     }
   }, [])
 
   const isAdmin = user?.status === "admin"
 
-  const getMockWeather = (dateStr: string) => {
-    const eventDate = new Date(dateStr)
-    const today = new Date()
-    const diffTime = eventDate.getTime() - today.getTime()
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-
-    if (diffDays < 0) return { icon: CheckCircle, text: 'Concluso', temp: '', color: 'text-muted-foreground' }
-    if (diffDays > 14) return { icon: Clock, text: 'Meteo', temp: '', color: 'text-white/70' }
-
-    const weathers = [
-      { icon: Sun, temp: '24°', color: 'text-accent' },
-      { icon: Cloud, temp: '21°', color: 'text-white' },
-      { icon: CloudRain, temp: '18°', color: 'text-blue-400' }
-    ]
-    const seed = eventDate.getDate() % 3
-    return { ...weathers[seed] }
+  const getMockWeatherIcon = () => {
+    return Sun // Default soleggiato per l'anteprima
   }
 
   const handleDelete = (id: number) => {
-    const allEvents = JSON.parse(localStorage.getItem("vvf_all_events") || "[]")
-    const updatedAll = allEvents.filter((e: any) => e.id !== id)
-    localStorage.setItem("vvf_all_events", JSON.stringify(updatedAll))
-    setEvents(updatedAll.slice(0, 3))
-    toast({ title: "Uscita rimossa", description: "L'uscita è stata eliminata correttamente." })
-  }
-
-  const openEdit = (event: any) => {
-    setEditingEvent(event)
-    setFormData({ ...event })
-  }
-
-  const saveEdit = () => {
-    if (!formData.title || !formData.date) {
-      toast({ variant: "destructive", title: "Errore", description: "Titolo e Data sono obbligatori." })
-      return
-    }
-    const allEvents = JSON.parse(localStorage.getItem("vvf_all_events") || "[]")
-    const updatedAll = allEvents.map((e: any) => e.id === editingEvent.id ? { ...formData } : e)
-    localStorage.setItem("vvf_all_events", JSON.stringify(updatedAll))
-    setEvents(updatedAll.slice(0, 3))
-    setEditingEvent(null)
-    toast({ title: "Uscita aggiornata", description: "Le modifiche sono state salvate correttamente." })
+    const updated = events.filter(e => e.id !== id)
+    setEvents(updated)
+    const all = JSON.parse(localStorage.getItem("vvf_all_events") || "[]")
+    localStorage.setItem("vvf_all_events", JSON.stringify(all.filter((e: any) => e.id !== id)))
+    toast({ title: "Uscita rimossa", description: "L'operazione è stata completata." })
   }
 
   const handleAddPhotoSubmit = () => {
     if (!photoUrlInput) return
-
-    const allEvents = JSON.parse(localStorage.getItem("vvf_all_events") || "[]")
-    const updatedAll = allEvents.map((event: any) => {
-      if (event.id === isAddingPhoto) {
-        return { ...event, photos: [...(event.photos || []), photoUrlInput] }
-      }
-      return event
-    })
+    const updated = events.map(e => e.id === isAddingPhoto ? { ...e, image: photoUrlInput } : e)
+    setEvents(updated)
+    const all = JSON.parse(localStorage.getItem("vvf_all_events") || "[]")
+    const updatedAll = all.map((e: any) => e.id === isAddingPhoto ? { ...e, image: photoUrlInput } : e)
     localStorage.setItem("vvf_all_events", JSON.stringify(updatedAll))
-    setEvents(updatedAll.slice(0, 3))
     setIsAddingPhoto(null)
     setPhotoUrlInput("")
-    toast({ title: "Foto aggiunta", description: "La foto è stata salvata con successo." })
+    toast({ title: "Foto aggiunta", description: "La copertina è stata aggiornata." })
   }
 
   return (
     <div className="min-h-screen pb-20 md:pb-0 md:pt-16 bg-background">
       <Navbar />
       
+      {/* HERO SECTION */}
       <section className="relative h-[45vh] w-full flex items-center justify-center overflow-hidden px-6 pt-16 md:pt-0">
         <Image
           src="/cascovigili.jpg"
-          alt="Background"
+          alt="Hero Background"
           fill
           className="object-cover opacity-30"
           priority
         />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background z-[1]" />
         <div className="relative z-10 text-center max-w-3xl flex flex-col items-center">
-          <div className="relative w-24 h-24 md:w-32 md:h-32 mb-6 animate-pulse">
-            <Image src="/logo_motoclub.gif" alt="Logo" fill className="object-contain" priority />
+          <div className="relative w-24 h-24 md:w-32 md:h-32 mb-6">
+            <Image src="/logo_motoclub.gif" alt="Logo Motoclub" fill className="object-contain" priority />
           </div>
           <h1 className="text-4xl md:text-6xl font-headline font-bold mb-4 bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent uppercase tracking-tighter">
             Motoclub VVF Roma
@@ -184,12 +122,13 @@ export default function Home() {
         </div>
       </section>
 
+      {/* MAIN CONTENT */}
       <main className="max-w-7xl mx-auto px-4 py-16">
         <section>
           <div className="flex items-center justify-between mb-12">
             <div>
               <h2 className="text-3xl md:text-4xl font-headline font-bold border-l-4 border-primary pl-4 uppercase tracking-tighter">Prossime Uscite</h2>
-              <p className="text-muted-foreground text-sm mt-2 ml-5">Il calendario ufficiale del Comando di Roma</p>
+              <p className="text-muted-foreground text-sm mt-2 ml-5">Calendario ufficiale del Comando di Roma</p>
             </div>
             <Link href="/events" className="hidden md:flex items-center gap-2 text-primary hover:text-accent transition-colors font-bold uppercase text-xs tracking-widest">
               VEDI TUTTO <ArrowRight className="w-4 h-4" />
@@ -197,18 +136,14 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {events.length === 0 ? (
-               <div className="col-span-full py-20 text-center text-muted-foreground italic border-2 border-dashed border-border rounded-3xl">
-                  Nessuna uscita programmata al momento.
-               </div>
-            ) : events.map(event => {
-              const weather = getMockWeather(event.date)
-              const WeatherIcon = weather.icon
-              const weatherKey = event.weatherLocation || "Roma"
-              const imageUrl = event.photos?.length > 0 ? event.photos[event.photos.length - 1] : "/cascovigili.jpg"
+            {events.map(event => {
+              const WeatherIcon = getMockWeatherIcon()
+              const weatherKey = event.weatherLocation || event.location || "Roma"
+              const imageUrl = event.image || "/cascovigili.jpg"
               
               return (
                 <Card key={event.id} className="overflow-hidden border-border bg-card hover:border-primary/50 transition-all duration-300 group flex flex-col shadow-lg">
+                  {/* CARD IMAGE */}
                   <div className="relative h-56 w-full overflow-hidden">
                     <Image 
                       src={imageUrl} 
@@ -219,23 +154,25 @@ export default function Home() {
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
                     
+                    {/* WEATHER BADGE */}
                     <a 
                       href={`https://www.ilmeteo.it/meteo/${encodeURIComponent(weatherKey)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="absolute top-4 right-4 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-2 hover:bg-primary hover:scale-110 transition-all z-10"
                     >
-                      <WeatherIcon className={cn("w-4 h-4", weather.color)} />
+                      <WeatherIcon className="w-4 h-4 text-accent" />
                       <span className="text-[10px] font-bold text-white uppercase tracking-widest">
-                        {weather.temp ? `${weather.temp} | ${weatherKey}` : weather.text}
+                         METEO | {weatherKey}
                       </span>
                     </a>
                   </div>
 
+                  {/* CARD CONTENT */}
                   <CardContent className="p-6 flex-1 flex flex-col">
                     <div className="flex items-center gap-2 text-accent text-[11px] font-bold uppercase tracking-widest mb-2">
                        <Calendar className="w-3.5 h-3.5" />
-                       {new Date(event.date).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}
+                       {event.date}
                     </div>
                     <CardTitle className="text-2xl text-foreground font-headline mb-4 leading-tight group-hover:text-primary transition-colors">{event.title}</CardTitle>
                     
@@ -245,48 +182,47 @@ export default function Home() {
                     </div>
 
                     <div className="space-y-4 mt-auto">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="w-full gap-2 border-accent/50 text-accent hover:bg-accent hover:text-accent-foreground font-bold uppercase tracking-tighter"
-                        onClick={() => setIsAddingPhoto(event.id)}
-                      >
-                        <Camera className="w-4 h-4" /> AGGIUNGI FOTO
-                      </Button>
-
-                      <div className="flex items-center justify-between pt-5 border-t border-border">
-                        <div className="flex gap-1">
-                          {isAdmin && (
-                            <>
-                              <Button variant="ghost" size="icon" onClick={() => openEdit(event)} className="h-9 w-9 text-accent hover:bg-accent/10">
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-9 w-9 text-destructive hover:bg-destructive/10">
-                                    <Trash2 className="w-4 h-4" />
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent className="bg-card border-border text-foreground">
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle className="text-2xl font-headline">Rimuovi Uscita</AlertDialogTitle>
-                                    <AlertDialogDescription className="text-muted-foreground font-medium">
-                                      Sei sicuro di voler eliminare "{event.title}" dal calendario? L'operazione è immediata.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel className="bg-background border-border">Annulla</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleDelete(event.id)} className="bg-destructive text-white font-bold">Rimuovi</AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            </>
-                          )}
-                        </div>
-                        <Button asChild variant="link" className="text-primary p-0 h-auto font-bold text-xs uppercase tracking-widest hover:text-accent">
-                          <Link href={`/events/${event.id}`}>DETTAGLI <ArrowRight className="ml-1.5 w-4 h-4" /></Link>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button asChild variant="outline" size="sm" className="border-accent/50 text-accent font-bold uppercase tracking-tighter">
+                          <Link href={`/events/${event.id}`}>DETTAGLI</Link>
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="gap-2 border-primary/50 text-primary font-bold uppercase tracking-tighter"
+                          onClick={() => setIsAddingPhoto(event.id)}
+                        >
+                          <Camera className="w-4 h-4" /> FOTO
                         </Button>
                       </div>
+
+                      {/* ADMIN CONTROLS */}
+                      {isAdmin && (
+                        <div className="flex items-center justify-end gap-2 pt-4 border-t border-border">
+                          <Button variant="ghost" size="icon" asChild className="h-9 w-9 text-accent hover:bg-accent/10">
+                            <Link href="/events"><Edit className="w-4 h-4" /></Link>
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-9 w-9 text-destructive hover:bg-destructive/10">
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent className="bg-card border-border text-foreground">
+                              <AlertDialogHeader>
+                                <AlertDialogTitle className="text-2xl font-headline">Rimuovi Uscita</AlertDialogTitle>
+                                <AlertDialogDescription className="text-muted-foreground">
+                                  Vuoi davvero eliminare "{event.title}"? Questa operazione è definitiva.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel className="bg-background border-border">Annulla</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDelete(event.id)} className="bg-destructive text-white font-bold">Rimuovi</AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -296,7 +232,7 @@ export default function Home() {
         </section>
       </main>
 
-      {/* Dialog Aggiungi Foto */}
+      {/* DIALOG AGGIUNGI FOTO */}
       <Dialog open={isAddingPhoto !== null} onOpenChange={(open) => !open && setIsAddingPhoto(null)}>
         <DialogContent className="bg-card border-border text-foreground sm:max-w-[450px]">
           <DialogHeader>
@@ -305,7 +241,7 @@ export default function Home() {
           </DialogHeader>
           <div className="py-6 space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="photo-url" className="text-xs uppercase tracking-widest font-bold">URL Immagine (Unsplash, etc.)</Label>
+              <Label htmlFor="photo-url" className="text-xs uppercase tracking-widest font-bold">URL Immagine</Label>
               <Input 
                 id="photo-url"
                 placeholder="https://images.unsplash.com/..."
@@ -321,50 +257,6 @@ export default function Home() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Dialog Modifica (Admin) */}
-      {editingEvent && (
-        <Dialog open={!!editingEvent} onOpenChange={(open) => !open && setEditingEvent(null)}>
-          <DialogContent className="bg-card border-border sm:max-w-[550px] text-foreground">
-            <DialogHeader>
-              <DialogTitle className="text-2xl font-headline">Modifica Dettagli Uscita</DialogTitle>
-              <DialogDescription>Aggiorna le informazioni ufficiali per l'evento.</DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-5 py-6 max-h-[70vh] overflow-y-auto pr-2">
-              <div className="grid gap-2">
-                <Label className="text-xs font-bold uppercase">Titolo Evento</Label>
-                <Input value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="bg-background h-11" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label className="text-xs font-bold uppercase">Data</Label>
-                  <Input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="bg-background h-11" />
-                </div>
-                <div className="grid gap-2">
-                  <Label className="text-xs font-bold uppercase">Orario Ritrovo</Label>
-                  <Input type="time" value={formData.time} onChange={e => setFormData({...formData, time: e.target.value})} className="bg-background h-11" />
-                </div>
-              </div>
-              <div className="grid gap-2">
-                <Label className="text-xs font-bold uppercase">Luogo di Partenza</Label>
-                <Input value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} className="bg-background h-11" />
-              </div>
-              <div className="grid gap-2">
-                <Label className="text-xs font-bold uppercase">Località per Meteo</Label>
-                <Input value={formData.weatherLocation} onChange={e => setFormData({...formData, weatherLocation: e.target.value})} className="bg-background h-11" />
-              </div>
-              <div className="grid gap-2">
-                <Label className="text-xs font-bold uppercase">Descrizione / Itinerario</Label>
-                <Textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="bg-background min-h-[120px] resize-none" />
-              </div>
-            </div>
-            <DialogFooter className="gap-2">
-              <Button variant="ghost" onClick={() => setEditingEvent(null)}>Annulla</Button>
-              <Button onClick={saveEdit} className="bg-accent text-accent-foreground font-bold px-8">Salva Modifiche</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
     </div>
   )
 }
