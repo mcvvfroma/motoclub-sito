@@ -16,18 +16,23 @@ import { useToast } from "@/hooks/use-toast"
 import { Calendar, ArrowRight, MapPin, Sun, Cloud, CloudRain, Clock, CheckCircle, Edit, Trash2, Camera, Plus, Thermometer } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-// Componente Badge Meteo Dinamico (Stesso di Events)
+// Componente Badge Meteo Dinamico con Fallback
 function DynamicWeatherBadge({ location, date }: { location: string; date: string }) {
   const [weatherData, setWeatherData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function fetchWeather() {
-      if (!location || !date) return
+      if (!location || !date) {
+        setLoading(false)
+        return
+      }
+      
       const eventDate = new Date(date)
       const today = new Date()
       const diffDays = Math.ceil((eventDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
 
+      // Open-Meteo fornisce previsioni fino a 14-16 giorni
       if (diffDays < 0 || diffDays > 14) {
         setLoading(false)
         return
@@ -98,7 +103,7 @@ export default function Home() {
     if (storedUser) setUser(JSON.parse(storedUser))
 
     const storedEvents = localStorage.getItem("vvf_all_events")
-    if (storedEvents) {
+    if (storedEvents && JSON.parse(storedEvents).length > 0) {
       setEvents(JSON.parse(storedEvents).slice(0, 3))
     } else {
       setEvents(DEFAULT_EVENTS)
@@ -112,8 +117,9 @@ export default function Home() {
     const updated = events.filter(e => e.id !== id)
     setEvents(updated)
     const all = JSON.parse(localStorage.getItem("vvf_all_events") || "[]")
-    localStorage.setItem("vvf_all_events", JSON.stringify(all.filter((e: any) => e.id !== id)))
-    toast({ title: "Uscita rimossa", description: "L'operazione è stata completata." })
+    const filteredAll = all.filter((e: any) => e.id !== id)
+    localStorage.setItem("vvf_all_events", JSON.stringify(filteredAll))
+    toast({ title: "Uscita rimossa", description: "L'operazione è stata completata correttamente." })
   }
 
   const handleAddPhotoSubmit = () => {
@@ -161,63 +167,69 @@ export default function Home() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {events.map(event => {
-            const imageUrl = event.image || (event.photos?.length > 0 ? event.photos[event.photos.length - 1] : "/cascovigili.jpg")
-            return (
-              <Card key={event.id} className="overflow-hidden border-border bg-card hover:border-primary/50 transition-all group flex flex-col">
-                <div className="relative h-56 w-full">
-                  <Image src={imageUrl} alt={event.title} fill className="object-cover transition-transform group-hover:scale-105" unoptimized={imageUrl.startsWith('http')} />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent" />
-                  <div className="absolute bottom-4 right-4 z-10">
-                    <DynamicWeatherBadge location={event.weatherLocation} date={event.date} />
-                  </div>
-                </div>
-
-                <CardContent className="p-6 flex-1 flex flex-col">
-                  <div className="flex items-center gap-2 text-accent text-[11px] font-bold uppercase mb-2">
-                    <Calendar className="w-3.5 h-3.5" /> {new Date(event.date).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}
-                  </div>
-                  <CardTitle className="text-2xl font-headline mb-4 group-hover:text-primary transition-colors">{event.title}</CardTitle>
-                  <div className="flex items-center text-muted-foreground text-sm mb-8">
-                    <MapPin className="w-4 h-4 mr-2 text-primary" /> {event.location}
+          {events && events.length > 0 ? (
+            events.map(event => {
+              const imageUrl = event.image || (event.photos?.length > 0 ? event.photos[event.photos.length - 1] : "/cascovigili.jpg")
+              return (
+                <Card key={event.id} className="overflow-hidden border-border bg-card hover:border-primary/50 transition-all group flex flex-col">
+                  <div className="relative h-56 w-full">
+                    <Image src={imageUrl} alt={event.title} fill className="object-cover transition-transform group-hover:scale-105" unoptimized={imageUrl.startsWith('http')} />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent" />
+                    <div className="absolute bottom-4 right-4 z-10">
+                      <DynamicWeatherBadge location={event.weatherLocation || event.location} date={event.date} />
+                    </div>
                   </div>
 
-                  <div className="space-y-4 mt-auto">
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button asChild variant="outline" size="sm" className="font-bold">
-                        <Link href={`/events/${event.id}`}>DETTAGLI</Link>
-                      </Button>
-                      <Button variant="outline" size="sm" className="gap-2 font-bold" onClick={() => setIsAddingPhoto(event.id)}>
-                        <Camera className="w-4 h-4" /> FOTO
-                      </Button>
+                  <CardContent className="p-6 flex-1 flex flex-col">
+                    <div className="flex items-center gap-2 text-accent text-[11px] font-bold uppercase mb-2">
+                      <Calendar className="w-3.5 h-3.5" /> {new Date(event.date).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    </div>
+                    <CardTitle className="text-2xl font-headline mb-4 group-hover:text-primary transition-colors">{event.title}</CardTitle>
+                    <div className="flex items-center text-muted-foreground text-sm mb-8">
+                      <MapPin className="w-4 h-4 mr-2 text-primary" /> {event.location}
                     </div>
 
-                    {isAdmin && (
-                      <div className="flex items-center justify-end gap-2 pt-4 border-t border-border">
-                        <Button variant="ghost" size="icon" className="text-destructive" asChild>
-                           <AlertDialog>
+                    <div className="space-y-4 mt-auto">
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button asChild variant="outline" size="sm" className="font-bold">
+                          <Link href={`/events/${event.id}`}>DETTAGLI</Link>
+                        </Button>
+                        <Button variant="outline" size="sm" className="gap-2 font-bold" onClick={() => setIsAddingPhoto(event.id)}>
+                          <Camera className="w-4 h-4" /> FOTO
+                        </Button>
+                      </div>
+
+                      {isAdmin && (
+                        <div className="flex items-center justify-end gap-2 pt-4 border-t border-border">
+                          <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <Trash2 className="w-4 h-4 cursor-pointer" />
+                              <Button variant="ghost" size="icon" className="text-destructive">
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent className="bg-card border-border">
                               <AlertDialogHeader>
-                                <AlertDialogTitle className="text-foreground">Conferma</AlertDialogTitle>
-                                <AlertDialogDescription>Vuoi rimuovere l'uscita?</AlertDialogDescription>
+                                <AlertDialogTitle className="text-foreground">Elimina Uscita</AlertDialogTitle>
+                                <AlertDialogDescription>Vuoi rimuovere l'uscita dalla vetrina della Home Page?</AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                 <AlertDialogCancel className="bg-background">No</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleDelete(event.id)} className="bg-destructive">Sì</AlertDialogAction>
+                                <AlertDialogAction onClick={() => handleDelete(event.id)} className="bg-destructive">Sì, Rimuovi</AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
                           </AlertDialog>
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            )
-          })}
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            })
+          ) : (
+            <div className="col-span-full py-20 text-center border-2 border-dashed border-border rounded-2xl">
+              <p className="text-muted-foreground font-headline">Nessuna uscita programmata disponibile.</p>
+            </div>
+          )}
         </div>
       </main>
 
@@ -225,7 +237,7 @@ export default function Home() {
         <DialogContent className="bg-card border-border text-foreground">
           <DialogHeader><DialogTitle>Aggiungi Foto</DialogTitle></DialogHeader>
           <div className="py-4"><Input placeholder="URL Immagine" value={photoUrlInput} onChange={(e) => setPhotoUrlInput(e.target.value)} /></div>
-          <DialogFooter><Button onClick={handleAddPhotoSubmit} className="bg-primary">Salva</Button></DialogFooter>
+          <DialogFooter><Button onClick={handleAddPhotoSubmit} className="bg-primary text-white font-bold">Salva</Button></DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

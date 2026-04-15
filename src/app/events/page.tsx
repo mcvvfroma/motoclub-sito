@@ -14,42 +14,39 @@ import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
-import { Calendar, MapPin, ArrowRight, Plus, Edit, Trash2, Clock, CheckCircle, Sun, Cloud, CloudRain, Camera, Thermometer, AlertTriangle } from "lucide-react"
+import { Calendar, MapPin, ArrowRight, Plus, Edit, Trash2, Clock, Camera, Sun, Cloud, CloudRain } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-// Componente Badge Meteo Dinamico
+// Componente Badge Meteo Dinamico con Fallback
 function DynamicWeatherBadge({ location, date }: { location: string; date: string }) {
   const [weatherData, setWeatherData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function fetchWeather() {
-      if (!location || !date) return
+      if (!location || !date) {
+        setLoading(false)
+        return
+      }
       
       const eventDate = new Date(date)
       const today = new Date()
       const diffDays = Math.ceil((eventDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
 
-      // Open-Meteo fornisce previsioni fino a 16 giorni
       if (diffDays < 0 || diffDays > 14) {
         setLoading(false)
         return
       }
 
       try {
-        // 1. Geocoding per ottenere lat/lon
         const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(location)}&count=1&language=it&format=json`)
         const geoData = await geoRes.json()
-        
         if (!geoData.results?.[0]) throw new Error("Città non trovata")
-        
         const { latitude, longitude } = geoData.results[0]
 
-        // 2. Fetch Meteo
         const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=weathercode,temperature_2m_max,precipitation_probability_max&timezone=auto`)
         const weather = await weatherRes.json()
 
-        // Trova l'indice della data corretta
         const dateStr = eventDate.toISOString().split('T')[0]
         const dateIndex = weather.daily.time.indexOf(dateStr)
 
@@ -66,35 +63,25 @@ function DynamicWeatherBadge({ location, date }: { location: string; date: strin
         setLoading(false)
       }
     }
-
     fetchWeather()
   }, [location, date])
 
   if (loading) return <Badge variant="outline" className="bg-black/40 text-[10px] animate-pulse">Analisi Meteo...</Badge>
-  
-  if (!weatherData) return (
-    <Badge variant="outline" className="bg-black/40 text-white/50 text-[10px] uppercase tracking-tighter">
-      Meteo non disponibile
-    </Badge>
-  )
+  if (!weatherData) return <Badge variant="outline" className="bg-black/40 text-white/50 text-[10px] uppercase tracking-tighter">Meteo non disp.</Badge>
 
   const isRainy = weatherData.prob > 50
   const Icon = weatherData.code <= 3 ? Sun : (weatherData.code <= 67 ? Cloud : CloudRain)
 
   return (
-    <a 
-      href={`https://www.ilmeteo.it/meteo/${encodeURIComponent(location)}`}
-      target="_blank"
-      className={cn(
-        "flex items-center gap-1.5 px-3 py-1.5 rounded-full border backdrop-blur-md transition-all hover:scale-105",
-        isRainy ? "bg-red-600 border-red-400 text-white" : "bg-black/60 border-white/10 text-white"
-      )}
-    >
+    <div className={cn(
+      "flex items-center gap-1.5 px-3 py-1.5 rounded-full border backdrop-blur-md",
+      isRainy ? "bg-red-600 border-red-400 text-white" : "bg-black/60 border-white/10 text-white"
+    )}>
       <Icon className={cn("w-3.5 h-3.5", !isRainy && "text-accent")} />
       <span className="text-[10px] font-bold uppercase tracking-widest">
         {isRainy ? "Rischio Pioggia" : `${weatherData.temp}°C`} | {location}
       </span>
-    </a>
+    </div>
   )
 }
 
@@ -162,10 +149,11 @@ export default function EventsPage() {
     if (storedUser) setUser(JSON.parse(storedUser))
 
     const storedEvents = localStorage.getItem("vvf_all_events")
-    if (storedEvents) {
+    if (storedEvents && JSON.parse(storedEvents).length > 0) {
       setEvents(JSON.parse(storedEvents))
     } else {
       setEvents(initialEvents)
+      localStorage.setItem("vvf_all_events", JSON.stringify(initialEvents))
     }
   }, [])
 
@@ -178,18 +166,19 @@ export default function EventsPage() {
   const isAdmin = user?.status === "admin"
 
   const sortedEvents = useMemo(() => {
+    if (!events) return []
     return [...events].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
   }, [events])
 
   const handleSaveEvent = () => {
-    if (!formData.title || !formData.date || !formData.location || !formData.weatherLocation) {
-      toast({ variant: "destructive", title: "Errore", description: "Compila tutti i campi, inclusa la Località Meteo." })
+    if (!formData.title || !formData.date || !formData.location) {
+      toast({ variant: "destructive", title: "Errore", description: "Compila i campi obbligatori (Titolo, Data, Luogo)." })
       return
     }
 
     if (editingEvent) {
       setEvents(events.map(e => e.id === editingEvent.id ? { ...formData, id: e.id } : e))
-      toast({ title: "Uscita aggiornata", description: "Le modifiche sono state salvate correttamente." })
+      toast({ title: "Uscita aggiornata", description: "Le modifiche sono state salvate." })
       setEditingEvent(null)
     } else {
       const newEvent = { ...formData, id: Date.now(), photos: [] }
@@ -203,7 +192,7 @@ export default function EventsPage() {
 
   const handleDeleteEvent = (id: number) => {
     setEvents(events.filter(e => e.id !== id))
-    toast({ title: "Uscita rimossa", description: "L'uscita è stata eliminata." })
+    toast({ title: "Uscita rimossa", description: "L'uscita è stata eliminata correttamente." })
   }
 
   const handleAddPhotoSubmit = () => {
@@ -216,7 +205,7 @@ export default function EventsPage() {
     }))
     setIsAddingPhoto(null)
     setPhotoUrlInput("")
-    toast({ title: "Foto aggiunta", description: "La foto è stata salvata correttamente." })
+    toast({ title: "Foto aggiunta", description: "L'immagine è stata aggiunta alla gallery." })
   }
 
   return (
@@ -284,89 +273,96 @@ export default function EventsPage() {
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {sortedEvents.map((event) => {
-            const imageUrl = event.photos?.length > 0 ? event.photos[event.photos.length - 1] : "/cascovigili.jpg"
-            const eventDate = new Date(event.date)
-            const isPast = eventDate.getTime() < new Date().setHours(0,0,0,0)
+          {sortedEvents && sortedEvents.length > 0 ? (
+            sortedEvents.map((event) => {
+              const imageUrl = event.photos?.length > 0 ? event.photos[event.photos.length - 1] : "/cascovigili.jpg"
+              const eventDate = new Date(event.date)
+              const isPast = eventDate.getTime() < new Date().setHours(0,0,0,0)
 
-            return (
-              <Card key={event.id} className={cn(
-                "bg-card border-border overflow-hidden transition-all group flex flex-col",
-                isPast ? "opacity-60 grayscale-[0.5]" : "hover:shadow-2xl hover:shadow-primary/5"
-              )}>
-                <div className="relative h-48">
-                  <Image 
-                    src={imageUrl} 
-                    alt={event.title} 
-                    fill 
-                    className="object-cover transition-transform group-hover:scale-105 duration-500"
-                    unoptimized={imageUrl.startsWith('data:') || imageUrl.startsWith('http')}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-                  <Badge className={cn("absolute top-4 left-4 border-none font-bold", isPast ? "bg-muted text-muted-foreground" : "bg-primary text-white")}>
-                    {isPast ? "CONCLUSO" : "PROSSIMA USCITA"}
-                  </Badge>
+              return (
+                <Card key={event.id} className={cn(
+                  "bg-card border-border overflow-hidden transition-all group flex flex-col",
+                  isPast ? "opacity-60 grayscale-[0.5]" : "hover:shadow-2xl hover:shadow-primary/5"
+                )}>
+                  <div className="relative h-48">
+                    <Image 
+                      src={imageUrl} 
+                      alt={event.title} 
+                      fill 
+                      className="object-cover transition-transform group-hover:scale-105 duration-500"
+                      unoptimized={imageUrl.startsWith('data:') || imageUrl.startsWith('http')}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                    <Badge className={cn("absolute top-4 left-4 border-none font-bold", isPast ? "bg-muted text-muted-foreground" : "bg-primary text-white")}>
+                      {isPast ? "CONCLUSO" : "PROSSIMA USCITA"}
+                    </Badge>
 
-                  <div className="absolute bottom-4 right-4 z-10">
-                    <DynamicWeatherBadge location={event.weatherLocation} date={event.date} />
-                  </div>
-                </div>
-                <CardContent className="p-6 flex-1 flex flex-col">
-                  <div className="flex items-center gap-2 text-accent text-sm mb-3 font-bold uppercase tracking-wider">
-                    <Calendar className="w-4 h-4" />
-                    {eventDate.toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })} {event.time && `• ${event.time}`}
-                  </div>
-                  <CardTitle className="text-2xl mb-3 leading-tight font-headline text-foreground">{event.title}</CardTitle>
-                  <div className="flex items-center text-muted-foreground text-sm mb-4">
-                    <MapPin className="w-4 h-4 mr-2 text-primary shrink-0" />
-                    <span className="line-clamp-1">{event.location}</span>
-                  </div>
-                  
-                  <div className="space-y-4 mt-auto">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="w-full gap-2 border-accent text-accent font-bold uppercase tracking-tighter"
-                      onClick={() => setIsAddingPhoto(event.id)}
-                    >
-                      <Camera className="w-4 h-4" /> AGGIUNGI FOTO
-                    </Button>
-
-                    <div className="flex items-center justify-between pt-5 border-t border-border">
-                      <div className="flex gap-2">
-                        {isAdmin && (
-                          <>
-                            <Button variant="ghost" size="icon" onClick={() => { setEditingEvent(event); setFormData({...event}) }} className="h-9 w-9 text-accent hover:bg-accent/10">
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-9 w-9 text-destructive hover:bg-destructive/10">
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent className="bg-card border-border text-foreground">
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle className="text-xl font-headline">Elimina Uscita</AlertDialogTitle>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel className="bg-background border-border">Annulla</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => handleDeleteEvent(event.id)} className="bg-destructive text-white font-bold">Elimina</AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </>
-                        )}
-                      </div>
-                      <Button variant="link" asChild className="text-primary p-0 h-auto font-bold text-xs uppercase tracking-tighter">
-                        <Link href={`/events/${event.id}`}>Vedi Dettagli <ArrowRight className="ml-1 w-3 h-3" /></Link>
-                      </Button>
+                    <div className="absolute bottom-4 right-4 z-10">
+                      <DynamicWeatherBadge location={event.weatherLocation || event.location} date={event.date} />
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            )
-          })}
+                  <CardContent className="p-6 flex-1 flex flex-col">
+                    <div className="flex items-center gap-2 text-accent text-sm mb-3 font-bold uppercase tracking-wider">
+                      <Calendar className="w-4 h-4" />
+                      {eventDate.toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })} {event.time && `• ${event.time}`}
+                    </div>
+                    <CardTitle className="text-2xl mb-3 leading-tight font-headline text-foreground">{event.title}</CardTitle>
+                    <div className="flex items-center text-muted-foreground text-sm mb-4">
+                      <MapPin className="w-4 h-4 mr-2 text-primary shrink-0" />
+                      <span className="line-clamp-1">{event.location}</span>
+                    </div>
+                    
+                    <div className="space-y-4 mt-auto">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="w-full gap-2 border-accent text-accent font-bold uppercase tracking-tighter"
+                        onClick={() => setIsAddingPhoto(event.id)}
+                      >
+                        <Camera className="w-4 h-4" /> AGGIUNGI FOTO
+                      </Button>
+
+                      <div className="flex items-center justify-between pt-5 border-t border-border">
+                        <div className="flex gap-2">
+                          {isAdmin && (
+                            <>
+                              <Button variant="ghost" size="icon" onClick={() => { setEditingEvent(event); setFormData({...event}) }} className="h-9 w-9 text-accent hover:bg-accent/10">
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-9 w-9 text-destructive hover:bg-destructive/10">
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent className="bg-card border-border text-foreground">
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle className="text-xl font-headline">Elimina Uscita</AlertDialogTitle>
+                                    <AlertDialogDescription>Vuoi rimuovere definitivamente questa uscita dal calendario?</AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel className="bg-background border-border">Annulla</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleDeleteEvent(event.id)} className="bg-destructive text-white font-bold">Sì, Elimina</AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </>
+                          )}
+                        </div>
+                        <Button variant="link" asChild className="text-primary p-0 h-auto font-bold text-xs uppercase tracking-tighter">
+                          <Link href={`/events/${event.id}`}>Vedi Dettagli <ArrowRight className="ml-1 w-3 h-3" /></Link>
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            })
+          ) : (
+            <div className="col-span-full py-20 text-center border-2 border-dashed border-border rounded-2xl">
+              <p className="text-muted-foreground font-headline">Nessun evento in programma.</p>
+            </div>
+          )}
         </div>
 
         {/* Dialog Aggiungi Foto */}
