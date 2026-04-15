@@ -14,8 +14,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
-import { Calendar, ArrowRight, MapPin, Sun, Cloud, CloudRain, Clock, CheckCircle, Edit, Trash2, Camera, Plus, Map as MapIcon } from "lucide-react"
-import { PlaceHolderImages } from "@/lib/placeholder-images"
+import { Calendar, ArrowRight, MapPin, Sun, Cloud, CloudRain, Clock, CheckCircle, Edit, Trash2, Camera, Plus } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const initialUpcomingEvents = [
@@ -81,9 +80,11 @@ export default function Home() {
 
     const storedEvents = localStorage.getItem("vvf_all_events")
     if (storedEvents) {
-      setEvents(JSON.parse(storedEvents).slice(0, 3))
+      const allEvents = JSON.parse(storedEvents)
+      setEvents(allEvents.slice(0, 3))
     } else {
       setEvents(initialUpcomingEvents)
+      localStorage.setItem("vvf_all_events", JSON.stringify(initialUpcomingEvents))
     }
   }, [])
 
@@ -96,7 +97,7 @@ export default function Home() {
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
 
     if (diffDays < 0) return { icon: CheckCircle, text: 'Concluso', temp: '', color: 'text-muted-foreground' }
-    if (diffDays > 10) return { icon: Clock, text: 'Meteo', temp: '', color: 'text-white/70' }
+    if (diffDays > 14) return { icon: Clock, text: 'Meteo', temp: '', color: 'text-white/70' }
 
     const weathers = [
       { icon: Sun, temp: '24°', color: 'text-accent' },
@@ -147,49 +148,44 @@ export default function Home() {
     setEvents(updatedAll.slice(0, 3))
     setIsAddingPhoto(null)
     setPhotoUrlInput("")
-    toast({ title: "Foto aggiunta", description: "La foto è stata salvata correttamente." })
+    toast({ title: "Foto aggiunta", description: "La foto è stata salvata con successo." })
   }
-
-  const heroImage = PlaceHolderImages.find(img => img.id === "hero-ride")
 
   return (
     <div className="min-h-screen pb-20 md:pb-0 md:pt-16 bg-background">
       <Navbar />
       
-      <section className="relative h-[60vh] w-full flex items-center justify-center overflow-hidden px-6 pt-16 md:pt-0">
-        {heroImage?.imageUrl && (
-          <>
-            <Image
-              src={heroImage.imageUrl}
-              alt="Logo Background"
-              fill
-              className="object-contain"
-              priority
-            />
-            <div className="absolute inset-0 bg-black/40 z-[1]" />
-          </>
-        )}
+      <section className="relative h-[50vh] w-full flex items-center justify-center overflow-hidden px-6 pt-16 md:pt-0">
+        <Image
+          src="/cascovigili.jpg"
+          alt="Background"
+          fill
+          className="object-cover opacity-40"
+          priority
+        />
+        <div className="absolute inset-0 bg-black/40 z-[1]" />
         <div className="relative z-10 text-center max-w-2xl flex flex-col items-center">
-          <div className="relative w-24 h-24 md:w-32 md:h-32 mb-6">
+          <div className="relative w-20 h-20 md:w-28 md:h-28 mb-4">
             <Image src="/logo_motoclub.gif" alt="Logo" fill className="object-contain" priority />
           </div>
-          <h1 className="text-3xl md:text-5xl font-headline font-bold mb-8 bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent uppercase tracking-tighter">
+          <h1 className="text-3xl md:text-5xl font-headline font-bold mb-6 bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent uppercase tracking-tighter">
             Motoclub VVF Roma
           </h1>
-          <Button size="lg" className="bg-primary hover:bg-primary/90 text-white rounded-full px-10 h-14 font-bold" asChild>
-            <Link href="/events">Esplora Uscite <ArrowRight className="ml-2 w-5 h-5" /></Link>
+          <Button size="lg" className="bg-primary hover:bg-primary/90 text-white rounded-full px-8 h-12 font-bold" asChild>
+            <Link href="/events">Tutti gli Eventi <ArrowRight className="ml-2 w-5 h-5" /></Link>
           </Button>
         </div>
       </section>
 
-      <main className="max-w-7xl mx-auto px-4 py-16 space-y-20">
+      <main className="max-w-7xl mx-auto px-4 py-12">
         <section>
           <div className="flex items-center justify-between mb-8">
-            <h2 className="text-3xl font-headline font-bold border-l-4 border-primary pl-4 uppercase tracking-tighter">Prossime Uscite</h2>
-            <Link href="/events" className="text-primary flex items-center gap-1 hover:underline font-bold uppercase text-sm">
-              Calendario <ArrowRight className="w-4 h-4" />
+            <h2 className="text-2xl md:text-3xl font-headline font-bold border-l-4 border-primary pl-4 uppercase tracking-tighter">Prossime Uscite</h2>
+            <Link href="/events" className="text-primary flex items-center gap-1 hover:underline font-bold uppercase text-xs">
+              Vedi Tutto <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {events.map(event => {
               const weather = getMockWeather(event.date)
@@ -199,20 +195,16 @@ export default function Home() {
               
               return (
                 <Card key={event.id} className="overflow-hidden border-border bg-card hover:border-primary/50 transition-all group flex flex-col">
-                  <div className="relative h-56 w-full">
+                  <div className="relative h-52 w-full">
                     <Image 
                       src={imageUrl} 
                       alt={event.title} 
                       fill 
                       className="object-cover transition-transform group-hover:scale-105" 
-                      priority
-                      unoptimized={imageUrl.startsWith('data:') || imageUrl.startsWith('http')}
+                      unoptimized={imageUrl.startsWith('http') || imageUrl.startsWith('data:')}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
-                    <Badge className="absolute top-4 left-4 bg-primary text-white border-none font-bold uppercase py-1 text-[10px]">
-                      PROSSIMA USCITA
-                    </Badge>
-
+                    
                     <a 
                       href={`https://www.ilmeteo.it/meteo/${encodeURIComponent(weatherKey)}`}
                       target="_blank"
@@ -225,11 +217,12 @@ export default function Home() {
                       </span>
                     </a>
                   </div>
+
                   <CardContent className="p-6 flex-1 flex flex-col">
-                    <p className="text-accent text-xs font-bold uppercase tracking-widest mb-2">
+                    <p className="text-accent text-[10px] font-bold uppercase tracking-widest mb-1">
                       {new Date(event.date).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}
                     </p>
-                    <CardTitle className="text-2xl text-foreground font-headline mb-4">{event.title}</CardTitle>
+                    <CardTitle className="text-xl text-foreground font-headline mb-4 leading-tight">{event.title}</CardTitle>
                     
                     <div className="flex items-center text-muted-foreground text-sm mb-6">
                       <MapPin className="w-4 h-4 mr-2 text-primary shrink-0" />
@@ -261,19 +254,19 @@ export default function Home() {
                                 </AlertDialogTrigger>
                                 <AlertDialogContent className="bg-card border-border text-foreground">
                                   <AlertDialogHeader>
-                                    <AlertDialogTitle className="text-xl font-headline">Rimuovi Uscita</AlertDialogTitle>
-                                    <AlertDialogDescription className="text-muted-foreground">Vuoi davvero eliminare questa uscita?</AlertDialogDescription>
+                                    <AlertDialogTitle>Rimuovi Uscita</AlertDialogTitle>
+                                    <AlertDialogDescription>Vuoi davvero eliminare l'uscita "{event.title}" dalla lista?</AlertDialogDescription>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>
-                                    <AlertDialogCancel className="bg-background border-border">No</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleDelete(event.id)} className="bg-destructive text-white font-bold">Sì, Rimuovi</AlertDialogAction>
+                                    <AlertDialogCancel className="bg-background border-border">Annulla</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleDelete(event.id)} className="bg-destructive text-white font-bold">Rimuovi</AlertDialogAction>
                                   </AlertDialogFooter>
                                 </AlertDialogContent>
                               </AlertDialog>
                             </>
                           )}
                         </div>
-                        <Button asChild variant="outline" className="h-9 text-xs border-primary text-primary font-bold uppercase">
+                        <Button asChild variant="outline" className="h-8 text-[10px] border-primary text-primary font-bold uppercase">
                           <Link href={`/events/${event.id}`}>Dettagli</Link>
                         </Button>
                       </div>
@@ -291,10 +284,10 @@ export default function Home() {
         <DialogContent className="bg-card border-border text-foreground">
           <DialogHeader>
             <DialogTitle className="font-headline text-2xl">Condividi una Foto</DialogTitle>
-            <DialogDescription>Incolla l'URL di un'immagine per aggiungerla alla gallery dell'uscita.</DialogDescription>
+            <DialogDescription>Inserisci l'URL dell'immagine che vuoi aggiungere alla galleria di questa uscita.</DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            <Label htmlFor="photo-url" className="block mb-2">URL Immagine</Label>
+            <Label htmlFor="photo-url" className="block mb-2 text-sm">URL Immagine</Label>
             <Input 
               id="photo-url"
               placeholder="https://images.unsplash.com/..."
@@ -305,47 +298,44 @@ export default function Home() {
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setIsAddingPhoto(null)}>Annulla</Button>
-            <Button onClick={handleAddPhotoSubmit} className="bg-primary text-white font-bold">Aggiungi</Button>
+            <Button onClick={handleAddPhotoSubmit} className="bg-primary text-white font-bold">Salva Foto</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
+      {/* Dialog Modifica (Admin) */}
       {editingEvent && (
         <Dialog open={!!editingEvent} onOpenChange={(open) => !open && setEditingEvent(null)}>
           <DialogContent className="bg-card border-border sm:max-w-[500px] text-foreground">
             <DialogHeader>
               <DialogTitle className="text-2xl font-headline">Modifica Uscita</DialogTitle>
-              <DialogDescription className="text-muted-foreground">Aggiorna i dettagli dell'uscita in vetrina.</DialogDescription>
+              <DialogDescription>Aggiorna le informazioni dell'evento programmato.</DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-2">
-              <div className="grid gap-2">
-                <Label>Titolo</Label>
+              <div className="grid gap-1">
+                <Label className="text-xs">Titolo</Label>
                 <Input value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="bg-background" />
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label>Data</Label>
+                <div className="grid gap-1">
+                  <Label className="text-xs">Data</Label>
                   <Input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="bg-background" />
                 </div>
-                <div className="grid gap-2">
-                  <Label>Orario</Label>
+                <div className="grid gap-1">
+                  <Label className="text-xs">Orario</Label>
                   <Input type="time" value={formData.time} onChange={e => setFormData({...formData, time: e.target.value})} className="bg-background" />
                 </div>
               </div>
-              <div className="grid gap-2">
-                <Label>Luogo di Ritrovo</Label>
+              <div className="grid gap-1">
+                <Label className="text-xs">Luogo di Ritrovo</Label>
                 <Input value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} className="bg-background" />
               </div>
-              <div className="grid gap-2">
-                <Label>Località Meteo</Label>
+              <div className="grid gap-1">
+                <Label className="text-xs">Località Meteo</Label>
                 <Input value={formData.weatherLocation} onChange={e => setFormData({...formData, weatherLocation: e.target.value})} className="bg-background" />
               </div>
-              <div className="grid gap-2">
-                <Label>URL Percorso Google Maps</Label>
-                <Input value={formData.mapUrl} onChange={e => setFormData({...formData, mapUrl: e.target.value})} className="bg-background" />
-              </div>
-              <div className="grid gap-2">
-                <Label>Descrizione</Label>
+              <div className="grid gap-1">
+                <Label className="text-xs">Descrizione</Label>
                 <Textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="bg-background min-h-[80px]" />
               </div>
             </div>
