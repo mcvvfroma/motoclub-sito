@@ -155,10 +155,7 @@ export default function Home() {
               const weather = getMockWeather(event.date)
               const WeatherIcon = weather.icon
               const weatherKey = event.weatherLocation || "Roma"
-              const mapUrl = event.mapUrl || `https://www.meteoam.it/it/meteo-citta/${encodeURIComponent(weatherKey)}`
-              
-              const unsplashUrl = `https://source.unsplash.com/featured/1600x900/?motorcycle,${encodeURIComponent(weatherKey)}`
-              const imageUrl = event.image || unsplashUrl
+              const imageUrl = event.image || "/cascovigili.jpg"
               
               return (
                 <Card key={event.id} className="overflow-hidden border-border bg-card hover:border-primary/50 transition-all group flex flex-col">
@@ -168,7 +165,7 @@ export default function Home() {
                       alt={event.title} 
                       fill 
                       className="object-cover transition-transform group-hover:scale-105" 
-                      onError={(e: any) => { e.currentTarget.src = "/cascovigili.jpg" }}
+                      priority
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
                     <Badge className="absolute top-4 left-4 bg-primary text-white border-none font-bold uppercase py-1 text-[10px]">
@@ -216,13 +213,13 @@ export default function Home() {
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel className="bg-background border-border">No</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDelete(event.id)} className="bg-destructive text-white">Sì, Rimuovi</AlertDialogAction>
+                              <AlertDialogAction onClick={() => handleDelete(event.id)} className="bg-destructive text-white font-bold">Sì, Rimuovi</AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>
                       </div>
                       <Button asChild variant="outline" className="h-9 text-xs border-accent text-accent font-bold uppercase">
-                        <a href={mapUrl} target="_blank" rel="noopener noreferrer">Percorso</a>
+                        <Link href={`/events/${event.id}`}>Dettagli</Link>
                       </Button>
                     </div>
                   </CardContent>
@@ -278,7 +275,7 @@ export default function Home() {
             </div>
             <DialogFooter>
               <Button variant="ghost" onClick={() => setEditingEvent(null)}>Annulla</Button>
-              <Button onClick={saveEdit} className="bg-accent text-accent-foreground font-bold">Salva</Button>
+              <Button onClick={saveEdit} className="bg-accent text-accent-foreground font-bold">Salva Modifiche</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

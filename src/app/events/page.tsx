@@ -215,9 +215,7 @@ export default function EventsPage() {
             const weather = getMockWeather(event.date)
             const WeatherIcon = weather.icon
             const weatherKey = event.weatherLocation || "Roma"
-            
-            const unsplashUrl = `https://source.unsplash.com/featured/1600x900/?motorcycle,${encodeURIComponent(weatherKey)}`
-            const imageUrl = event.image || unsplashUrl
+            const imageUrl = event.image || "/cascovigili.jpg"
 
             return (
               <Card key={event.id} className={cn(
@@ -230,7 +228,7 @@ export default function EventsPage() {
                     alt={event.title} 
                     fill 
                     className="object-cover transition-transform group-hover:scale-105 duration-500"
-                    onError={(e: any) => { e.currentTarget.src = "/cascovigili.jpg" }}
+                    priority
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
                   <Badge className={cn("absolute top-4 left-4 border-none font-bold", isPast ? "bg-muted text-muted-foreground" : "bg-primary text-white")}>
@@ -282,21 +280,15 @@ export default function EventsPage() {
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel className="bg-background border-border">Annulla</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDeleteEvent(event.id)} className="bg-destructive text-white">Elimina</AlertDialogAction>
+                            <AlertDialogAction onClick={() => handleDeleteEvent(event.id)} className="bg-destructive text-white font-bold">Elimina</AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>
                     </div>
                     <div className="flex gap-4">
-                      {event.mapUrl ? (
-                        <Button variant="link" asChild className="text-accent p-0 h-auto font-bold text-xs uppercase tracking-tighter">
-                          <a href={event.mapUrl} target="_blank" rel="noopener noreferrer">Percorso</a>
-                        </Button>
-                      ) : (
-                        <Button variant="link" asChild className="text-accent p-0 h-auto font-bold text-xs uppercase tracking-tighter">
-                          <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(weatherKey)}`} target="_blank" rel="noopener noreferrer">Percorso</a>
-                        </Button>
-                      )}
+                      <Button variant="link" asChild className="text-accent p-0 h-auto font-bold text-xs uppercase tracking-tighter">
+                        <Link href={event.mapUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(weatherKey)}`} target="_blank">Percorso</Link>
+                      </Button>
                       <Button variant="link" asChild className="text-primary p-0 h-auto font-bold text-xs uppercase tracking-tighter">
                         <Link href={`/events/${event.id}`}>Dettagli <ArrowRight className="ml-1 w-3 h-3" /></Link>
                       </Button>
