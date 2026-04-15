@@ -16,14 +16,15 @@ export default async function EventDetailPage({ params }: { params: { id: string
   // Mock event data retrieval
   const event = {
     title: "Mountain Pass Adventure",
-    date: "May 20, 2024",
+    date: "2026-05-20",
     time: "08:30 AM",
     location: "Alps - Milan Base",
+    weatherLocation: "Stelvio",
     description: "A breathtaking journey through the Stelvio Pass. We'll start from our Milan base early in the morning and navigate the serpentines of the Alps. Expect tight hairpins and incredible vistas.",
     route: "Milan -> Lecco -> Bormio -> Stelvio Pass -> Bolzano",
     distance: "280km",
     duration: "6 hours",
-    image: PlaceHolderImages.find(img => img.id === "event-1")?.imageUrl,
+    image: null,
     map: PlaceHolderImages.find(img => img.id === "map-placeholder")?.imageUrl
   }
 
@@ -42,6 +43,10 @@ export default async function EventDetailPage({ params }: { params: { id: string
     weatherData: mockWeatherData
   })
 
+  // Gerarchia Immagine
+  const unsplashUrl = `https://source.unsplash.com/featured/1600x900/?motorcycle,landscape,${encodeURIComponent(event.weatherLocation || event.title)}`
+  const imageUrl = event.image || unsplashUrl || "/cascovigili.jpg"
+
   return (
     <div className="min-h-screen pb-20 md:pb-0 md:pt-16">
       <Navbar />
@@ -59,7 +64,7 @@ export default async function EventDetailPage({ params }: { params: { id: string
             <h1 className="text-4xl font-headline font-bold mb-4">{event.title}</h1>
             <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
               <span className="flex items-center gap-1 bg-secondary px-3 py-1 rounded-full">
-                <Calendar className="w-4 h-4 text-primary" /> {event.date}
+                <Calendar className="w-4 h-4 text-primary" /> {new Date(event.date).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}
               </span>
               <span className="flex items-center gap-1 bg-secondary px-3 py-1 rounded-full">
                 <Clock className="w-4 h-4 text-primary" /> {event.time}
@@ -71,7 +76,13 @@ export default async function EventDetailPage({ params }: { params: { id: string
           </header>
 
           <div className="relative h-80 rounded-2xl overflow-hidden">
-            {event.image && <Image src={event.image} alt={event.title} fill className="object-cover" />}
+            <Image 
+              src={imageUrl} 
+              alt={event.title} 
+              fill 
+              className="object-cover" 
+              onError={(e: any) => { e.target.src = "/cascovigili.jpg" }}
+            />
           </div>
 
           <Card className="bg-card border-border">
@@ -122,7 +133,7 @@ export default async function EventDetailPage({ params }: { params: { id: string
                 <span className="text-xs font-bold uppercase tracking-widest">AI Ride Advisor</span>
               </div>
               <CardTitle className="text-2xl">Consigli di Sicurezza</CardTitle>
-              <CardDescription>Generato per il {event.date}</CardDescription>
+              <CardDescription>Generato per il {new Date(event.date).toLocaleDateString('it-IT', { day: 'numeric', month: 'long' })}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className={cn(

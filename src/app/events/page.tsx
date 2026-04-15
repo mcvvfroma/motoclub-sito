@@ -1,11 +1,11 @@
 
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useMemo } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { Navbar } from "@/components/Navbar"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,7 +15,6 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
 import { Calendar, MapPin, ArrowRight, Plus, Edit, Trash2, Clock, CheckCircle, Sun, Cloud, CloudRain } from "lucide-react"
-import { PlaceHolderImages } from "@/lib/placeholder-images"
 import { cn } from "@/lib/utils"
 
 const initialEvents = [
@@ -27,9 +26,9 @@ const initialEvents = [
     location: "Caserma VVF Roma",
     weatherLocation: "Roma",
     mapUrl: "https://www.google.com/maps/search/?api=1&query=Caserma+VVF+Roma",
+    image: "/cascovigili.jpg",
     description: "Partenza dalla Caserma per un'uscita istituzionale tra i monumenti della Capitale.",
-    type: "Touring",
-    image: "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?q=80&w=1000"
+    type: "Touring"
   },
   {
     id: 2,
@@ -39,9 +38,9 @@ const initialEvents = [
     location: "Comando VVF via Genova",
     weatherLocation: "Terminillo",
     mapUrl: "https://www.google.com/maps/dir/Roma/Monte+Terminillo",
+    image: "/cascovigili.jpg",
     description: "La classica scalata alla 'Montagna di Roma'. Curve mozzafiato e aria fresca.",
-    type: "Touring",
-    image: "https://images.unsplash.com/photo-1444491741275-3747c53c99b4?q=80&w=1000"
+    type: "Touring"
   },
   {
     id: 3,
@@ -51,9 +50,9 @@ const initialEvents = [
     location: "Piazza del Popolo, Roma",
     weatherLocation: "Roma",
     mapUrl: "https://www.google.com/maps/search/?api=1&query=Piazza+del+Popolo+Roma",
+    image: "/cascovigili.jpg",
     description: "Il grande raduno biennale di tutti i motoclub dei Vigili del Fuoco d'Italia.",
-    type: "Raduno",
-    image: "https://images.unsplash.com/photo-1558980394-34764db076b4?q=80&w=1000"
+    type: "Raduno"
   }
 ]
 
@@ -119,15 +118,12 @@ export default function EventsPage() {
       return
     }
 
-    const weatherLoc = formData.weatherLocation || formData.title || "motorcycle"
-    const finalImage = formData.image || `https://source.unsplash.com/featured/?motorcycle,landscape,${encodeURIComponent(weatherLoc)}`
-
     if (editingEvent) {
-      setEvents(events.map(e => e.id === editingEvent.id ? { ...formData, id: e.id, image: finalImage } : e))
+      setEvents(events.map(e => e.id === editingEvent.id ? { ...formData, id: e.id } : e))
       toast({ title: "Uscita aggiornata", description: "Le modifiche sono state salvate correttamente." })
       setEditingEvent(null)
     } else {
-      const newEvent = { ...formData, id: Date.now(), image: finalImage }
+      const newEvent = { ...formData, id: Date.now() }
       setEvents([newEvent, ...events])
       toast({ title: "Uscita creata", description: "La nuova uscita è stata aggiunta al calendario." })
       setIsAdding(false)
@@ -185,20 +181,19 @@ export default function EventsPage() {
                   </div>
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="location">Luogo di Ritrovo (Indirizzo)</Label>
+                  <Label htmlFor="location">Luogo di Ritrovo</Label>
                   <Input id="location" value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} className="bg-background" />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="weatherLocation">Località Meteo (Meta finale)</Label>
-                  <Input id="weatherLocation" value={formData.weatherLocation} onChange={e => setFormData({...formData, weatherLocation: e.target.value})} className="bg-background" placeholder="es: Terminillo" />
-                  <p className="text-[10px] text-muted-foreground italic">Inserisci solo il comune o la vetta per foto e meteo precisi.</p>
+                  <Label htmlFor="weatherLocation">Località Meteo</Label>
+                  <Input id="weatherLocation" value={formData.weatherLocation} onChange={e => setFormData({...formData, weatherLocation: e.target.value})} className="bg-background" />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="image">Link Foto Manuale (opzionale)</Label>
-                  <Input id="image" value={formData.image} onChange={e => setFormData({...formData, image: e.target.value})} className="bg-background" />
+                  <Input id="image" value={formData.image} onChange={e => setFormData({...formData, image: e.target.value})} className="bg-background" placeholder="https://..." />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="mapUrl">Link Google Maps (Percorso)</Label>
+                  <Label htmlFor="mapUrl">URL Google Maps (Percorso)</Label>
                   <Input id="mapUrl" value={formData.mapUrl} onChange={e => setFormData({...formData, mapUrl: e.target.value})} className="bg-background" />
                 </div>
                 <div className="grid gap-2">
@@ -220,7 +215,10 @@ export default function EventsPage() {
             const weather = getMockWeather(event.date)
             const WeatherIcon = weather.icon
             const weatherKey = event.weatherLocation || "Roma"
-            const imageUrl = event.image || `https://source.unsplash.com/featured/?motorcycle,landscape,${encodeURIComponent(weatherKey)}`
+            
+            // Gerarchia Immagine: 1. Manuale, 2. Unsplash Locale, 3. Casco VVF
+            const unsplashUrl = `https://source.unsplash.com/featured/1600x900/?motorcycle,landscape,${encodeURIComponent(weatherKey)}`
+            const imageUrl = event.image || unsplashUrl || "/cascovigili.jpg"
 
             return (
               <Card key={event.id} className={cn(
@@ -233,6 +231,7 @@ export default function EventsPage() {
                     alt={event.title} 
                     fill 
                     className="object-cover transition-transform group-hover:scale-105 duration-500"
+                    onError={(e: any) => { e.target.src = "/cascovigili.jpg" }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
                   <Badge className={cn("absolute top-4 left-4 border-none font-bold", isPast ? "bg-muted text-muted-foreground" : "bg-primary text-white")}>
@@ -290,9 +289,13 @@ export default function EventsPage() {
                       </AlertDialog>
                     </div>
                     <div className="flex gap-4">
-                      {event.mapUrl && (
+                      {event.mapUrl ? (
                         <Button variant="link" asChild className="text-accent p-0 h-auto font-bold text-xs uppercase tracking-tighter">
                           <a href={event.mapUrl} target="_blank" rel="noopener noreferrer">Percorso</a>
+                        </Button>
+                      ) : (
+                        <Button variant="link" asChild className="text-accent p-0 h-auto font-bold text-xs uppercase tracking-tighter">
+                          <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(weatherKey)}`} target="_blank" rel="noopener noreferrer">Percorso</a>
                         </Button>
                       )}
                       <Button variant="link" asChild className="text-primary p-0 h-auto font-bold text-xs uppercase tracking-tighter">
@@ -337,8 +340,8 @@ export default function EventsPage() {
                   <Input value={formData.weatherLocation} onChange={e => setFormData({...formData, weatherLocation: e.target.value})} className="bg-background" />
                 </div>
                 <div className="grid gap-2">
-                  <Label>Link Foto (opzionale)</Label>
-                  <Input value={formData.image} onChange={e => setFormData({...formData, image: e.target.value})} className="bg-background" />
+                  <Label>Link Foto Manuale (opzionale)</Label>
+                  <Input value={formData.image} onChange={e => setFormData({...formData, image: e.target.value})} className="bg-background" placeholder="https://..." />
                 </div>
                 <div className="grid gap-2">
                   <Label>Link Percorso Maps</Label>
@@ -351,7 +354,7 @@ export default function EventsPage() {
               </div>
               <DialogFooter>
                 <Button variant="ghost" onClick={() => setEditingEvent(null)}>Annulla</Button>
-                <Button onClick={handleSaveEvent} className="bg-accent text-accent-foreground font-bold">Salva</Button>
+                <Button onClick={handleSaveEvent} className="bg-accent text-accent-foreground font-bold">Salva Modifiche</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>

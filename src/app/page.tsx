@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useEffect, useState, useMemo } from "react"
+import { useEffect, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { Navbar } from "@/components/Navbar"
@@ -27,7 +27,7 @@ const initialUpcomingEvents = [
     location: "Caserma VVF Roma",
     weatherLocation: "Roma",
     mapUrl: "https://www.google.com/maps/search/?api=1&query=Caserma+VVF+Roma",
-    image: "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?q=80&w=1000",
+    image: "/cascovigili.jpg",
     description: "Partenza dalla Caserma per un'uscita istituzionale tra i monumenti della Capitale.",
     type: "Touring"
   },
@@ -39,7 +39,7 @@ const initialUpcomingEvents = [
     location: "Comando VVF via Genova",
     weatherLocation: "Terminillo",
     mapUrl: "https://www.google.com/maps/dir/Roma/Monte+Terminillo",
-    image: "https://images.unsplash.com/photo-1444491741275-3747c53c99b4?q=80&w=1000",
+    image: "/cascovigili.jpg",
     description: "La classica scalata alla 'Montagna di Roma'. Curve mozzafiato e aria fresca.",
     type: "Touring"
   },
@@ -51,7 +51,7 @@ const initialUpcomingEvents = [
     location: "Piazza del Popolo, Roma",
     weatherLocation: "Roma",
     mapUrl: "https://www.google.com/maps/search/?api=1&query=Piazza+del+Popolo+Roma",
-    image: "https://images.unsplash.com/photo-1558980394-34764db076b4?q=80&w=1000",
+    image: "/cascovigili.jpg",
     description: "Il grande raduno biennale di tutti i motoclub dei Vigili del Fuoco d'Italia.",
     type: "Raduno"
   }
@@ -103,12 +103,13 @@ export default function Home() {
   }
 
   const saveEdit = () => {
-    const weatherLoc = formData.weatherLocation || formData.title || "motorcycle"
-    const finalImage = formData.image || `https://source.unsplash.com/featured/?motorcycle,landscape,${encodeURIComponent(weatherLoc)}`
-    
-    setEvents(events.map(e => e.id === editingEvent.id ? { ...formData, image: finalImage } : e))
+    if (!formData.title || !formData.date) {
+      toast({ variant: "destructive", title: "Errore", description: "Titolo e Data sono obbligatori." })
+      return
+    }
+    setEvents(events.map(e => e.id === editingEvent.id ? { ...formData } : e))
     setEditingEvent(null)
-    toast({ title: "Uscita aggiornata", description: "Le modifiche sono state salvate." })
+    toast({ title: "Uscita aggiornata", description: "Le modifiche sono state salvate correttamente." })
   }
 
   return (
@@ -155,7 +156,10 @@ export default function Home() {
               const WeatherIcon = weather.icon
               const weatherKey = event.weatherLocation || "Roma"
               const mapUrl = event.mapUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(weatherKey)}`
-              const imageUrl = event.image || `https://source.unsplash.com/featured/?motorcycle,landscape,${encodeURIComponent(weatherKey)}`
+              
+              // Gerarchia Immagine: 1. Manuale, 2. Unsplash Locale, 3. Casco VVF
+              const unsplashUrl = `https://source.unsplash.com/featured/1600x900/?motorcycle,landscape,${encodeURIComponent(weatherKey)}`
+              const imageUrl = event.image || unsplashUrl || "/cascovigili.jpg"
               
               return (
                 <Card key={event.id} className="overflow-hidden border-border bg-card hover:border-primary/50 transition-all group flex flex-col">
@@ -165,6 +169,7 @@ export default function Home() {
                       alt={event.title} 
                       fill 
                       className="object-cover transition-transform group-hover:scale-105" 
+                      onError={(e: any) => { e.target.src = "/cascovigili.jpg" }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
                     <Badge className="absolute top-4 left-4 bg-primary text-white border-none font-bold uppercase py-1 text-[10px]">
@@ -260,8 +265,8 @@ export default function Home() {
                 <Input value={formData.weatherLocation} onChange={e => setFormData({...formData, weatherLocation: e.target.value})} className="bg-background" />
               </div>
               <div className="grid gap-2">
-                <Label>Link Foto (opzionale)</Label>
-                <Input value={formData.image} onChange={e => setFormData({...formData, image: e.target.value})} className="bg-background" />
+                <Label>Link Foto Manuale (opzionale)</Label>
+                <Input value={formData.image} onChange={e => setFormData({...formData, image: e.target.value})} className="bg-background" placeholder="https://..." />
               </div>
               <div className="grid gap-2">
                 <Label>Link Percorso Maps</Label>
