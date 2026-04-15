@@ -166,6 +166,7 @@ export default function Home() {
                       fill 
                       className="object-cover transition-transform group-hover:scale-105" 
                       priority
+                      unoptimized={!!event.image}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
                     <Badge className="absolute top-4 left-4 bg-primary text-white border-none font-bold uppercase py-1 text-[10px]">
@@ -173,7 +174,7 @@ export default function Home() {
                     </Badge>
 
                     <a 
-                      href={`https://www.meteoam.it/it/meteo-citta/${encodeURIComponent(weatherKey)}`}
+                      href="https://www.meteoam.it/it/previsioni-meteo-italia"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="absolute bottom-4 right-4 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-2 hover:bg-black/80 hover:scale-110 transition-all z-10"

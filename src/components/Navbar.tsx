@@ -41,7 +41,7 @@ export function Navbar() {
     { name: "Home", href: "/", icon: Home },
     { name: "Eventi", href: "/events", icon: Calendar },
     ...(isAdmin ? [{ name: "Soci", href: "/members", icon: Users }] : []),
-    { name: "Galleria", href: "/gallery", icon: ImageIcon },
+    { name: "Galleria", href: "/galleria", icon: ImageIcon },
     { name: "Convenzioni", href: "/conventions", icon: FileText },
   ]
 
