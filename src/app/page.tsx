@@ -27,7 +27,7 @@ const initialUpcomingEvents = [
     location: "Caserma VVF Roma",
     weatherLocation: "Roma",
     mapUrl: "https://www.google.com/maps/search/?api=1&query=Caserma+VVF+Roma",
-    image: PlaceHolderImages.find(img => img.id === "event-1")?.imageUrl,
+    image: "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?q=80&w=1000",
     description: "Partenza dalla Caserma per un'uscita istituzionale tra i monumenti della Capitale.",
     type: "Touring"
   },
@@ -39,7 +39,7 @@ const initialUpcomingEvents = [
     location: "Comando VVF via Genova",
     weatherLocation: "Terminillo",
     mapUrl: "https://www.google.com/maps/dir/Roma/Monte+Terminillo",
-    image: PlaceHolderImages.find(img => img.id === "gallery-3")?.imageUrl,
+    image: "https://images.unsplash.com/photo-1444491741275-3747c53c99b4?q=80&w=1000",
     description: "La classica scalata alla 'Montagna di Roma'. Curve mozzafiato e aria fresca.",
     type: "Touring"
   },
@@ -51,7 +51,7 @@ const initialUpcomingEvents = [
     location: "Piazza del Popolo, Roma",
     weatherLocation: "Roma",
     mapUrl: "https://www.google.com/maps/search/?api=1&query=Piazza+del+Popolo+Roma",
-    image: PlaceHolderImages.find(img => img.id === "hero-ride")?.imageUrl,
+    image: "https://images.unsplash.com/photo-1558980394-34764db076b4?q=80&w=1000",
     description: "Il grande raduno biennale di tutti i motoclub dei Vigili del Fuoco d'Italia.",
     type: "Raduno"
   }
@@ -103,8 +103,8 @@ export default function Home() {
   }
 
   const saveEdit = () => {
-    const seed = formData.weatherLocation || formData.title || "motorcycle"
-    const finalImage = formData.image || `https://picsum.photos/seed/${encodeURIComponent(seed)}/800/600`
+    const weatherLoc = formData.weatherLocation || formData.title || "motorcycle"
+    const finalImage = formData.image || `https://source.unsplash.com/featured/?motorcycle,landscape,${encodeURIComponent(weatherLoc)}`
     
     setEvents(events.map(e => e.id === editingEvent.id ? { ...formData, image: finalImage } : e))
     setEditingEvent(null)
@@ -155,25 +155,17 @@ export default function Home() {
               const WeatherIcon = weather.icon
               const weatherKey = event.weatherLocation || "Roma"
               const mapUrl = event.mapUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(weatherKey)}`
+              const imageUrl = event.image || `https://source.unsplash.com/featured/?motorcycle,landscape,${encodeURIComponent(weatherKey)}`
               
               return (
                 <Card key={event.id} className="overflow-hidden border-border bg-card hover:border-primary/50 transition-all group flex flex-col">
                   <div className="relative h-56 w-full">
-                    {event.image ? (
-                      <Image 
-                        src={event.image} 
-                        alt={event.title} 
-                        fill 
-                        className="object-cover transition-transform group-hover:scale-105" 
-                      />
-                    ) : (
-                      <Image 
-                        src={`https://picsum.photos/seed/${encodeURIComponent(weatherKey)}/800/600`}
-                        alt={event.title}
-                        fill
-                        className="object-cover transition-transform group-hover:scale-105"
-                      />
-                    )}
+                    <Image 
+                      src={imageUrl} 
+                      alt={event.title} 
+                      fill 
+                      className="object-cover transition-transform group-hover:scale-105" 
+                    />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
                     <Badge className="absolute top-4 left-4 bg-primary text-white border-none font-bold uppercase py-1 text-[10px]">
                       PROSSIMA USCITA

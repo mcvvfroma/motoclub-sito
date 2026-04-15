@@ -29,7 +29,7 @@ const initialEvents = [
     mapUrl: "https://www.google.com/maps/search/?api=1&query=Caserma+VVF+Roma",
     description: "Partenza dalla Caserma per un'uscita istituzionale tra i monumenti della Capitale.",
     type: "Touring",
-    image: PlaceHolderImages.find(img => img.id === "event-1")?.imageUrl
+    image: "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?q=80&w=1000"
   },
   {
     id: 2,
@@ -41,7 +41,7 @@ const initialEvents = [
     mapUrl: "https://www.google.com/maps/dir/Roma/Monte+Terminillo",
     description: "La classica scalata alla 'Montagna di Roma'. Curve mozzafiato e aria fresca.",
     type: "Touring",
-    image: PlaceHolderImages.find(img => img.id === "gallery-3")?.imageUrl
+    image: "https://images.unsplash.com/photo-1444491741275-3747c53c99b4?q=80&w=1000"
   },
   {
     id: 3,
@@ -53,7 +53,7 @@ const initialEvents = [
     mapUrl: "https://www.google.com/maps/search/?api=1&query=Piazza+del+Popolo+Roma",
     description: "Il grande raduno biennale di tutti i motoclub dei Vigili del Fuoco d'Italia.",
     type: "Raduno",
-    image: PlaceHolderImages.find(img => img.id === "hero-ride")?.imageUrl
+    image: "https://images.unsplash.com/photo-1558980394-34764db076b4?q=80&w=1000"
   }
 ]
 
@@ -119,8 +119,8 @@ export default function EventsPage() {
       return
     }
 
-    const seed = formData.weatherLocation || formData.title || "motorcycle"
-    const finalImage = formData.image || `https://picsum.photos/seed/${encodeURIComponent(seed)}/800/600`
+    const weatherLoc = formData.weatherLocation || formData.title || "motorcycle"
+    const finalImage = formData.image || `https://source.unsplash.com/featured/?motorcycle,landscape,${encodeURIComponent(weatherLoc)}`
 
     if (editingEvent) {
       setEvents(events.map(e => e.id === editingEvent.id ? { ...formData, id: e.id, image: finalImage } : e))
@@ -220,6 +220,7 @@ export default function EventsPage() {
             const weather = getMockWeather(event.date)
             const WeatherIcon = weather.icon
             const weatherKey = event.weatherLocation || "Roma"
+            const imageUrl = event.image || `https://source.unsplash.com/featured/?motorcycle,landscape,${encodeURIComponent(weatherKey)}`
 
             return (
               <Card key={event.id} className={cn(
@@ -228,7 +229,7 @@ export default function EventsPage() {
               )}>
                 <div className="relative h-48">
                   <Image 
-                    src={event.image || `https://picsum.photos/seed/${encodeURIComponent(weatherKey)}/800/600`} 
+                    src={imageUrl} 
                     alt={event.title} 
                     fill 
                     className="object-cover transition-transform group-hover:scale-105 duration-500"

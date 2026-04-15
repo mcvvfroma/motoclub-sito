@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState } from "react"
@@ -8,12 +9,12 @@ import { PlaceHolderImages } from "@/lib/placeholder-images"
 import { Camera, Plus, Heart, MessageSquare, Download } from "lucide-react"
 
 const initialPhotos = [
-  { id: 1, src: PlaceHolderImages.find(img => img.id === "gallery-1")?.imageUrl, author: "Marco R.", likes: 24, comments: 5 },
-  { id: 2, src: PlaceHolderImages.find(img => img.id === "gallery-2")?.imageUrl, author: "Elena S.", likes: 45, comments: 12 },
-  { id: 3, src: PlaceHolderImages.find(img => img.id === "gallery-3")?.imageUrl, author: "Giani V.", likes: 18, comments: 3 },
-  { id: 4, src: "https://picsum.photos/seed/ride1/800/800", author: "Luca M.", likes: 32, comments: 8 },
-  { id: 5, src: "https://picsum.photos/seed/ride2/800/800", author: "Sofia D.", likes: 12, comments: 1 },
-  { id: 6, src: "https://picsum.photos/seed/ride3/800/800", author: "David K.", likes: 55, comments: 22 },
+  { id: 1, src: "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?q=80&w=1000", author: "Marco R.", likes: 24, comments: 5 },
+  { id: 2, src: "https://images.unsplash.com/photo-1558980394-34764db076b4?q=80&w=1000", author: "Elena S.", likes: 45, comments: 12 },
+  { id: 3, src: "https://images.unsplash.com/photo-1444491741275-3747c53c99b4?q=80&w=1000", author: "Giani V.", likes: 18, comments: 3 },
+  { id: 4, src: "https://images.unsplash.com/photo-1517649763962-0c623066013b?q=80&w=1000", author: "Luca M.", likes: 32, comments: 8 },
+  { id: 5, src: "https://images.unsplash.com/photo-1471506480208-91b3a4cc78be?q=80&w=1000", author: "Sofia D.", likes: 12, comments: 1 },
+  { id: 6, src: "https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?q=80&w=1000", author: "David K.", likes: 55, comments: 22 },
 ]
 
 export default function GalleryPage() {
