@@ -19,11 +19,11 @@ import { cn } from "@/lib/utils"
 const initialCommunications = [
   {
     id: 1,
-    title: "Benvenuto dal Presidente",
+    title: "Benvenuto dal Direttivo",
     date: "2026-01-01",
     priority: "Info",
-    content: "Benvenuti soci nel nuovo portale del Motoclub VVF Roma. Questo spazio è dedicato alla trasparenza e alla condivisione di tutte le decisioni del Direttivo. Qui troverete verbali, nuove quote associative e avvisi urgenti. Buona strada a tutti!\n\nIl Motoclub VVF Roma nasce con l'obiettivo di unire la passione per le due ruote con lo spirito di corpo che contraddistingue i Vigili del Fuoco. Attraverso questo portale, vogliamo rendere più agevole la consultazione dei documenti ufficiali e la partecipazione alle nostre attività sociali.\n\nOgni socio è invitato a consultare regolarmente questa bacheca per rimanere aggiornato sulle ultime circolari e decisioni assembleari.\n\nQuesto testo è stato allungato per testare la nuova funzione di scorrimento del popup. Un testo molto lungo deve poter scorrere senza bloccare la pagina e permettendo sempre di chiudere il messaggio. La passione per le moto ci unisce, la sicurezza ci protegge. Ricordate sempre di controllare la pressione degli pneumatici e lo stato dei freni prima di ogni uscita sociale. Il Direttivo è a vostra disposizione per qualsiasi chiarimento sulle attività del club.",
-    author: "Presidente"
+    content: "Benvenuti soci nel nuovo portale del Motoclub VVF Roma. Questo spazio è dedicato alla trasparenza e alla condivisione di tutte le decisioni del Direttivo di Sezione. Qui troverete verbali, nuove quote associative e avvisi urgenti. Buona strada a tutti!\n\nIl Motoclub VVF Roma nasce con l'obiettivo di unire la passione per le due ruote con lo spirito di corpo che contraddistingue i Vigili del Fuoco. Attraverso questo portale, vogliamo rendere più agevole la consultazione dei documenti ufficiali e la partecipazione alle nostre attività sociali.\n\nOgni socio è invitato a consultare regolarmente questa bacheca per rimanere aggiornato sulle ultime circolari e decisioni assembleari.\n\nLa passione per le moto ci unisce, la sicurezza ci protegge. Ricordate sempre di controllare la pressione degli pneumatici e lo stato dei freni prima di ogni uscita sociale. Il Direttivo è a vostra disposizione per qualsiasi chiarimento sulle attività del club.",
+    author: "Direttivo di Sezione"
   }
 ]
 
@@ -39,7 +39,7 @@ export default function CommunicationsPage() {
     date: new Date().toISOString().split('T')[0],
     priority: "Info",
     content: "",
-    author: "Direttivo"
+    author: "Direttivo di Sezione"
   })
 
   useEffect(() => {
@@ -85,7 +85,7 @@ export default function CommunicationsPage() {
       toast({ title: "Comunicazione pubblicata", description: "Il messaggio è ora visibile a tutti i soci." })
       setIsAdding(false)
     }
-    setFormData({ title: "", date: new Date().toISOString().split('T')[0], priority: "Info", content: "", author: "Direttivo" })
+    setFormData({ title: "", date: new Date().toISOString().split('T')[0], priority: "Info", content: "", author: "Direttivo di Sezione" })
   }
 
   const handleDeleteComm = (id: number) => {
@@ -106,11 +106,11 @@ export default function CommunicationsPage() {
       <main className="max-w-5xl mx-auto px-4 py-8">
         <header className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="space-y-4">
-            <Badge className="bg-primary/10 text-primary border-none font-bold uppercase tracking-widest">Bacheca Ufficiale</Badge>
+            <Badge className="bg-primary/10 text-primary border-none font-bold uppercase tracking-widest">Bacheca Ufficiale Sezione</Badge>
             <h1 className="text-4xl font-headline font-bold text-foreground flex items-center gap-3">
               <Megaphone className="w-10 h-10 text-primary" /> Comunicazioni
             </h1>
-            <p className="text-muted-foreground max-w-2xl">Verbali, circolari e avvisi dal Direttivo del Motoclub VVF Roma.</p>
+            <p className="text-muted-foreground max-w-2xl">Verbali, circolari e avvisi dal Direttivo di Sezione del Motoclub VVF Roma.</p>
           </div>
 
           {isAdmin && (
@@ -217,10 +217,7 @@ export default function CommunicationsPage() {
                   <p className="text-muted-foreground text-sm line-clamp-2 mb-6 leading-relaxed">
                     {comm.content || "Nessun testo inserito."}
                   </p>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold text-accent uppercase tracking-widest">
-                      Pubblicato da: {comm.author || "Direttivo"}
-                    </span>
+                  <div className="flex items-center justify-end">
                     <Button 
                       variant="outline" 
                       size="sm" 
@@ -253,7 +250,7 @@ export default function CommunicationsPage() {
                 </div>
                 <DialogTitle className="text-3xl font-headline leading-tight">{readingComm.title}</DialogTitle>
                 <DialogDescription className="text-accent font-bold uppercase text-[10px] tracking-[0.3em] mt-1">
-                   Comunicazione ufficiale del {readingComm.author}
+                   Motoclub VVF Roma - Sezione Sezionale
                 </DialogDescription>
               </DialogHeader>
 
