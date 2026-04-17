@@ -117,7 +117,7 @@ export default function GalleriaPage() {
     <div className="min-h-screen pb-20 md:pb-0 md:pt-16 bg-background">
       <Navbar />
       
-      <main className="max-w-7xl mx-auto px-2 md:px-4 py-8">
+      <main className="max-w-7xl mx-auto px-2 py-8">
         <header className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6 px-2">
           <div className="space-y-2">
             <Badge className="bg-primary/10 text-primary border-none font-bold uppercase tracking-widest text-[10px]">Memorie di Strada</Badge>
