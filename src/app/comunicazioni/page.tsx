@@ -15,7 +15,6 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useToast } from "@/hooks/use-toast"
 import { Megaphone, Calendar, AlertCircle, Info, Plus, Edit, Trash2, FileText, ChevronRight, X } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { ScrollArea } from "@/components/ui/scroll-area"
 
 const initialCommunications = [
   {
@@ -23,7 +22,7 @@ const initialCommunications = [
     title: "Benvenuto dal Presidente",
     date: "2026-01-01",
     priority: "Info",
-    content: "Benvenuti soci nel nuovo portale del Motoclub VVF Roma. Questo spazio è dedicato alla trasparenza e alla condivisione di tutte le decisioni del Direttivo. Qui troverete verbali, nuove quote associative e avvisi urgenti. Buona strada a tutti!\n\nIl Motoclub VVF Roma nasce con l'obiettivo di unire la passione per le due ruote con lo spirito di corpo che contraddistingue i Vigili del Fuoco. Attraverso questo portale, vogliamo rendere più agevole la consultazione dei documenti ufficiali e la partecipazione alle nostre attività sociali.\n\nOgni socio è invitato a consultare regolarmente questa bacheca per rimanere aggiornato sulle ultime circolari e decisioni assembleari.",
+    content: "Benvenuti soci nel nuovo portale del Motoclub VVF Roma. Questo spazio è dedicato alla trasparenza e alla condivisione di tutte le decisioni del Direttivo. Qui troverete verbali, nuove quote associative e avvisi urgenti. Buona strada a tutti!\n\nIl Motoclub VVF Roma nasce con l'obiettivo di unire la passione per le due ruote con lo spirito di corpo che contraddistingue i Vigili del Fuoco. Attraverso questo portale, vogliamo rendere più agevole la consultazione dei documenti ufficiali e la partecipazione alle nostre attività sociali.\n\nOgni socio è invitato a consultare regolarmente questa bacheca per rimanere aggiornato sulle ultime circolari e decisioni assembleari.\n\nQuesto testo è stato allungato per testare la nuova funzione di scorrimento del popup. Un testo molto lungo deve poter scorrere senza bloccare la pagina e permettendo sempre di chiudere il messaggio. La passione per le moto ci unisce, la sicurezza ci protegge. Ricordate sempre di controllare la pressione degli pneumatici e lo stato dei freni prima di ogni uscita sociale. Il Direttivo è a vostra disposizione per qualsiasi chiarimento sulle attività del club.",
     author: "Presidente"
   }
 ]
@@ -237,11 +236,11 @@ export default function CommunicationsPage() {
           )}
         </div>
 
-        {/* Read More Dialog with Scrolling Support */}
+        {/* Read More Dialog with FIXED Scroll and Sticky Footer */}
         {readingComm && (
           <Dialog open={!!readingComm} onOpenChange={(open) => !open && setReadingComm(null)}>
-            <DialogContent className="bg-card border-border sm:max-w-[650px] text-foreground p-0 gap-0 flex flex-col max-h-[90vh]">
-              <DialogHeader className="p-6 pb-2">
+            <DialogContent className="bg-card border-border sm:max-w-[650px] text-foreground p-0 gap-0 flex flex-col max-h-[90vh] overflow-hidden">
+              <DialogHeader className="p-6 pb-4 border-b border-border">
                 <div className="flex items-center gap-3 mb-2">
                    <Badge className={cn(
                     "font-bold uppercase tracking-widest text-[10px]",
@@ -258,19 +257,21 @@ export default function CommunicationsPage() {
                 </DialogDescription>
               </DialogHeader>
 
-              {/* Scrollable Area */}
-              <ScrollArea className="flex-1 px-6 py-4 border-y border-border">
-                <div className="pr-4">
-                  <p className="text-foreground leading-relaxed whitespace-pre-wrap text-base font-medium opacity-90">
-                    {readingComm.content}
-                  </p>
-                </div>
-              </ScrollArea>
+              {/* AREA DI TESTO CON ALTEZZA FISSA E SCROLL FORZATO */}
+              <div 
+                className="flex-1 px-6 py-6 overflow-y-auto scrollbar-thin scrollbar-thumb-primary" 
+                style={{ maxHeight: '400px', overflowY: 'auto' }}
+              >
+                <p className="text-foreground leading-relaxed whitespace-pre-wrap text-base font-medium opacity-90 pb-4">
+                  {readingComm.content}
+                </p>
+              </div>
 
-              <DialogFooter className="p-4 bg-secondary/20">
+              {/* FOOTER SEMPRE VISIBILE CON TASTO CHIUDI */}
+              <DialogFooter className="p-4 bg-secondary/30 border-t border-border mt-auto">
                 <Button 
                   onClick={() => setReadingComm(null)} 
-                  className="bg-primary text-white hover:bg-primary/90 font-bold px-8 rounded-full h-11 shadow-lg shadow-primary/20"
+                  className="bg-primary text-white hover:bg-primary/90 font-bold px-10 rounded-full h-11 shadow-lg shadow-primary/20 w-full sm:w-auto"
                 >
                   CHIUDI
                 </Button>
