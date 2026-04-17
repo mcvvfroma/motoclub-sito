@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription, DialogTrigger } from "@/components/ui/dialog"
 import { Camera, Plus, X, Maximize2, Filter, Loader2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
@@ -132,7 +132,7 @@ export default function GalleriaPage() {
              <div className="flex items-center gap-2 bg-card border border-border px-4 py-2 rounded-full">
               <Filter className="w-4 h-4 text-accent" />
               <Select value={filter} onValueChange={setFilter}>
-                <SelectTrigger className="border-none bg-transparent h-auto p-0 focus:ring-0 text-sm font-bold">
+                <SelectTrigger className="border-none bg-transparent h-auto p-0 focus:ring-0 text-sm font-bold min-w-[120px]">
                   <SelectValue placeholder="Filtra per evento" />
                 </SelectTrigger>
                 <SelectContent>
