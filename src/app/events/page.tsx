@@ -17,7 +17,7 @@ import { useToast } from "@/hooks/use-toast"
 import { Calendar, MapPin, ArrowRight, Plus, Edit, Trash2, Clock, Camera, Sun, Cloud, CloudRain } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-// Componente Badge Meteo Dinamico con Fallback
+// Componente Badge Meteo Dinamico con Link ilMeteo.it
 function DynamicWeatherBadge({ location, date }: { location: string; date: string }) {
   const [weatherData, setWeatherData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -66,22 +66,31 @@ function DynamicWeatherBadge({ location, date }: { location: string; date: strin
     fetchWeather()
   }, [location, date])
 
+  const ilMeteoUrl = `https://www.ilmeteo.it/meteo/${encodeURIComponent(location)}`
+
   if (loading) return <Badge variant="outline" className="bg-black/40 text-[10px] animate-pulse">Analisi Meteo...</Badge>
-  if (!weatherData) return <Badge variant="outline" className="bg-black/40 text-white/50 text-[10px] uppercase tracking-tighter">Meteo non disp.</Badge>
+  
+  if (!weatherData) return (
+    <Link href={ilMeteoUrl} target="_blank">
+      <Badge variant="outline" className="bg-black/40 text-white/50 text-[10px] uppercase tracking-tighter">Vedi su ilMeteo.it</Badge>
+    </Link>
+  )
 
   const isRainy = weatherData.prob > 50
   const Icon = weatherData.code <= 3 ? Sun : (weatherData.code <= 67 ? Cloud : CloudRain)
 
   return (
-    <div className={cn(
-      "flex items-center gap-1.5 px-3 py-1.5 rounded-full border backdrop-blur-md",
-      isRainy ? "bg-red-600 border-red-400 text-white" : "bg-black/60 border-white/10 text-white"
-    )}>
-      <Icon className={cn("w-3.5 h-3.5", !isRainy && "text-accent")} />
-      <span className="text-[10px] font-bold uppercase tracking-widest">
-        {isRainy ? "Rischio Pioggia" : `${weatherData.temp}°C`} | {location}
-      </span>
-    </div>
+    <Link href={ilMeteoUrl} target="_blank">
+      <div className={cn(
+        "flex items-center gap-1.5 px-3 py-1.5 rounded-full border backdrop-blur-md hover:bg-black/80 transition-all",
+        isRainy ? "bg-red-600 border-red-400 text-white" : "bg-black/60 border-white/10 text-white"
+      )}>
+        <Icon className={cn("w-3.5 h-3.5", !isRainy && "text-accent")} />
+        <span className="text-[10px] font-bold uppercase tracking-widest">
+          {isRainy ? "Rischio Pioggia" : `${weatherData.temp}°C`} | {location}
+        </span>
+      </div>
+    </Link>
   )
 }
 
@@ -157,12 +166,6 @@ export default function EventsPage() {
     }
   }, [])
 
-  useEffect(() => {
-    if (events.length > 0) {
-      localStorage.setItem("vvf_all_events", JSON.stringify(events))
-    }
-  }, [events])
-
   const isAdmin = user?.status === "admin"
 
   const sortedEvents = useMemo(() => {
@@ -177,12 +180,16 @@ export default function EventsPage() {
     }
 
     if (editingEvent) {
-      setEvents(events.map(e => e.id === editingEvent.id ? { ...formData, id: e.id } : e))
+      const updated = events.map(e => e.id === editingEvent.id ? { ...formData, id: e.id } : e)
+      setEvents(updated)
+      localStorage.setItem("vvf_all_events", JSON.stringify(updated))
       toast({ title: "Uscita aggiornata", description: "Le modifiche sono state salvate." })
       setEditingEvent(null)
     } else {
       const newEvent = { ...formData, id: Date.now(), photos: [] }
-      setEvents([newEvent, ...events])
+      const updated = [newEvent, ...events]
+      setEvents(updated)
+      localStorage.setItem("vvf_all_events", JSON.stringify(updated))
       toast({ title: "Uscita creata", description: "La nuova uscita è stata aggiunta al calendario." })
       setIsAdding(false)
     }
@@ -191,21 +198,26 @@ export default function EventsPage() {
   }
 
   const handleDeleteEvent = (id: number) => {
-    setEvents(events.filter(e => e.id !== id))
+    const updated = events.filter(e => e.id !== id)
+    setEvents(updated)
+    localStorage.setItem("vvf_all_events", JSON.stringify(updated))
     toast({ title: "Uscita rimossa", description: "L'uscita è stata eliminata correttamente." })
   }
 
   const handleAddPhotoSubmit = () => {
     if (!photoUrlInput) return
-    setEvents(events.map(event => {
+    const updated = events.map(event => {
       if (event.id === isAddingPhoto) {
-        return { ...event, photos: [...(event.photos || []), photoUrlInput] }
+        const newPhotos = [...(event.photos || []), photoUrlInput]
+        return { ...event, photos: newPhotos, image: photoUrlInput }
       }
       return event
-    }))
+    })
+    setEvents(updated)
+    localStorage.setItem("vvf_all_events", JSON.stringify(updated))
     setIsAddingPhoto(null)
     setPhotoUrlInput("")
-    toast({ title: "Foto aggiunta", description: "L'immagine è stata aggiunta alla gallery." })
+    toast({ title: "Foto aggiunta", description: "L'immagine è stata aggiunta alla gallery e impostata come copertina." })
   }
 
   return (
@@ -215,7 +227,7 @@ export default function EventsPage() {
       <main className="max-w-7xl mx-auto px-4 py-8">
         <header className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
-            <Badge className="mb-4 bg-accent/10 text-accent border-none font-bold uppercase tracking-widest">Calendario Uscite</Badge>
+            <Badge className="mb-4 bg-accent/10 text-accent border-none font-bold uppercase tracking-widest">Calendario Uscite 2026</Badge>
             <h1 className="text-4xl font-headline font-bold mb-2 text-foreground uppercase tracking-tighter">Eventi & Uscite</h1>
             <p className="text-muted-foreground max-w-2xl">Partecipa alle nostre uscite programmate del Motoclub VVF Roma.</p>
           </div>
@@ -251,7 +263,7 @@ export default function EventsPage() {
                     <Input value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} className="bg-background" />
                   </div>
                   <div className="grid gap-2">
-                    <Label>Località Meteo (Città per previsioni)</Label>
+                    <Label>Località Meteo (per previsioni)</Label>
                     <Input value={formData.weatherLocation} onChange={e => setFormData({...formData, weatherLocation: e.target.value})} className="bg-background" placeholder="es: Roma" />
                   </div>
                   <div className="grid gap-2">
@@ -275,7 +287,7 @@ export default function EventsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {sortedEvents && sortedEvents.length > 0 ? (
             sortedEvents.map((event) => {
-              const imageUrl = event.photos?.length > 0 ? event.photos[event.photos.length - 1] : "/cascovigili.jpg"
+              const imageUrl = event.image || "/cascovigili.jpg"
               const eventDate = new Date(event.date)
               const isPast = eventDate.getTime() < new Date().setHours(0,0,0,0)
 
@@ -313,46 +325,39 @@ export default function EventsPage() {
                     </div>
                     
                     <div className="space-y-4 mt-auto">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="w-full gap-2 border-accent text-accent font-bold uppercase tracking-tighter"
-                        onClick={() => setIsAddingPhoto(event.id)}
-                      >
-                        <Camera className="w-4 h-4" /> AGGIUNGI FOTO
-                      </Button>
-
-                      <div className="flex items-center justify-between pt-5 border-t border-border">
-                        <div className="flex gap-2">
-                          {isAdmin && (
-                            <>
-                              <Button variant="ghost" size="icon" onClick={() => { setEditingEvent(event); setFormData({...event}) }} className="h-9 w-9 text-accent hover:bg-accent/10">
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-9 w-9 text-destructive hover:bg-destructive/10">
-                                    <Trash2 className="w-4 h-4" />
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent className="bg-card border-border text-foreground">
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle className="text-xl font-headline">Elimina Uscita</AlertDialogTitle>
-                                    <AlertDialogDescription>Vuoi rimuovere definitivamente questa uscita dal calendario?</AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel className="bg-background border-border">Annulla</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleDeleteEvent(event.id)} className="bg-destructive text-white font-bold">Sì, Elimina</AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            </>
-                          )}
-                        </div>
-                        <Button variant="link" asChild className="text-primary p-0 h-auto font-bold text-xs uppercase tracking-tighter">
-                          <Link href={`/events/${event.id}`}>Vedi Dettagli <ArrowRight className="ml-1 w-3 h-3" /></Link>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button asChild variant="outline" size="sm" className="font-bold border-border hover:bg-primary/10">
+                          <Link href={`/events/${event.id}`}>DETTAGLI</Link>
+                        </Button>
+                        <Button variant="outline" size="sm" className="gap-2 border-accent text-accent font-bold uppercase tracking-tighter" onClick={() => setIsAddingPhoto(event.id)}>
+                          <Camera className="w-4 h-4" /> AGGIUNGI FOTO
                         </Button>
                       </div>
+
+                      {isAdmin && (
+                        <div className="flex items-center justify-end gap-2 pt-4 border-t border-border">
+                          <Button variant="ghost" size="icon" onClick={() => { setEditingEvent(event); setFormData({...event}) }} className="h-9 w-9 text-accent hover:bg-accent/10">
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-9 w-9 text-destructive hover:bg-destructive/10">
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent className="bg-card border-border text-foreground">
+                              <AlertDialogHeader>
+                                <AlertDialogTitle className="text-xl font-headline">Elimina Uscita</AlertDialogTitle>
+                                <AlertDialogDescription>Vuoi rimuovere definitivamente questa uscita dal calendario?</AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel className="bg-background border-border">Annulla</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDeleteEvent(event.id)} className="bg-destructive text-white font-bold">Sì, Elimina</AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -370,6 +375,7 @@ export default function EventsPage() {
           <DialogContent className="bg-card border-border text-foreground">
             <DialogHeader>
               <DialogTitle className="font-headline text-2xl">Condividi una Foto</DialogTitle>
+              <DialogDescription>Carica uno scatto dell'uscita per popolare la gallery dei soci.</DialogDescription>
             </DialogHeader>
             <div className="py-4">
               <Label className="block mb-2">URL Immagine</Label>
