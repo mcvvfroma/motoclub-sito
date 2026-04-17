@@ -8,9 +8,12 @@ import { Navbar } from "@/components/Navbar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
-import { Calendar, ArrowRight, MapPin, Camera, Sun, Cloud, CloudRain, Trash2, Edit } from "lucide-react"
+import { Calendar, ArrowRight, MapPin, Camera, Sun, Cloud, CloudRain, Trash2, Edit, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 function DynamicWeatherBadge({ location, date }: { location: string; date: string }) {
@@ -85,6 +88,10 @@ export default function Home() {
   const { toast } = useToast()
   const [events, setEvents] = useState<any[]>([])
   const [user, setUser] = useState<any>(null)
+  
+  const [isAddingPhoto, setIsAddingPhoto] = useState<number | null>(null)
+  const [selectedFile, setSelectedFile] = useState<string | null>(null)
+  const [isUploading, setIsUploading] = useState(false)
 
   useEffect(() => {
     const storedUser = localStorage.getItem("vvf_user")
@@ -106,6 +113,51 @@ export default function Home() {
     localStorage.setItem("vvf_all_events", JSON.stringify(filtered))
     setEvents(filtered.slice(0, 3))
     toast({ title: "Uscita rimossa", description: "L'evento è stato eliminato dalla home." })
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setSelectedFile(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleUploadPhoto = () => {
+    if (!selectedFile || isAddingPhoto === null) return
+    setIsUploading(true)
+
+    const allEvents = JSON.parse(localStorage.getItem("vvf_all_events") || "[]")
+    const targetEvent = allEvents.find((e: any) => e.id === isAddingPhoto)
+
+    const updatedEvents = allEvents.map((e: any) => {
+      if (e.id === isAddingPhoto) {
+        return { ...e, image: selectedFile, photos: [...(e.photos || []), selectedFile] }
+      }
+      return e
+    })
+
+    localStorage.setItem("vvf_all_events", JSON.stringify(updatedEvents))
+    setEvents(updatedEvents.slice(0, 3))
+
+    // Aggiungi anche alla galleria generale
+    const galleryPhotos = JSON.parse(localStorage.getItem("vvf_gallery_photos") || "[]")
+    const newPhoto = {
+      id: Date.now().toString(),
+      url: selectedFile,
+      event: targetEvent?.title || "Evento",
+      author: user?.nome || "Socio",
+      date: new Date().toISOString().split('T')[0]
+    }
+    localStorage.setItem("vvf_gallery_photos", JSON.stringify([newPhoto, ...galleryPhotos]))
+
+    toast({ title: "Foto caricata", description: "La foto è stata aggiunta all'evento e alla galleria." })
+    setIsAddingPhoto(null)
+    setSelectedFile(null)
+    setIsUploading(false)
   }
 
   return (
@@ -159,8 +211,8 @@ export default function Home() {
                       <Button asChild variant="outline" size="sm" className="font-bold">
                         <Link href={`/events/${event.id}`}>DETTAGLI</Link>
                       </Button>
-                      <Button asChild variant="outline" size="sm" className="gap-2 font-bold border-accent text-accent">
-                        <Link href="/events"><Camera className="w-4 h-4" /> FOTO</Link>
+                      <Button variant="outline" size="sm" className="gap-2 font-bold border-accent text-accent" onClick={() => setIsAddingPhoto(event.id)}>
+                        <Camera className="w-4 h-4" /> FOTO
                       </Button>
                     </div>
                     {isAdmin && (
@@ -192,6 +244,30 @@ export default function Home() {
           })}
         </div>
       </main>
+
+      <Dialog open={isAddingPhoto !== null} onOpenChange={(open) => !open && setIsAddingPhoto(null)}>
+        <DialogContent className="bg-card border-border text-foreground">
+          <DialogHeader>
+            <DialogTitle>Aggiungi Foto</DialogTitle>
+            <DialogDescription>Seleziona una foto dalla tua galleria per condividerla con il club.</DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <Label htmlFor="event-photo">Scegli file (JPG, PNG)</Label>
+            <Input id="event-photo" type="file" accept="image/*" onChange={handleFileChange} className="bg-background cursor-pointer" />
+            {selectedFile && (
+              <div className="relative h-40 w-full rounded-lg overflow-hidden border border-border">
+                <Image src={selectedFile} alt="Preview" fill className="object-cover" unoptimized />
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => { setIsAddingPhoto(null); setSelectedFile(null); }}>Annulla</Button>
+            <Button onClick={handleUploadPhoto} disabled={!selectedFile || isUploading} className="bg-primary text-white">
+              {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : "CARICA"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

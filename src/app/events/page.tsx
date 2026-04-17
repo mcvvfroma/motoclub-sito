@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
-import { Calendar, MapPin, Plus, Edit, Trash2, Camera, Sun, Cloud, CloudRain } from "lucide-react"
+import { Calendar, MapPin, Plus, Edit, Trash2, Camera, Sun, Cloud, CloudRain, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 function DynamicWeatherBadge({ location, date }: { location: string; date: string }) {
@@ -92,7 +92,9 @@ export default function EventsPage() {
   const [isAdding, setIsAdding] = useState(false)
   const [editingEvent, setEditingEvent] = useState<any>(null)
   const [isAddingPhoto, setIsAddingPhoto] = useState<number | null>(null)
-  const [photoUrlInput, setPhotoUrlInput] = useState("")
+  const [selectedFile, setSelectedFile] = useState<string | null>(null)
+  const [isUploading, setIsUploading] = useState(false)
+  
   const [formData, setFormData] = useState({
     title: "",
     date: "",
@@ -153,20 +155,49 @@ export default function EventsPage() {
     toast({ title: "Uscita rimossa", description: "L'evento è stato eliminato dal registro." })
   }
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setSelectedFile(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
   const handleAddPhotoSubmit = () => {
-    if (!photoUrlInput) return
+    if (!selectedFile || isAddingPhoto === null) return
+    setIsUploading(true)
+    
+    const targetEvent = events.find(e => e.id === isAddingPhoto)
+    
     const updated = events.map(e => {
       if (e.id === isAddingPhoto) {
-        const newPhotos = [...(e.photos || []), photoUrlInput]
-        return { ...e, photos: newPhotos, image: photoUrlInput }
+        const newPhotos = [...(e.photos || []), selectedFile]
+        return { ...e, photos: newPhotos, image: selectedFile }
       }
       return e
     })
+    
     setEvents(updated)
     localStorage.setItem("vvf_all_events", JSON.stringify(updated))
+    
+    // Sincronizza con la galleria
+    const galleryPhotos = JSON.parse(localStorage.getItem("vvf_gallery_photos") || "[]")
+    const newGalleryPhoto = {
+      id: Date.now().toString(),
+      url: selectedFile,
+      event: targetEvent?.title || "Evento",
+      author: user?.nome || "Socio",
+      date: new Date().toISOString().split('T')[0]
+    }
+    localStorage.setItem("vvf_gallery_photos", JSON.stringify([newGalleryPhoto, ...galleryPhotos]))
+
     setIsAddingPhoto(null)
-    setPhotoUrlInput("")
-    toast({ title: "Foto caricata", description: "L'immagine è stata aggiunta alla gallery." })
+    setSelectedFile(null)
+    setIsUploading(false)
+    toast({ title: "Foto caricata", description: "L'immagine è stata aggiunta all'evento e alla galleria." })
   }
 
   return (
@@ -298,9 +329,25 @@ export default function EventsPage() {
 
       <Dialog open={isAddingPhoto !== null} onOpenChange={(open) => !open && setIsAddingPhoto(null)}>
         <DialogContent className="bg-card border-border text-foreground">
-          <DialogHeader><DialogTitle>Aggiungi Foto</DialogTitle></DialogHeader>
-          <div className="py-4"><Label>URL Immagine</Label><Input value={photoUrlInput} onChange={(e) => setPhotoUrlInput(e.target.value)} className="bg-background mt-2" placeholder="https://..." /></div>
-          <DialogFooter><Button variant="ghost" onClick={() => setIsAddingPhoto(null)}>Annulla</Button><Button onClick={handleAddPhotoSubmit} className="bg-primary text-white">Carica</Button></DialogFooter>
+          <DialogHeader>
+            <DialogTitle>Aggiungi Foto</DialogTitle>
+            <DialogDescription>Seleziona una foto dalla tua galleria per condividerla con il club.</DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <Label htmlFor="photo-file">Scegli file (JPG, PNG)</Label>
+            <Input id="photo-file" type="file" accept="image/*" onChange={handleFileChange} className="bg-background cursor-pointer" />
+            {selectedFile && (
+              <div className="relative h-40 w-full rounded-lg overflow-hidden border border-border">
+                <Image src={selectedFile} alt="Preview" fill className="object-cover" unoptimized />
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => { setIsAddingPhoto(null); setSelectedFile(null); }}>Annulla</Button>
+            <Button onClick={handleAddPhotoSubmit} disabled={!selectedFile || isUploading} className="bg-primary text-white">
+              {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : "CARICA"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

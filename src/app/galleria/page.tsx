@@ -10,8 +10,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog"
-import { Camera, Plus, X, Maximize2, Filter } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog"
+import { Camera, Plus, X, Maximize2, Filter, Loader2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
 interface Photo {
@@ -23,10 +23,10 @@ interface Photo {
 }
 
 const initialPhotos: Photo[] = [
-  { id: "1", url: "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?q=80&w=1000", event: "Roma", author: "Marco R.", date: "2026-05-29" },
-  { id: "2", url: "https://images.unsplash.com/photo-1558980394-34764db076b4?q=80&w=1000", event: "Roma", author: "Elena S.", date: "2026-05-29" },
-  { id: "3", url: "https://images.unsplash.com/photo-1444491741275-3747c53c99b4?q=80&w=1000", event: "Terminillo", author: "Gianni V.", date: "2026-06-14" },
-  { id: "4", url: "https://images.unsplash.com/photo-1517649763962-0c623066013b?q=80&w=1000", event: "Roma", author: "Luca M.", date: "2026-09-12" },
+  { id: "1", url: "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?q=80&w=1000", event: "Uscita di Roma", author: "Marco R.", date: "2026-05-29" },
+  { id: "2", url: "https://images.unsplash.com/photo-1558980394-34764db076b4?q=80&w=1000", event: "Uscita di Roma", author: "Elena S.", date: "2026-05-29" },
+  { id: "3", url: "https://images.unsplash.com/photo-1444491741275-3747c53c99b4?q=80&w=1000", event: "Passo del Terminillo", author: "Gianni V.", date: "2026-06-14" },
+  { id: "4", url: "https://images.unsplash.com/photo-1517649763962-0c623066013b?q=80&w=1000", event: "Raduno Nazionale VVF 2026", author: "Luca M.", date: "2026-09-12" },
 ]
 
 export default function GalleriaPage() {
@@ -36,7 +36,8 @@ export default function GalleriaPage() {
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null)
   const [isUploading, setIsUploading] = useState(false)
   const [newPhotoData, setNewPhotoData] = useState({ event: "Altro", author: "" })
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null)
+  const [selectedFile, setSelectedFile] = useState<string | null>(null)
+  const [isProcessing, setIsProcessing] = useState(false)
 
   useEffect(() => {
     const storedPhotos = localStorage.getItem("vvf_gallery_photos")
@@ -48,6 +49,7 @@ export default function GalleriaPage() {
       }
     } else {
       setPhotos(initialPhotos)
+      localStorage.setItem("vvf_gallery_photos", JSON.stringify(initialPhotos))
     }
     
     const storedUser = localStorage.getItem("vvf_user")
@@ -57,43 +59,57 @@ export default function GalleriaPage() {
     }
   }, [])
 
-  useEffect(() => {
-    if (photos.length > 0) {
-      localStorage.setItem("vvf_gallery_photos", JSON.stringify(photos))
-    }
-  }, [photos])
-
   const filteredPhotos = filter === "Tutti" 
     ? photos 
     : photos.filter(p => p.event === filter)
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setUploadedFile(e.target.files[0])
+    const file = e.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setSelectedFile(reader.result as string)
+      }
+      reader.readAsDataURL(file)
     }
   }
 
   const handleUpload = () => {
-    if (!uploadedFile) {
+    if (!selectedFile) {
       toast({ variant: "destructive", title: "Errore", description: "Seleziona un file prima di caricare." })
       return
     }
 
-    const reader = new FileReader()
-    reader.onloadend = () => {
-      const newPhoto: Photo = {
-        id: Date.now().toString(),
-        url: reader.result as string,
-        event: newPhotoData.event,
-        author: newPhotoData.author || "Socio Anonimo",
-        date: new Date().toISOString().split('T')[0]
-      }
-      setPhotos([newPhoto, ...photos])
-      setIsUploading(false)
-      setUploadedFile(null)
-      toast({ title: "Foto caricata", description: "La tua foto è stata aggiunta alla galleria!" })
+    setIsProcessing(true)
+    const newPhoto: Photo = {
+      id: Date.now().toString(),
+      url: selectedFile,
+      event: newPhotoData.event,
+      author: newPhotoData.author || "Socio",
+      date: new Date().toISOString().split('T')[0]
     }
-    reader.readAsDataURL(uploadedFile)
+    
+    const updatedPhotos = [newPhoto, ...photos]
+    setPhotos(updatedPhotos)
+    localStorage.setItem("vvf_gallery_photos", JSON.stringify(updatedPhotos))
+    
+    // Sincronizza anche con l'evento se presente
+    const storedEvents = localStorage.getItem("vvf_all_events")
+    if (storedEvents) {
+      const events = JSON.parse(storedEvents)
+      const updatedEvents = events.map((e: any) => {
+        if (e.title === newPhotoData.event) {
+          return { ...e, image: selectedFile, photos: [...(e.photos || []), selectedFile] }
+        }
+        return e
+      })
+      localStorage.setItem("vvf_all_events", JSON.stringify(updatedEvents))
+    }
+
+    setIsUploading(false)
+    setSelectedFile(null)
+    setIsProcessing(false)
+    toast({ title: "Foto caricata", description: "La tua foto è stata aggiunta alla galleria!" })
   }
 
   const uniqueEvents = ["Tutti", ...Array.from(new Set(photos.map(p => p.event)))]
@@ -136,29 +152,38 @@ export default function GalleriaPage() {
               <DialogContent className="bg-card border-border sm:max-w-[450px] text-foreground">
                 <DialogHeader>
                   <DialogTitle className="text-2xl font-headline">Carica Ricordo</DialogTitle>
+                  <DialogDescription>Seleziona una foto dalla tua galleria per condividerla con il club.</DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                   <div className="grid gap-2">
-                    <Label>Seleziona File</Label>
-                    <Input type="file" accept="image/*" onChange={handleFileChange} className="bg-background cursor-pointer" />
+                    <Label htmlFor="gallery-photo">Scegli file (JPG, PNG)</Label>
+                    <Input id="gallery-photo" type="file" accept="image/*" onChange={handleFileChange} className="bg-background cursor-pointer" />
+                    {selectedFile && (
+                      <div className="relative h-40 w-full rounded-lg overflow-hidden border border-border mt-2">
+                        <Image src={selectedFile} alt="Preview" fill className="object-cover" unoptimized />
+                      </div>
+                    )}
                   </div>
                   <div className="grid gap-2">
-                    <Label>Evento / Luogo</Label>
+                    <Label>Associa a Evento</Label>
                     <Select value={newPhotoData.event} onValueChange={v => setNewPhotoData({...newPhotoData, event: v})}>
                       <SelectTrigger className="bg-background">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Roma">Roma</SelectItem>
-                        <SelectItem value="Terminillo">Terminillo</SelectItem>
-                        <SelectItem value="Altro">Altro / Raduno</SelectItem>
+                        <SelectItem value="Uscita di Roma">Uscita di Roma</SelectItem>
+                        <SelectItem value="Passo del Terminillo">Passo del Terminillo</SelectItem>
+                        <SelectItem value="Raduno Nazionale VVF 2026">Raduno Nazionale VVF</SelectItem>
+                        <SelectItem value="Altro">Altro / Libera</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button variant="ghost" onClick={() => setIsUploading(false)}>Annulla</Button>
-                  <Button onClick={handleUpload} className="bg-primary text-white font-bold">Pubblica in Gallery</Button>
+                  <Button variant="ghost" onClick={() => { setIsUploading(false); setSelectedFile(null); }}>Annulla</Button>
+                  <Button onClick={handleUpload} disabled={!selectedFile || isProcessing} className="bg-primary text-white font-bold">
+                    {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : "PUBBLICA ORA"}
+                  </Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
