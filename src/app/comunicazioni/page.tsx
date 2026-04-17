@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
-import { Megaphone, Calendar, AlertCircle, Info, Plus, Edit, Trash2, FileText, ChevronRight, X } from "lucide-react"
+import { Megaphone, Calendar, ChevronRight, FileText, Plus, Edit, Trash2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const initialCommunications = [
@@ -233,7 +233,6 @@ export default function CommunicationsPage() {
           )}
         </div>
 
-        {/* Read More Dialog with FIXED Scroll and Sticky Footer */}
         {readingComm && (
           <Dialog open={!!readingComm} onOpenChange={(open) => !open && setReadingComm(null)}>
             <DialogContent className="bg-card border-border sm:max-w-[650px] text-foreground p-0 gap-0 flex flex-col max-h-[90vh] overflow-hidden">
@@ -250,11 +249,10 @@ export default function CommunicationsPage() {
                 </div>
                 <DialogTitle className="text-3xl font-headline leading-tight">{readingComm.title}</DialogTitle>
                 <DialogDescription className="text-accent font-bold uppercase text-[10px] tracking-[0.3em] mt-1">
-                   Motoclub VVF Roma - Sezione Sezionale
+                   Motoclub VVF Roma - Sezione di Roma
                 </DialogDescription>
               </DialogHeader>
 
-              {/* AREA DI TESTO CON ALTEZZA FISSA E SCROLL FORZATO */}
               <div 
                 className="flex-1 px-6 py-6 overflow-y-auto scrollbar-thin scrollbar-thumb-primary" 
                 style={{ maxHeight: '400px', overflowY: 'auto' }}
@@ -264,7 +262,6 @@ export default function CommunicationsPage() {
                 </p>
               </div>
 
-              {/* FOOTER SEMPRE VISIBILE CON TASTO CHIUDI */}
               <DialogFooter className="p-4 bg-secondary/30 border-t border-border mt-auto">
                 <Button 
                   onClick={() => setReadingComm(null)} 
@@ -277,7 +274,6 @@ export default function CommunicationsPage() {
           </Dialog>
         )}
 
-        {/* Edit Dialog */}
         {editingComm && (
           <Dialog open={!!editingComm} onOpenChange={(open) => !open && setEditingComm(null)}>
             <DialogContent className="bg-card border-border sm:max-w-[550px] text-foreground">
