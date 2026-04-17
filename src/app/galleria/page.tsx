@@ -117,12 +117,12 @@ export default function GalleriaPage() {
     <div className="min-h-screen pb-20 md:pb-0 md:pt-16 bg-background">
       <Navbar />
       
-      <main className="max-w-7xl mx-auto px-4 py-8">
-        <header className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <main className="max-w-7xl mx-auto px-2 md:px-4 py-8">
+        <header className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6 px-2">
           <div className="space-y-2">
-            <Badge className="bg-primary/10 text-primary border-none font-bold uppercase tracking-widest">Memorie di Strada</Badge>
-            <h1 className="text-4xl font-headline font-bold text-foreground flex items-center gap-3">
-              <Camera className="w-10 h-10 text-primary" /> Galleria
+            <Badge className="bg-primary/10 text-primary border-none font-bold uppercase tracking-widest text-[10px]">Memorie di Strada</Badge>
+            <h1 className="text-3xl md:text-4xl font-headline font-bold text-foreground flex items-center gap-3 tracking-tighter uppercase">
+              <Camera className="w-8 h-8 text-primary" /> Galleria
             </h1>
           </div>
 
@@ -157,7 +157,7 @@ export default function GalleriaPage() {
                     <Label htmlFor="gallery-photo">Scegli file (JPG, PNG)</Label>
                     <Input id="gallery-photo" type="file" accept="image/*" onChange={handleFileChange} className="bg-background cursor-pointer" />
                     {selectedFile && (
-                      <div className="relative h-40 w-full rounded-lg overflow-hidden border border-border mt-2">
+                      <div className="relative aspect-square w-full rounded-lg overflow-hidden border border-border mt-2">
                         <Image src={selectedFile} alt="Preview" fill className="object-cover" unoptimized />
                       </div>
                     )}
@@ -188,35 +188,33 @@ export default function GalleriaPage() {
           </div>
         </header>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
           {filteredPhotos.map((photo) => (
-            <Card 
+            <div 
               key={photo.id} 
-              className="group relative aspect-square overflow-hidden border-border bg-card cursor-pointer hover:border-primary/50 transition-all rounded-md"
+              className="group relative aspect-square overflow-hidden rounded-lg cursor-pointer hover:ring-2 hover:ring-primary transition-all bg-card"
               onClick={() => setSelectedPhoto(photo)}
             >
-              <CardContent className="p-0 h-full">
-                <Image 
-                  src={photo.url} 
-                  alt={photo.event} 
-                  fill 
-                  className="object-cover transition-transform duration-500 group-hover:scale-110" 
-                  unoptimized={photo.url.startsWith('data:') || photo.url.startsWith('http')}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-2">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <p className="text-white font-bold text-[10px] uppercase tracking-tighter line-clamp-1">{photo.event}</p>
-                      <p className="text-white/70 text-[8px] italic">Foto di {photo.author}</p>
-                    </div>
-                    <Maximize2 className="w-3 h-3 text-primary" />
+              <Image 
+                src={photo.url} 
+                alt={photo.event} 
+                fill 
+                className="object-cover aspect-square w-full h-full rounded-lg transition-transform duration-500 group-hover:scale-110" 
+                unoptimized={photo.url.startsWith('data:') || photo.url.startsWith('http')}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-2">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <p className="text-white font-bold text-[10px] uppercase tracking-tighter line-clamp-1">{photo.event}</p>
+                    <p className="text-white/70 text-[8px] italic">Foto di {photo.author}</p>
                   </div>
+                  <Maximize2 className="w-3 h-3 text-primary" />
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           ))}
           {filteredPhotos.length === 0 && (
-            <div className="col-span-full py-20 text-center border-2 border-dashed border-border rounded-3xl bg-card/30">
+            <div className="col-span-full py-20 text-center border-2 border-dashed border-border rounded-3xl bg-card/30 mx-2">
               <Camera className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-20" />
               <p className="text-muted-foreground italic font-medium">Nessuna foto trovata.</p>
             </div>
