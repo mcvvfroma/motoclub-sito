@@ -13,8 +13,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
-import { Megaphone, Calendar, AlertCircle, Info, Plus, Edit, Trash2, FileText, ChevronRight } from "lucide-react"
+import { Megaphone, Calendar, AlertCircle, Info, Plus, Edit, Trash2, FileText, ChevronRight, X } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { ScrollArea } from "@/components/ui/scroll-area"
 
 const initialCommunications = [
   {
@@ -22,7 +23,7 @@ const initialCommunications = [
     title: "Benvenuto dal Presidente",
     date: "2026-01-01",
     priority: "Info",
-    content: "Benvenuti soci nel nuovo portale del Motoclub VVF Roma. Questo spazio è dedicato alla trasparenza e alla condivisione di tutte le decisioni del Direttivo. Qui troverete verbali, nuove quote associative e avvisi urgenti. Buona strada a tutti!",
+    content: "Benvenuti soci nel nuovo portale del Motoclub VVF Roma. Questo spazio è dedicato alla trasparenza e alla condivisione di tutte le decisioni del Direttivo. Qui troverete verbali, nuove quote associative e avvisi urgenti. Buona strada a tutti!\n\nIl Motoclub VVF Roma nasce con l'obiettivo di unire la passione per le due ruote con lo spirito di corpo che contraddistingue i Vigili del Fuoco. Attraverso questo portale, vogliamo rendere più agevole la consultazione dei documenti ufficiali e la partecipazione alle nostre attività sociali.\n\nOgni socio è invitato a consultare regolarmente questa bacheca per rimanere aggiornato sulle ultime circolari e decisioni assembleari.",
     author: "Presidente"
   }
 ]
@@ -236,11 +237,11 @@ export default function CommunicationsPage() {
           )}
         </div>
 
-        {/* Read More Dialog */}
+        {/* Read More Dialog with Scrolling Support */}
         {readingComm && (
           <Dialog open={!!readingComm} onOpenChange={(open) => !open && setReadingComm(null)}>
-            <DialogContent className="bg-card border-border sm:max-w-[600px] text-foreground">
-              <DialogHeader>
+            <DialogContent className="bg-card border-border sm:max-w-[650px] text-foreground p-0 gap-0 flex flex-col max-h-[90vh]">
+              <DialogHeader className="p-6 pb-2">
                 <div className="flex items-center gap-3 mb-2">
                    <Badge className={cn(
                     "font-bold uppercase tracking-widest text-[10px]",
@@ -251,18 +252,26 @@ export default function CommunicationsPage() {
                   </Badge>
                   <span className="text-xs text-muted-foreground">{new Date(readingComm.date).toLocaleDateString('it-IT')}</span>
                 </div>
-                <DialogTitle className="text-3xl font-headline">{readingComm.title}</DialogTitle>
-                <DialogDescription className="text-accent font-bold uppercase text-[10px] tracking-[0.3em]">
+                <DialogTitle className="text-3xl font-headline leading-tight">{readingComm.title}</DialogTitle>
+                <DialogDescription className="text-accent font-bold uppercase text-[10px] tracking-[0.3em] mt-1">
                    Comunicazione ufficiale del {readingComm.author}
                 </DialogDescription>
               </DialogHeader>
-              <div className="py-6 border-y border-border my-4">
-                <p className="text-foreground leading-relaxed whitespace-pre-wrap">
-                  {readingComm.content}
-                </p>
-              </div>
-              <DialogFooter>
-                <Button onClick={() => setReadingComm(null)} className="bg-secondary text-foreground hover:bg-secondary/80 font-bold px-8 rounded-full">
+
+              {/* Scrollable Area */}
+              <ScrollArea className="flex-1 px-6 py-4 border-y border-border">
+                <div className="pr-4">
+                  <p className="text-foreground leading-relaxed whitespace-pre-wrap text-base font-medium opacity-90">
+                    {readingComm.content}
+                  </p>
+                </div>
+              </ScrollArea>
+
+              <DialogFooter className="p-4 bg-secondary/20">
+                <Button 
+                  onClick={() => setReadingComm(null)} 
+                  className="bg-primary text-white hover:bg-primary/90 font-bold px-8 rounded-full h-11 shadow-lg shadow-primary/20"
+                >
                   CHIUDI
                 </Button>
               </DialogFooter>
