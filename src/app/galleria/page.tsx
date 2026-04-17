@@ -93,7 +93,6 @@ export default function GalleriaPage() {
     setPhotos(updatedPhotos)
     localStorage.setItem("vvf_gallery_photos", JSON.stringify(updatedPhotos))
     
-    // Sincronizza anche con l'evento se presente
     const storedEvents = localStorage.getItem("vvf_all_events")
     if (storedEvents) {
       const events = JSON.parse(storedEvents)
@@ -119,16 +118,15 @@ export default function GalleriaPage() {
       <Navbar />
       
       <main className="max-w-7xl mx-auto px-4 py-8">
-        <header className="mb-12 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <header className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
             <Badge className="bg-primary/10 text-primary border-none font-bold uppercase tracking-widest">Memorie di Strada</Badge>
             <h1 className="text-4xl font-headline font-bold text-foreground flex items-center gap-3">
-              <Camera className="w-10 h-10 text-primary" /> Galleria Fotografica
+              <Camera className="w-10 h-10 text-primary" /> Galleria
             </h1>
-            <p className="text-muted-foreground">Rivivi le emozioni delle nostre uscite ufficiali.</p>
           </div>
 
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-2">
              <div className="flex items-center gap-2 bg-card border border-border px-4 py-2 rounded-full">
               <Filter className="w-4 h-4 text-accent" />
               <Select value={filter} onValueChange={setFilter}>
@@ -145,8 +143,8 @@ export default function GalleriaPage() {
 
             <Dialog open={isUploading} onOpenChange={setIsUploading}>
               <DialogTrigger asChild>
-                <Button className="bg-primary hover:bg-primary/90 gap-2 h-12 px-6 rounded-full shadow-lg shadow-primary/20 font-bold uppercase tracking-tighter">
-                   <Plus className="w-5 h-5" /> CARICA FOTO
+                <Button className="bg-primary hover:bg-primary/90 gap-2 h-10 px-6 rounded-full shadow-lg shadow-primary/20 font-bold uppercase tracking-tighter">
+                   <Plus className="w-5 h-5" /> CARICA
                 </Button>
               </DialogTrigger>
               <DialogContent className="bg-card border-border sm:max-w-[450px] text-foreground">
@@ -182,7 +180,7 @@ export default function GalleriaPage() {
                 <DialogFooter>
                   <Button variant="ghost" onClick={() => { setIsUploading(false); setSelectedFile(null); }}>Annulla</Button>
                   <Button onClick={handleUpload} disabled={!selectedFile || isProcessing} className="bg-primary text-white font-bold">
-                    {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : "PUBBLICA ORA"}
+                    {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : "PUBBLICA"}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -190,11 +188,11 @@ export default function GalleriaPage() {
           </div>
         </header>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
           {filteredPhotos.map((photo) => (
             <Card 
               key={photo.id} 
-              className="group relative aspect-square overflow-hidden border-border bg-card cursor-pointer hover:border-primary/50 transition-all"
+              className="group relative aspect-square overflow-hidden border-border bg-card cursor-pointer hover:border-primary/50 transition-all rounded-md"
               onClick={() => setSelectedPhoto(photo)}
             >
               <CardContent className="p-0 h-full">
@@ -205,13 +203,13 @@ export default function GalleriaPage() {
                   className="object-cover transition-transform duration-500 group-hover:scale-110" 
                   unoptimized={photo.url.startsWith('data:') || photo.url.startsWith('http')}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-4">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-2">
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <p className="text-white font-bold text-xs uppercase tracking-tighter">{photo.event}</p>
-                      <p className="text-white/70 text-[10px] italic">Foto di {photo.author}</p>
+                      <p className="text-white font-bold text-[10px] uppercase tracking-tighter line-clamp-1">{photo.event}</p>
+                      <p className="text-white/70 text-[8px] italic">Foto di {photo.author}</p>
                     </div>
-                    <Maximize2 className="w-4 h-4 text-primary" />
+                    <Maximize2 className="w-3 h-3 text-primary" />
                   </div>
                 </div>
               </CardContent>
@@ -220,7 +218,7 @@ export default function GalleriaPage() {
           {filteredPhotos.length === 0 && (
             <div className="col-span-full py-20 text-center border-2 border-dashed border-border rounded-3xl bg-card/30">
               <Camera className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-20" />
-              <p className="text-muted-foreground italic font-medium">Nessuna foto trovata per questo filtro.</p>
+              <p className="text-muted-foreground italic font-medium">Nessuna foto trovata.</p>
             </div>
           )}
         </div>

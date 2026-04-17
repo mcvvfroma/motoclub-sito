@@ -9,8 +9,9 @@ import { Navbar } from "@/components/Navbar"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { MapPin, Clock, Calendar, ShieldCheck, Thermometer, Wind, CloudRain, AlertTriangle, CheckCircle2, Camera } from "lucide-react"
+import { MapPin, Clock, Calendar, ShieldCheck, Thermometer, Wind, CloudRain, AlertTriangle, CheckCircle2, Camera, X } from "lucide-react"
 import { aiRideConditionAdvisory } from "@/ai/flows/ai-ride-condition-advisory"
+import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 
 export default function EventDetailPage() {
@@ -20,6 +21,7 @@ export default function EventDetailPage() {
   const [event, setEvent] = useState<any>(null)
   const [advisory, setAdvisory] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null)
 
   useEffect(() => {
     const storedEvents = localStorage.getItem("vvf_all_events")
@@ -29,7 +31,6 @@ export default function EventDetailPage() {
     if (foundEvent) {
       setEvent(foundEvent)
       
-      // Simulate weather analysis
       const mockWeatherData = JSON.stringify({
         temperature: { min: 12, max: 22, unit: "C" },
         precipitation_chance: 5,
@@ -63,7 +64,6 @@ export default function EventDetailPage() {
       
       <main className="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-3 gap-8 text-foreground">
         
-        {/* Left: Main Content */}
         <div className="lg:col-span-2 space-y-8">
           <header>
             <Button variant="ghost" className="mb-4 pl-0 hover:bg-transparent hover:text-primary" asChild>
@@ -85,7 +85,7 @@ export default function EventDetailPage() {
             </div>
           </header>
 
-          <div className="relative h-80 rounded-2xl overflow-hidden border border-border shadow-xl">
+          <div className="relative h-64 md:h-80 rounded-2xl overflow-hidden border border-border shadow-xl">
             <Image 
               src={coverImage} 
               alt={event.title} 
@@ -112,14 +112,17 @@ export default function EventDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Galleria Evento */}
           <section>
             <h3 className="text-2xl font-headline font-bold mb-6 flex items-center gap-2">
               <Camera className="w-6 h-6 text-accent" /> Gallery Evento
             </h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
               {event.photos && event.photos.map((photo: string, i: number) => (
-                <div key={i} className="relative aspect-square rounded-xl overflow-hidden border border-border group shadow-sm">
+                <div 
+                  key={i} 
+                  className="relative aspect-square rounded-md overflow-hidden border border-border group shadow-sm cursor-pointer"
+                  onClick={() => setSelectedPhoto(photo)}
+                >
                   <Image 
                     src={photo} 
                     alt={`Foto ${i}`} 
@@ -131,7 +134,7 @@ export default function EventDetailPage() {
               ))}
               {(!event.photos || event.photos.length === 0) && (
                 <div className="col-span-full py-12 text-center text-muted-foreground italic border-2 border-dashed border-border rounded-xl">
-                  Nessuna foto caricata dai soci per questa uscita.
+                  Nessuna foto caricata dai soci.
                 </div>
               )}
             </div>
@@ -148,13 +151,12 @@ export default function EventDetailPage() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground bg-background p-4 rounded-lg border border-border italic">
-                {event.mapUrl ? "Mappa interattiva disponibile tramite il pulsante in alto." : "Nessun URL percorso inserito per questa uscita."}
+                {event.mapUrl ? "Mappa interattiva disponibile." : "Percorso non disponibile."}
               </p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Right: Sidebar / AI Advisory */}
         <div className="space-y-6">
           <Card className="border-accent/30 bg-card shadow-lg shadow-accent/5">
             <CardHeader>
@@ -163,7 +165,6 @@ export default function EventDetailPage() {
                 <span className="text-xs font-bold uppercase tracking-widest">AI Ride Advisor</span>
               </div>
               <CardTitle className="text-2xl">Sicurezza</CardTitle>
-              <CardDescription>Consulenza basata sul meteo locale</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {advisory ? (
@@ -236,6 +237,32 @@ export default function EventDetailPage() {
           </Card>
         </div>
       </main>
+
+      {selectedPhoto && (
+        <Dialog open={!!selectedPhoto} onOpenChange={() => setSelectedPhoto(null)}>
+          <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 border-none bg-black/90 flex items-center justify-center">
+            <div className="relative w-full h-full flex flex-col">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="absolute top-4 right-4 z-50 text-white hover:bg-white/20 rounded-full"
+                onClick={() => setSelectedPhoto(null)}
+              >
+                <X className="w-8 h-8" />
+              </Button>
+              <div className="relative flex-1 w-full h-full min-h-[70vh]">
+                <Image 
+                  src={selectedPhoto} 
+                  alt="Foto Galleria" 
+                  fill 
+                  className="object-contain" 
+                  unoptimized 
+                />
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   )
 }
