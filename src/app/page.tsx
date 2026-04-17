@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useEffect, useState } from "react"
@@ -53,15 +52,10 @@ function DynamicWeatherBadge({ location, date }: { location: string; date: strin
 
   const ilMeteoUrl = `https://www.ilmeteo.it/meteo/${encodeURIComponent(location)}`
 
-  if (loading) return <Badge variant="outline" className="bg-black/40 text-[10px] animate-pulse">Analisi Meteo...</Badge>
-  if (!weatherData) return (
-    <Link href={ilMeteoUrl} target="_blank">
-      <Badge variant="outline" className="bg-black/40 text-white/50 text-[10px] uppercase tracking-tighter">ilMeteo.it</Badge>
-    </Link>
-  )
-
-  const isRainy = weatherData.prob > 50
-  const Icon = weatherData.code <= 3 ? Sun : (weatherData.code <= 67 ? Cloud : CloudRain)
+  if (loading) return <Badge variant="outline" className="bg-black/40 text-[10px] animate-pulse">Meteo...</Badge>
+  
+  const isRainy = weatherData?.prob > 50
+  const Icon = !weatherData ? Sun : (weatherData.code <= 3 ? Sun : (weatherData.code <= 67 ? Cloud : CloudRain))
 
   return (
     <Link href={ilMeteoUrl} target="_blank">
@@ -71,7 +65,7 @@ function DynamicWeatherBadge({ location, date }: { location: string; date: strin
       )}>
         <Icon className={cn("w-3.5 h-3.5", !isRainy && "text-accent")} />
         <span className="text-[10px] font-bold uppercase tracking-widest">
-          {isRainy ? "Rischio Pioggia" : `${weatherData.temp}°C`} | {location}
+          {weatherData ? `${weatherData.temp}°C` : "Vedi Meteo"} | {location}
         </span>
       </div>
     </Link>
@@ -88,7 +82,6 @@ export default function Home() {
   const { toast } = useToast()
   const [events, setEvents] = useState<any[]>([])
   const [user, setUser] = useState<any>(null)
-  
   const [isAddingPhoto, setIsAddingPhoto] = useState<number | null>(null)
   const [selectedFile, setSelectedFile] = useState<string | null>(null)
   const [isUploading, setIsUploading] = useState(false)
@@ -108,14 +101,6 @@ export default function Home() {
 
   const isAdmin = user?.status === "admin"
 
-  const handleDelete = (id: number) => {
-    const all = JSON.parse(localStorage.getItem("vvf_all_events") || "[]")
-    const filtered = all.filter((e: any) => e.id !== id)
-    localStorage.setItem("vvf_all_events", JSON.stringify(filtered))
-    setEvents(filtered.slice(0, 3))
-    toast({ title: "Uscita rimossa", description: "L'evento è stato eliminato dalla home." })
-  }
-
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
@@ -130,157 +115,89 @@ export default function Home() {
   const handleUploadPhoto = () => {
     if (!selectedFile || isAddingPhoto === null) return
     setIsUploading(true)
-
     const allEvents = JSON.parse(localStorage.getItem("vvf_all_events") || "[]")
-    const targetEvent = allEvents.find((e: any) => e.id === isAddingPhoto)
-
     const updatedEvents = allEvents.map((e: any) => {
       if (e.id === isAddingPhoto) {
-        const newPhotos = [...(e.photos || []), selectedFile]
-        return { ...e, image: selectedFile, photos: newPhotos }
+        return { ...e, image: selectedFile, photos: [...(e.photos || []), selectedFile] }
       }
       return e
     })
-
     localStorage.setItem("vvf_all_events", JSON.stringify(updatedEvents))
     setEvents(updatedEvents.slice(0, 3))
+    
+    const gallery = JSON.parse(localStorage.getItem("vvf_gallery_photos") || "[]")
+    gallery.unshift({ id: Date.now().toString(), url: selectedFile, event: "Evento", author: user?.nome || "Socio", date: new Date().toISOString() })
+    localStorage.setItem("vvf_gallery_photos", JSON.stringify(gallery))
 
-    // Sincronizza con la galleria generale
-    const galleryPhotos = JSON.parse(localStorage.getItem("vvf_gallery_photos") || "[]")
-    const newPhoto = {
-      id: Date.now().toString(),
-      url: selectedFile,
-      event: targetEvent?.title || "Evento",
-      author: user?.nome || "Socio",
-      date: new Date().toISOString().split('T')[0]
-    }
-    localStorage.setItem("vvf_gallery_photos", JSON.stringify([newPhoto, ...galleryPhotos]))
-
-    toast({ title: "Foto caricata", description: "La foto è stata aggiunta all'evento e alla galleria." })
-    setIsAddingPhoto(null)
-    setSelectedFile(null)
-    setIsUploading(false)
+    toast({ title: "Foto pubblicata", description: "L'immagine è ora visibile a tutti i soci." })
+    setIsAddingPhoto(null); setSelectedFile(null); setIsUploading(false);
   }
 
   return (
     <div className="min-h-screen pb-20 md:pb-0 md:pt-16 bg-background">
       <Navbar />
-      
-      <section className="relative h-[50vh] w-full flex items-center justify-center overflow-hidden px-6 pt-16 md:pt-0">
-        <Image src="/cascovigili.jpg" alt="Hero Background" fill className="object-cover opacity-20" priority />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background z-[1]" />
-        <div className="relative z-10 text-center max-w-4xl flex flex-col items-center">
-          <div className="relative w-28 h-28 mb-8 drop-shadow-2xl">
-            <Image src="/logo_motoclub.gif" alt="Logo Motoclub VVF Roma" fill className="object-contain" priority />
-          </div>
-          <h1 className="text-5xl md:text-7xl font-headline font-bold mb-4 bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent uppercase tracking-tighter">
-            Motoclub VVF Roma
-          </h1>
-          <p className="text-muted-foreground text-base md:text-lg font-medium uppercase tracking-[0.3em] mb-10">Passione • Servizio • Strada</p>
-          <Button size="lg" className="bg-primary hover:bg-primary/90 text-white rounded-full px-12 h-14 font-bold text-lg shadow-xl shadow-primary/20" asChild>
-            <Link href="/events">Esplora il Calendario <ArrowRight className="ml-3 w-6 h-6" /></Link>
-          </Button>
+      <section className="relative h-[60vh] flex items-center justify-center overflow-hidden">
+        <Image src="/cascovigili.jpg" alt="Hero" fill className="object-cover opacity-30" priority />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background" />
+        <div className="relative z-10 text-center px-4">
+          <Image src="/logo_motoclub.gif" alt="Logo" width={120} height={120} className="mx-auto mb-8 drop-shadow-2xl" />
+          <h1 className="text-5xl md:text-7xl font-headline font-bold mb-4 bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent uppercase tracking-tighter">Motoclub VVF Roma</h1>
+          <p className="text-muted-foreground uppercase tracking-[0.4em] text-sm md:text-lg mb-8">Passione • Servizio • Strada</p>
+          <Button size="lg" className="rounded-full px-10 h-14 font-bold text-lg" asChild><Link href="/events">CALENDARIO 2026</Link></Button>
         </div>
       </section>
 
       <main className="max-w-7xl mx-auto px-4 py-16">
-        <div className="flex items-center justify-between mb-12">
-          <div className="space-y-1">
-            <h2 className="text-3xl font-headline font-bold border-l-4 border-primary pl-4 uppercase tracking-tighter">Prossime Uscite 2026</h2>
-            <p className="text-muted-foreground text-sm ml-5">I prossimi appuntamenti ufficiali della Sezione.</p>
-          </div>
-          <Link href="/events" className="text-primary font-bold uppercase text-xs tracking-[0.2em] hover:text-accent transition-colors">Vedi Tutto</Link>
+        <div className="flex items-center justify-between mb-12 border-l-4 border-primary pl-4">
+          <h2 className="text-3xl font-headline font-bold uppercase tracking-tighter">Prossime Uscite</h2>
+          <Link href="/events" className="text-primary font-bold uppercase text-xs tracking-widest hover:text-accent">Vedi Tutto</Link>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {events.map(event => {
-            const imageUrl = event.image || "/cascovigili.jpg"
-            return (
-              <Card key={event.id} className="overflow-hidden border-border bg-card hover:border-primary/50 transition-all group flex flex-col shadow-lg">
-                <div className="relative h-60 w-full overflow-hidden">
-                  <Image 
-                    src={imageUrl} 
-                    alt={event.title} 
-                    fill 
-                    className="object-cover transition-transform duration-700 group-hover:scale-110" 
-                    unoptimized={imageUrl.startsWith('http') || imageUrl.startsWith('data:')} 
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent" />
-                  <div className="absolute bottom-4 right-4 z-10">
-                    <DynamicWeatherBadge location={event.weatherLocation || event.location} date={event.date} />
-                  </div>
+          {events.map(event => (
+            <Card key={event.id} className="overflow-hidden bg-card border-border hover:border-primary/50 transition-all group flex flex-col">
+              <div className="relative h-56">
+                <Image src={event.image || "/cascovigili.jpg"} alt={event.title} fill className="object-cover transition-transform group-hover:scale-105" unoptimized />
+                <div className="absolute bottom-4 right-4 z-10">
+                  <DynamicWeatherBadge location={event.weatherLocation || event.location} date={event.date} />
                 </div>
-                <CardContent className="p-6 flex-1 flex flex-col">
-                  <div className="flex items-center gap-2 text-accent text-[11px] font-bold uppercase mb-3 tracking-widest">
-                    <Calendar className="w-3.5 h-3.5" /> {new Date(event.date).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}
+              </div>
+              <CardContent className="p-6 flex-1 flex flex-col">
+                <div className="text-accent text-[11px] font-bold uppercase mb-2 flex items-center gap-2">
+                  <Calendar className="w-3 h-3" /> {new Date(event.date).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </div>
+                <CardTitle className="text-2xl font-headline mb-4 uppercase tracking-tighter">{event.title}</CardTitle>
+                <div className="flex items-center text-muted-foreground text-sm mb-6"><MapPin className="w-4 h-4 mr-2 text-primary" /> {event.location}</div>
+                <div className="mt-auto grid grid-cols-2 gap-3">
+                  <Button asChild variant="outline" className="rounded-full font-bold text-xs"><Link href={`/events/${event.id}`}>DETTAGLI</Link></Button>
+                  <Button variant="outline" className="rounded-full font-bold text-xs gap-2 border-accent text-accent" onClick={() => setIsAddingPhoto(event.id)}><Camera className="w-4 h-4" /> FOTO</Button>
+                </div>
+                {isAdmin && (
+                  <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-border">
+                    <Button variant="ghost" size="icon" className="text-accent"><Edit className="w-4 h-4" /></Button>
+                    <Button variant="ghost" size="icon" className="text-destructive"><Trash2 className="w-4 h-4" /></Button>
                   </div>
-                  <CardTitle className="text-2xl font-headline mb-4 group-hover:text-primary transition-colors leading-tight uppercase tracking-tighter">{event.title}</CardTitle>
-                  <div className="flex items-center text-muted-foreground text-sm mb-8">
-                    <MapPin className="w-4 h-4 mr-2 text-primary" /> {event.location}
-                  </div>
-                  
-                  <div className="mt-auto space-y-4">
-                    <div className="grid grid-cols-2 gap-3">
-                      <Button asChild variant="outline" size="sm" className="font-bold rounded-full border-border hover:bg-primary hover:text-white transition-all">
-                        <Link href={`/events/${event.id}`}>DETTAGLI</Link>
-                      </Button>
-                      <Button variant="outline" size="sm" className="gap-2 font-bold rounded-full border-accent text-accent hover:bg-accent hover:text-accent-foreground transition-all" onClick={() => setIsAddingPhoto(event.id)}>
-                        <Camera className="w-4 h-4" /> AGGIUNGI FOTO
-                      </Button>
-                    </div>
-
-                    {isAdmin && (
-                      <div className="flex items-center justify-end gap-3 pt-4 border-t border-border">
-                        <Button variant="ghost" size="icon" className="h-9 w-9 text-accent hover:bg-accent/10" asChild>
-                          <Link href="/events"><Edit className="w-4 h-4" /></Link>
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-9 w-9 text-destructive hover:bg-destructive/10"><Trash2 className="w-4 h-4" /></Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent className="bg-card border-border text-foreground">
-                            <AlertDialogHeader>
-                              <AlertDialogTitle className="font-headline uppercase">Elimina Uscita</AlertDialogTitle>
-                              <AlertDialogDescription>Vuoi davvero rimuovere questa uscita dalla home page?</AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel className="bg-background border-border">Annulla</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDelete(event.id)} className="bg-destructive text-white font-bold">Rimuovi</AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            )
-          })}
+                )}
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </main>
 
-      <Dialog open={isAddingPhoto !== null} onOpenChange={(open) => !open && setIsAddingPhoto(null)}>
-        <DialogContent className="bg-card border-border text-foreground sm:max-w-[450px]">
+      <Dialog open={isAddingPhoto !== null} onOpenChange={() => setIsAddingPhoto(null)}>
+        <DialogContent className="bg-card text-foreground">
           <DialogHeader>
             <DialogTitle className="text-2xl font-headline">Aggiungi Foto</DialogTitle>
             <DialogDescription>Seleziona una foto dalla tua galleria per condividerla con il club.</DialogDescription>
           </DialogHeader>
-          <div className="py-6 space-y-6">
-            <div className="grid gap-2">
-              <Label htmlFor="event-photo">Scegli file (JPG, PNG)</Label>
-              <Input id="event-photo" type="file" accept="image/*" onChange={handleFileChange} className="bg-background cursor-pointer h-12 flex items-center" />
-            </div>
-            {selectedFile && (
-              <div className="relative h-48 w-full rounded-xl overflow-hidden border border-border shadow-inner">
-                <Image src={selectedFile} alt="Anteprima caricamento" fill className="object-cover" unoptimized />
-              </div>
-            )}
+          <div className="py-6 space-y-4">
+            <Label>Scegli Immagine (JPG/PNG)</Label>
+            <Input type="file" accept="image/*" onChange={handleFileChange} className="bg-background cursor-pointer" />
+            {selectedFile && <div className="relative h-40 rounded-xl overflow-hidden border"><Image src={selectedFile} alt="Preview" fill className="object-cover" unoptimized /></div>}
           </div>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="ghost" onClick={() => { setIsAddingPhoto(null); setSelectedFile(null); }}>Annulla</Button>
-            <Button onClick={handleUploadPhoto} disabled={!selectedFile || isUploading} className="bg-primary text-white font-bold px-8">
-              {isUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : "PUBBLICA ORA"}
-            </Button>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setIsAddingPhoto(null)}>Annulla</Button>
+            <Button onClick={handleUploadPhoto} disabled={!selectedFile || isUploading} className="bg-primary text-white font-bold">{isUploading ? <Loader2 className="animate-spin" /> : "CARICA"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
