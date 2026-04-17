@@ -5,7 +5,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
-import { Calendar, Image as ImageIcon, FileText, User, Home, Menu, Users, LogOut } from "lucide-react"
+import { Calendar, Image as ImageIcon, FileText, User, Home, Menu, Users, LogOut, Megaphone } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useSidebar } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
@@ -40,6 +40,7 @@ export function Navbar() {
   const navItems = [
     { name: "Home", href: "/", icon: Home },
     { name: "Eventi", href: "/events", icon: Calendar },
+    { name: "Comunicazioni", href: "/comunicazioni", icon: Megaphone },
     ...(isAdmin ? [{ name: "Soci", href: "/members", icon: Users }] : []),
     { name: "Galleria", href: "/galleria", icon: ImageIcon },
     { name: "Convenzioni", href: "/conventions", icon: FileText },

@@ -5,7 +5,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
-import { Home, Calendar, Image as ImageIcon, FileText, User, Users, ShieldAlert, LogOut } from "lucide-react"
+import { Home, Calendar, Image as ImageIcon, FileText, User, Users, ShieldAlert, LogOut, Megaphone } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 import {
@@ -52,6 +52,7 @@ export function AppSidebar() {
   const navItems = [
     { name: "Home", href: "/", icon: Home },
     { name: "Eventi", href: "/events", icon: Calendar },
+    { name: "Comunicazioni", href: "/comunicazioni", icon: Megaphone },
     ...(isAdmin ? [{ name: "Soci", href: "/members", icon: Users }] : []),
     { name: "Galleria", href: "/galleria", icon: ImageIcon },
     { name: "Convenzioni", href: "/conventions", icon: FileText },
