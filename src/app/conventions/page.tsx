@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
-import { ShieldCheck, Zap, Info, FileText, CheckCircle2, Wrench, ShoppingBag, Plus, Edit, Trash2, Bike } from "lucide-react"
+import { ShieldCheck, Zap, Info, FileText, CheckCircle2, Wrench, ShoppingBag, Plus, Edit, Trash2, Bike, CreditCard } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const categoryIcons: Record<string, any> = {
@@ -88,8 +88,8 @@ export default function ConventionsPage() {
   const isAdmin = user?.status === "admin"
 
   const handleSaveBenefit = () => {
-    if (!formData.title || !formData.discount || !formData.description) {
-      toast({ variant: "destructive", title: "Errore", description: "Tutti i campi sono obbligatori." })
+    if (!formData.title.trim()) {
+      toast({ variant: "destructive", title: "Errore", description: "Il Nome Partner è obbligatorio." })
       return
     }
 
@@ -102,7 +102,7 @@ export default function ConventionsPage() {
       const newBenefit = { ...formData, id: Date.now() }
       const updated = [...benefits, newBenefit]
       setBenefits(updated)
-      toast({ title: "Convenzione registrata", description: "Il nuovo vantaggio è stato salvato nel cloud locale." })
+      toast({ title: "Convenzione registrata", description: "Il nuovo vantaggio è stato salvato correttamente." })
       setIsAdding(false)
     }
     setFormData({ title: "", category: "Officina", discount: "", description: "" })
@@ -125,10 +125,15 @@ export default function ConventionsPage() {
       
       <main className="max-w-7xl mx-auto px-4 py-8">
         <header className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <div>
-            <Badge className="mb-4 bg-primary/10 text-primary border-none font-bold uppercase tracking-wider">Vantaggi Esclusivi</Badge>
+          <div className="space-y-4">
+            <div className="flex flex-wrap gap-3">
+              <Badge className="bg-primary/10 text-primary border-none font-bold uppercase tracking-wider">Vantaggi Esclusivi</Badge>
+              <Button size="sm" className="bg-accent text-accent-foreground font-bold rounded-full gap-2 shadow-lg shadow-accent/20">
+                <CreditCard className="w-4 h-4" /> TESSERA DIGITALE
+              </Button>
+            </div>
             <h1 className="text-4xl font-headline font-bold mb-2 text-foreground">Convenzioni & Regolamento</h1>
-            <p className="text-muted-foreground max-w-2xl">Accedi ai vantaggi riservati ai soci del Motoclub VVF Roma. I dati sono sincronizzati con il tuo dispositivo.</p>
+            <p className="text-muted-foreground max-w-2xl">Accedi ai vantaggi riservati ai soci del Motoclub VVF Roma.</p>
           </div>
 
           {isAdmin && (
@@ -141,11 +146,11 @@ export default function ConventionsPage() {
               <DialogContent className="bg-card border-border sm:max-w-[500px]">
                 <DialogHeader>
                   <DialogTitle className="text-2xl font-headline">Nuova Convenzione</DialogTitle>
-                  <DialogDescription>Inserisci i dettagli del nuovo vantaggio per i soci.</DialogDescription>
+                  <DialogDescription>Solo il Nome Partner è obbligatorio.</DialogDescription>
                 </DialogHeader>
-                <div className="grid gap-4 py-4">
+                <div className="grid gap-4 py-4 text-foreground">
                   <div className="grid gap-2">
-                    <Label htmlFor="title">Nome Partner / Attività</Label>
+                    <Label htmlFor="title">Nome Partner / Attività *</Label>
                     <Input id="title" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="bg-background" placeholder="es: Officina Roma Nord" />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
@@ -166,12 +171,12 @@ export default function ConventionsPage() {
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="discount">Sconto / Vantaggio</Label>
-                      <Input id="discount" value={formData.discount} onChange={e => setFormData({...formData, discount: e.target.value})} className="bg-background" placeholder="es: 15% o Buono 20€" />
+                      <Input id="discount" value={formData.discount} onChange={e => setFormData({...formData, discount: e.target.value})} className="bg-background" placeholder="es: 15%" />
                     </div>
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="description">Descrizione Breve</Label>
-                    <Textarea id="description" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="bg-background" placeholder="Dettagli sulla convenzione..." />
+                    <Textarea id="description" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="bg-background" placeholder="Dettagli opzionali..." />
                   </div>
                 </div>
                 <DialogFooter>
@@ -198,15 +203,17 @@ export default function ConventionsPage() {
                       <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center", catInfo.bg)}>
                         <Icon className={cn("w-6 h-6", catInfo.color)} />
                       </div>
-                      <Badge variant="outline" className="border-accent text-accent font-bold">
-                        {benefit.discount}
-                      </Badge>
+                      {benefit.discount && (
+                        <Badge variant="outline" className="border-accent text-accent font-bold">
+                          {benefit.discount}
+                        </Badge>
+                      )}
                     </div>
                     <CardTitle className="text-xl text-foreground group-hover:text-primary transition-colors">{benefit.title}</CardTitle>
                     <CardDescription className="text-accent text-xs font-bold uppercase tracking-widest">{benefit.category}</CardDescription>
                   </CardHeader>
                   <CardContent className="pb-12">
-                    <p className="text-muted-foreground text-sm leading-relaxed">{benefit.description}</p>
+                    <p className="text-muted-foreground text-sm leading-relaxed">{benefit.description || "Nessuna descrizione aggiuntiva."}</p>
                     
                     {isAdmin && (
                       <div className="absolute bottom-4 right-4 flex gap-2">
@@ -227,7 +234,7 @@ export default function ConventionsPage() {
                           <AlertDialogContent className="bg-card border-border text-foreground">
                             <AlertDialogHeader>
                               <AlertDialogTitle className="font-headline">Conferma Eliminazione</AlertDialogTitle>
-                              <AlertDialogDescription>Vuoi davvero rimuovere la convenzione con {benefit.title}? L'azione è immediata.</AlertDialogDescription>
+                              <AlertDialogDescription>Vuoi davvero rimuovere la convenzione con {benefit.title}?</AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel className="bg-background border-border">Annulla</AlertDialogCancel>
@@ -241,12 +248,6 @@ export default function ConventionsPage() {
                 </Card>
               )
             })}
-            
-            {benefits.length === 0 && (
-              <div className="col-span-full py-12 text-center text-muted-foreground italic border-2 border-dashed border-border rounded-2xl">
-                Nessuna convenzione disponibile al momento.
-              </div>
-            )}
           </div>
         </section>
 
@@ -296,14 +297,14 @@ export default function ConventionsPage() {
 
         {editingBenefit && (
           <Dialog open={!!editingBenefit} onOpenChange={(open) => !open && setEditingBenefit(null)}>
-            <DialogContent className="bg-card border-border sm:max-w-[500px]">
+            <DialogContent className="bg-card border-border sm:max-w-[500px] text-foreground">
               <DialogHeader>
                 <DialogTitle className="text-2xl font-headline">Modifica Convenzione</DialogTitle>
                 <DialogDescription>Aggiorna i dettagli per {editingBenefit.title}.</DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="edit-title">Nome Partner</Label>
+                  <Label htmlFor="edit-title">Nome Partner *</Label>
                   <Input id="edit-title" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="bg-background" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">

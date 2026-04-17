@@ -124,9 +124,8 @@ export default function EventsPage() {
   }, [events])
 
   const handleSaveEvent = () => {
-    // Validazione semplificata e robusta
-    if (!formData.title.trim() || !formData.date || !formData.location.trim()) {
-      toast({ variant: "destructive", title: "Campi Mancanti", description: "Titolo, Data e Luogo sono obbligatori." })
+    if (!formData.title.trim() || !formData.date) {
+      toast({ variant: "destructive", title: "Campi Mancanti", description: "Titolo e Data sono obbligatori." })
       return
     }
 
@@ -178,7 +177,7 @@ export default function EventsPage() {
           <div>
             <Badge className="mb-4 bg-primary/10 text-primary border-none font-bold uppercase tracking-widest">Motoclub VVF Roma</Badge>
             <h1 className="text-4xl font-headline font-bold mb-2 text-foreground uppercase tracking-tighter">Calendario Eventi</h1>
-            <p className="text-muted-foreground max-w-2xl">Gestione e consultazione delle uscite ufficiali del Comando.</p>
+            <p className="text-muted-foreground max-w-2xl">Gestione e consultazione delle uscite ufficiali.</p>
           </div>
           {isAdmin && (
             <Dialog open={isAdding} onOpenChange={setIsAdding}>
@@ -190,7 +189,7 @@ export default function EventsPage() {
               <DialogContent className="bg-card border-border sm:max-w-[500px]">
                 <DialogHeader>
                   <DialogTitle className="text-2xl font-headline text-foreground">Aggiungi Uscita</DialogTitle>
-                  <DialogDescription>Compila i campi per programmare una nuova uscita nel calendario.</DialogDescription>
+                  <DialogDescription>Titolo e Data sono obbligatori.</DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4 max-h-[65vh] overflow-y-auto pr-2 text-foreground">
                   <div className="grid gap-2">
@@ -208,15 +207,15 @@ export default function EventsPage() {
                     </div>
                   </div>
                   <div className="grid gap-2">
-                    <Label>Luogo di Ritrovo *</Label>
+                    <Label>Luogo di Ritrovo</Label>
                     <Input value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} className="bg-background" placeholder="es: Caserma VVF" />
                   </div>
                   <div className="grid gap-2">
-                    <Label>Località Meteo (per previsioni)</Label>
+                    <Label>Località Meteo</Label>
                     <Input value={formData.weatherLocation} onChange={e => setFormData({...formData, weatherLocation: e.target.value})} className="bg-background" placeholder="es: Roma" />
                   </div>
                   <div className="grid gap-2">
-                    <Label>URL Mappa (Google Maps)</Label>
+                    <Label>URL Mappa</Label>
                     <Input value={formData.mapUrl} onChange={e => setFormData({...formData, mapUrl: e.target.value})} className="bg-background" />
                   </div>
                   <div className="grid gap-2">
@@ -254,7 +253,7 @@ export default function EventsPage() {
                   <CardTitle className="text-2xl mb-3 font-headline text-foreground">{event.title}</CardTitle>
                   <div className="flex items-center text-muted-foreground text-sm mb-4">
                     <MapPin className="w-4 h-4 mr-2 text-primary shrink-0" />
-                    <span className="line-clamp-1">{event.location}</span>
+                    <span className="line-clamp-1">{event.location || "Punto di ritrovo da definire"}</span>
                   </div>
                   <div className="mt-auto space-y-4">
                     <div className="grid grid-cols-2 gap-2">
@@ -278,11 +277,11 @@ export default function EventsPage() {
                           </AlertDialogTrigger>
                           <AlertDialogContent className="bg-card border-border text-foreground">
                             <AlertDialogHeader>
-                              <AlertDialogTitle>Elimina Uscita</AlertDialogTitle>
+                              <AlertDialogTitle className="font-headline">Elimina Uscita</AlertDialogTitle>
                               <AlertDialogDescription>Vuoi rimuovere definitivamente questa uscita?</AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                              <AlertDialogCancel>Annulla</AlertDialogCancel>
+                              <AlertDialogCancel className="bg-background border-border">Annulla</AlertDialogCancel>
                               <AlertDialogAction onClick={() => handleDeleteEvent(event.id)} className="bg-destructive text-white">Elimina</AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
@@ -308,11 +307,11 @@ export default function EventsPage() {
       {editingEvent && (
         <Dialog open={!!editingEvent} onOpenChange={(open) => !open && setEditingEvent(null)}>
           <DialogContent className="bg-card border-border sm:max-w-[500px] text-foreground">
-            <DialogHeader><DialogTitle>Modifica Uscita</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle className="text-2xl font-headline">Modifica Uscita</DialogTitle></DialogHeader>
             <div className="grid gap-4 py-4 max-h-[65vh] overflow-y-auto pr-2">
-              <div className="grid gap-2"><Label>Titolo</Label><Input value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="bg-background" /></div>
+              <div className="grid gap-2"><Label>Titolo *</Label><Input value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="bg-background" /></div>
               <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2"><Label>Data</Label><Input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="bg-background" /></div>
+                <div className="grid gap-2"><Label>Data *</Label><Input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="bg-background" /></div>
                 <div className="grid gap-2"><Label>Orario</Label><Input type="time" value={formData.time} onChange={e => setFormData({...formData, time: e.target.value})} className="bg-background" /></div>
               </div>
               <div className="grid gap-2"><Label>Luogo</Label><Input value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} className="bg-background" /></div>
