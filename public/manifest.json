@@ -1,0 +1,21 @@
+{
+    "name": "Motoclub VVF Roma",
+    "short_name": "VVF Roma",
+    "description": "App ufficiale Motoclub VVF Roma",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#000000",
+    "theme_color": "#000000",
+    "icons": [
+      {
+        "src": "/cascovigili.jpg",
+        "sizes": "192x192",
+        "type": "image/jpeg"
+      },
+      {
+        "src": "/cascovigili.jpg",
+        "sizes": "512x512",
+        "type": "image/jpeg"
+      }
+    ]
+  }

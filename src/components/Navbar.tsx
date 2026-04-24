@@ -7,7 +7,7 @@ import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
 import { Calendar, Image as ImageIcon, FileText, User, Home, Menu, Users, LogOut, Megaphone } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { useSidebar } from "@/components/ui/sidebar"
+import { useSidebar, SidebarTrigger } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 
 export function Navbar() {
@@ -47,18 +47,19 @@ export function Navbar() {
   ]
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-[100] bg-card/80 backdrop-blur-lg border-b border-border h-16">
+    <header className="sticky top-0 z-10 w-full bg-card/80 backdrop-blur-lg border-b border-border h-16">
       <div className="max-w-7xl mx-auto px-4 h-full flex items-center justify-between">
-        <div className="flex md:hidden">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={toggleSidebar}
-            className="text-accent hover:bg-white/10"
-          >
-            <Menu className="w-8 h-8" />
-            <span className="sr-only">Apri menu</span>
-          </Button>
+        <div className="flex items-center gap-2 md:hidden">
+          <SidebarTrigger>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="text-accent hover:bg-white/10"
+            >
+              <Menu className="w-8 h-8" />
+              <span className="sr-only">Apri menu</span>
+            </Button>
+          </SidebarTrigger>
         </div>
 
         <Link href="/" className="flex items-center gap-2">
@@ -117,6 +118,7 @@ export function Navbar() {
 
         <div className="flex md:hidden w-10" />
       </div>
-    </nav>
+    </header>
   )
 }
+export default Navbar;

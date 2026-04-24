@@ -1,374 +1,277 @@
 
-"use client"
+"use client";
 
-import { useState, useMemo, useEffect } from "react"
-import Image from "next/image"
-import Link from "next/link"
-import { Navbar } from "@/components/Navbar"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
-import { useToast } from "@/hooks/use-toast"
-import { Calendar, MapPin, Plus, Edit, Trash2, Camera, Sun, Cloud, CloudRain, Loader2 } from "lucide-react"
-import { cn } from "@/lib/utils"
+import React, { useState, useEffect, useCallback } from 'react';
+import { collection, getDocs, doc, updateDoc, addDoc, deleteDoc, orderBy, query } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { useAdmin } from '@/hooks/use-admin';
+import Navbar from '@/components/Navbar';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from "@/hooks/use-toast";
+import { Calendar, Clock, MapPin, Sun, CloudRain, Edit, Trash2, PlusCircle, Camera, Loader2, Info } from 'lucide-react';
+import { format } from 'date-fns';
+import { it } from 'date-fns/locale';
 
-function DynamicWeatherBadge({ location, date }: { location: string; date: string }) {
-  const [weatherData, setWeatherData] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
+type Event = {
+    id: string;
+    title: string;
+    date: string;
+    time: string;
+    location: string;
+    weatherLocation: string;
+    mapUrl: string;
+    description: string;
+    photos: string[];
+    type: 'Touring' | 'Endurance' | 'Track';
+};
 
-  useEffect(() => {
-    async function fetchWeather() {
-      if (!location || !date) {
-        setLoading(false)
-        return
-      }
-      try {
-        const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(location)}&count=1&language=it&format=json`)
-        const geoData = await geoRes.json()
-        if (!geoData.results?.[0]) throw new Error("Città non trovata")
-        const { latitude, longitude } = geoData.results[0]
-        const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=weathercode,temperature_2m_max,precipitation_probability_max&timezone=auto`)
-        const weather = await weatherRes.json()
-        const dateStr = new Date(date).toISOString().split('T')[0]
-        const dateIndex = weather.daily.time.indexOf(dateStr)
-        if (dateIndex !== -1) {
-          setWeatherData({
-            temp: Math.round(weather.daily.temperature_2m_max[dateIndex]),
-            prob: weather.daily.precipitation_probability_max[dateIndex],
-            code: weather.daily.weathercode[dateIndex]
-          })
-        }
-      } catch (e) {
-        console.error("Errore meteo:", e)
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchWeather()
-  }, [location, date])
+type WeatherData = {
+    temperature: number;
+    weathercode: number;
+};
 
-  const ilMeteoUrl = `https://www.ilmeteo.it/meteo/${encodeURIComponent(location)}`
-
-  if (loading) return <Badge variant="outline" className="bg-black/40 text-[10px] animate-pulse">Analisi Meteo...</Badge>
-  if (!weatherData) return (
-    <Link href={ilMeteoUrl} target="_blank">
-      <Badge variant="outline" className="bg-black/40 text-white/50 text-[10px] uppercase tracking-tighter">Vedi ilMeteo.it</Badge>
-    </Link>
-  )
-
-  const isRainy = weatherData.prob > 50
-  const Icon = weatherData.code <= 3 ? Sun : (weatherData.code <= 67 ? Cloud : CloudRain)
-
-  return (
-    <Link href={ilMeteoUrl} target="_blank">
-      <div className={cn(
-        "flex items-center gap-1.5 px-3 py-1.5 rounded-full border backdrop-blur-md hover:bg-black/80 transition-all",
-        isRainy ? "bg-red-600 border-red-400 text-white" : "bg-black/60 border-white/10 text-white"
-      )}>
-        <Icon className={cn("w-3.5 h-3.5", !isRainy && "text-accent")} />
-        <span className="text-[10px] font-bold uppercase tracking-widest">
-          {isRainy ? "Rischio Pioggia" : `${weatherData.temp}°C`} | {location}
-        </span>
-      </div>
-    </Link>
-  )
-}
-
-const initialEvents = [
-  { id: 1, title: "Uscita di Roma", date: "2026-05-29", time: "08:30", location: "Roma", weatherLocation: "Roma", mapUrl: "", photos: [], description: "Giro istituzionale nella Capitale.", type: "Touring" },
-  { id: 2, title: "Passo del Terminillo", date: "2026-06-14", time: "09:00", location: "Terminillo", weatherLocation: "Rieti", mapUrl: "", photos: [], description: "Scalata alla Montagna di Roma.", type: "Touring" },
-  { id: 3, title: "Raduno Nazionale VVF 2026", date: "2026-09-12", time: "09:00", location: "Roma", weatherLocation: "Roma", mapUrl: "", photos: [], description: "Grande raduno biennale.", type: "Raduno" }
-]
+const EMPTY_FORM = {
+    title: "", date: "", time: "", location: "", weatherLocation: "", mapUrl: "", description: "", photos: [], type: "Touring" as const
+};
 
 export default function EventsPage() {
-  const { toast } = useToast()
-  const [events, setEvents] = useState<any[]>([])
-  const [user, setUser] = useState<any>(null)
-  const [isAdding, setIsAdding] = useState(false)
-  const [editingEvent, setEditingEvent] = useState<any>(null)
-  const [isAddingPhoto, setIsAddingPhoto] = useState<number | null>(null)
-  const [selectedFile, setSelectedFile] = useState<string | null>(null)
-  const [isUploading, setIsUploading] = useState(false)
-  
-  const [formData, setFormData] = useState({
-    title: "",
-    date: "",
-    time: "",
-    location: "",
-    weatherLocation: "",
-    mapUrl: "",
-    description: "",
-    photos: [],
-    type: "Touring"
-  })
+    const { isAdmin } = useAdmin();
+    const { toast } = useToast();
+    const [events, setEvents] = useState<Event[]>([]);
+    const [weather, setWeather] = useState<Record<string, WeatherData>>({});
+    const [isLoading, setIsLoading] = useState(true);
+    const [isAdding, setIsAdding] = useState(false);
+    const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+    const [formData, setFormData] = useState<Omit<Event, 'id'> | Event>(EMPTY_FORM);
 
-  useEffect(() => {
-    const storedUser = localStorage.getItem("vvf_user")
-    if (storedUser) setUser(JSON.parse(storedUser))
-    const storedEvents = localStorage.getItem("vvf_all_events")
-    if (storedEvents) {
-      setEvents(JSON.parse(storedEvents))
-    } else {
-      setEvents(initialEvents)
-      localStorage.setItem("vvf_all_events", JSON.stringify(initialEvents))
-    }
-  }, [])
+    const fetchEvents = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const q = query(collection(db, "events"), orderBy("date", "desc"));
+            const querySnapshot = await getDocs(q);
+            const eventsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Event[];
+            setEvents(eventsData);
+        } catch (error) {
+            toast({ variant: "destructive", title: "Errore di caricamento", description: "Impossibile recuperare gli eventi." });
+        } finally {
+            setIsLoading(false);
+        }
+    }, [toast]);
 
-  const isAdmin = user?.status === "admin"
+    const fetchWeather = useCallback(async (event: Event) => {
+        if (!event.weatherLocation) return;
+        try {
+            const [lat, lon] = event.weatherLocation.split(',');
+            const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
+            if (!response.ok) throw new Error('Risposta non valida dall\'API meteo');
+            const data = await response.json();
+            setWeather(prev => ({ ...prev, [event.id]: data.current_weather }));
+        } catch (error) {
+            console.error("Errore API Meteo:", error);
+        }
+    }, []);
 
-  const sortedEvents = useMemo(() => {
-    return [...events].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-  }, [events])
+    useEffect(() => {
+        fetchEvents();
+    }, [fetchEvents]);
 
-  const handleSaveEvent = () => {
-    if (!formData.title.trim() || !formData.date) {
-      toast({ variant: "destructive", title: "Campi Mancanti", description: "Titolo e Data sono obbligatori." })
-      return
-    }
+    useEffect(() => {
+        events.forEach(event => {
+            if (!weather[event.id]) fetchWeather(event);
+        });
+    }, [events, weather, fetchWeather]);
 
-    let updatedEvents;
-    if (editingEvent) {
-      updatedEvents = events.map(e => e.id === editingEvent.id ? { ...formData, id: e.id } : e)
-      toast({ title: "Modifica Salvata", description: "L'uscita è stata aggiornata correttamente." })
-    } else {
-      const newEvent = { ...formData, id: Date.now(), photos: [] }
-      updatedEvents = [newEvent, ...events]
-      toast({ title: "Uscita Creata", description: "La nuova uscita è stata aggiunta al calendario." })
-    }
-    
-    setEvents(updatedEvents)
-    localStorage.setItem("vvf_all_events", JSON.stringify(updatedEvents))
-    setIsAdding(false)
-    setEditingEvent(null)
-    setFormData({ title: "", date: "", time: "", location: "", weatherLocation: "", mapUrl: "", description: "", photos: [], type: "Touring" })
-  }
+    const handleEdit = (event: Event) => {
+        setEditingEvent(event);
+        setFormData(event);
+        setIsAdding(true);
+    };
 
-  const handleDeleteEvent = (id: number) => {
-    const updated = events.filter(e => e.id !== id)
-    setEvents(updated)
-    localStorage.setItem("vvf_all_events", JSON.stringify(updated))
-    toast({ title: "Uscita rimossa", description: "L'evento è stato eliminato dal registro." })
-  }
+    const handleCreate = () => {
+        setEditingEvent(null);
+        setFormData(EMPTY_FORM);
+        setIsAdding(true);
+    };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setSelectedFile(reader.result as string)
-      }
-      reader.readAsDataURL(file)
-    }
-  }
+    const handleDelete = async (id: string, title: string) => {
+        if (window.confirm(`Sei sicuro di voler eliminare l'evento "${title}"?`)) {
+            try {
+                await deleteDoc(doc(db, "events", id));
+                toast({ title: "Evento Eliminato", description: "L'uscita è stata rimossa dal calendario." });
+                fetchEvents();
+            } catch (error) {
+                toast({ variant: "destructive", title: "Errore", description: "Impossibile eliminare l'evento." });
+            }
+        }
+    };
 
-  const handleAddPhotoSubmit = () => {
-    if (!selectedFile || isAddingPhoto === null) return
-    setIsUploading(true)
-    
-    const targetEvent = events.find(e => e.id === isAddingPhoto)
-    
-    const updated = events.map(e => {
-      if (e.id === isAddingPhoto) {
-        const newPhotos = [...(e.photos || []), selectedFile]
-        return { ...e, photos: newPhotos, image: selectedFile }
-      }
-      return e
-    })
-    
-    setEvents(updated)
-    localStorage.setItem("vvf_all_events", JSON.stringify(updated))
-    
-    // Sincronizza con la galleria
-    const galleryPhotos = JSON.parse(localStorage.getItem("vvf_gallery_photos") || "[]")
-    const newGalleryPhoto = {
-      id: Date.now().toString(),
-      url: selectedFile,
-      event: targetEvent?.title || "Evento",
-      author: user?.nome || "Socio",
-      date: new Date().toISOString().split('T')[0]
-    }
-    localStorage.setItem("vvf_gallery_photos", JSON.stringify([newGalleryPhoto, ...galleryPhotos]))
+    const handleFormSubmit = async () => {
+        try {
+            if (editingEvent) {
+                const eventRef = doc(db, "events", editingEvent.id);
+                await updateDoc(eventRef, { ...formData });
+                toast({ title: "Modifica Salvata", description: "L'uscita è stata aggiornata." });
+            } else {
+                await addDoc(collection(db, "events"), { ...formData, createdAt: new Date().toISOString() });
+                toast({ title: "Uscita Creata", description: "La nuova uscita è stata salvata." });
+            }
+            setIsAdding(false);
+            setEditingEvent(null);
+            fetchEvents();
+        } catch (error) {
+            toast({ variant: "destructive", title: "Errore di Salvataggio", description: "Impossibile salvare i dati." });
+        }
+    };
 
-    setIsAddingPhoto(null)
-    setSelectedFile(null)
-    setIsUploading(false)
-    toast({ title: "Foto caricata", description: "L'immagine è stata aggiunta all'evento e alla galleria." })
-  }
+    const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
 
-  return (
-    <div className="min-h-screen pb-20 md:pb-0 md:pt-16 bg-background">
-      <Navbar />
-      <main className="max-w-7xl mx-auto px-4 py-8">
-        <header className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <div>
-            <Badge className="mb-4 bg-primary/10 text-primary border-none font-bold uppercase tracking-widest">Motoclub VVF Roma</Badge>
-            <h1 className="text-4xl font-headline font-bold mb-2 text-foreground uppercase tracking-tighter">Calendario Eventi</h1>
-            <p className="text-muted-foreground max-w-2xl">Gestione e consultazione delle uscite ufficiali.</p>
-          </div>
-          {isAdmin && (
-            <Dialog open={isAdding} onOpenChange={setIsAdding}>
-              <DialogTrigger asChild>
-                <Button className="bg-primary hover:bg-primary/90 gap-2 h-12 px-6 rounded-full shadow-lg shadow-primary/20 font-bold">
-                   <Plus className="w-5 h-5" /> NUOVA USCITA
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="bg-card border-border sm:max-w-[500px]">
-                <DialogHeader>
-                  <DialogTitle className="text-2xl font-headline text-foreground">Aggiungi Uscita</DialogTitle>
-                  <DialogDescription>Titolo e Data sono obbligatori.</DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4 max-h-[65vh] overflow-y-auto pr-2 text-foreground">
-                  <div className="grid gap-2">
-                    <Label>Titolo Uscita *</Label>
-                    <Input value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="bg-background" placeholder="es: Giro dei Castelli" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="grid gap-2">
-                      <Label>Data *</Label>
-                      <Input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="bg-background" />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label>Orario Ritrovo</Label>
-                      <Input type="time" value={formData.time} onChange={e => setFormData({...formData, time: e.target.value})} className="bg-background" />
-                    </div>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>Luogo di Ritrovo</Label>
-                    <Input value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} className="bg-background" placeholder="es: Caserma VVF" />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>Località Meteo</Label>
-                    <Input value={formData.weatherLocation} onChange={e => setFormData({...formData, weatherLocation: e.target.value})} className="bg-background" placeholder="es: Roma" />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>URL Mappa</Label>
-                    <Input value={formData.mapUrl} onChange={e => setFormData({...formData, mapUrl: e.target.value})} className="bg-background" />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>Descrizione</Label>
-                    <Textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="bg-background min-h-[80px]" />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button variant="ghost" onClick={() => setIsAdding(false)}>Annulla</Button>
-                  <Button onClick={handleSaveEvent} className="bg-primary text-white font-bold px-8">Salva Uscita</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          )}
-        </header>
+    const handleSelectChange = (value: string) => {
+        setFormData(prev => ({ ...prev, type: value as Event['type'] }));
+    };
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {sortedEvents.map((event) => {
-            const imageUrl = event.image || "/cascovigili.jpg"
-            const eventDate = new Date(event.date)
-            return (
-              <Card key={event.id} className="bg-card border-border overflow-hidden group flex flex-col hover:border-primary/50 transition-all">
-                <div className="relative h-48">
-                  <Image src={imageUrl} alt={event.title} fill className="object-cover transition-transform group-hover:scale-105 duration-500" unoptimized={imageUrl.startsWith('data:') || imageUrl.startsWith('http')} />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent" />
-                  <div className="absolute bottom-4 right-4 z-10">
-                    <DynamicWeatherBadge location={event.weatherLocation || event.location} date={event.date} />
-                  </div>
-                </div>
-                <CardContent className="p-6 flex-1 flex flex-col">
-                  <div className="flex items-center gap-2 text-accent text-sm mb-2 font-bold uppercase tracking-wider">
-                    <Calendar className="w-4 h-4" />
-                    {eventDate.toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}
-                  </div>
-                  <CardTitle className="text-2xl mb-3 font-headline text-foreground">{event.title}</CardTitle>
-                  <div className="flex items-center text-muted-foreground text-sm mb-4">
-                    <MapPin className="w-4 h-4 mr-2 text-primary shrink-0" />
-                    <span className="line-clamp-1">{event.location || "Punto di ritrovo da definire"}</span>
-                  </div>
-                  <div className="mt-auto space-y-4">
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button asChild variant="outline" size="sm" className="font-bold border-border">
-                        <Link href={`/events/${event.id}`}>DETTAGLI</Link>
-                      </Button>
-                      <Button variant="outline" size="sm" className="gap-2 border-accent text-accent font-bold" onClick={() => setIsAddingPhoto(event.id)}>
-                        <Camera className="w-4 h-4" /> FOTO
-                      </Button>
-                    </div>
+    const handleAddPhoto = () => {
+        toast({ title: "Funzione non disponibile", description: "L'aggiunta di foto sarà implementata in futuro." });
+    };
+
+    return (
+        <div className="min-h-screen bg-black text-white">
+            <Navbar />
+            <div className="container mx-auto px-4 py-8">
+                <div className="flex justify-between items-center mb-8">
+                    <h1 className="text-3xl font-bold tracking-tight">CALENDARIO USCITE</h1>
                     {isAdmin && (
-                      <div className="flex items-center justify-end gap-2 pt-4 border-t border-border">
-                        <Button variant="ghost" size="icon" onClick={() => { setEditingEvent(event); setFormData({...event}) }} className="h-9 w-9 text-accent hover:bg-accent/10">
-                          <Edit className="w-4 h-4" />
+                        <Button onClick={handleCreate} className="flex items-center space-x-2">
+                            <PlusCircle className="h-5 w-5" />
+                            <span>NUOVA USCITA</span>
                         </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-9 w-9 text-destructive hover:bg-destructive/10">
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent className="bg-card border-border text-foreground">
-                            <AlertDialogHeader>
-                              <AlertDialogTitle className="font-headline">Elimina Uscita</AlertDialogTitle>
-                              <AlertDialogDescription>Vuoi rimuovere definitivamente questa uscita?</AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel className="bg-background border-border">Annulla</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDeleteEvent(event.id)} className="bg-destructive text-white">Elimina</AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
                     )}
-                  </div>
-                </CardContent>
-              </Card>
-            )
-          })}
-        </div>
-      </main>
+                </div>
 
-      <Dialog open={isAddingPhoto !== null} onOpenChange={(open) => !open && setIsAddingPhoto(null)}>
-        <DialogContent className="bg-card border-border text-foreground">
-          <DialogHeader>
-            <DialogTitle>Aggiungi Foto</DialogTitle>
-            <DialogDescription>Seleziona una foto dalla tua galleria per condividerla con il club.</DialogDescription>
-          </DialogHeader>
-          <div className="py-4 space-y-4">
-            <Label htmlFor="photo-file">Scegli file (JPG, PNG)</Label>
-            <Input id="photo-file" type="file" accept="image/*" onChange={handleFileChange} className="bg-background cursor-pointer" />
-            {selectedFile && (
-              <div className="relative h-40 w-full rounded-lg overflow-hidden border border-border">
-                <Image src={selectedFile} alt="Preview" fill className="object-cover" unoptimized />
-              </div>
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => { setIsAddingPhoto(null); setSelectedFile(null); }}>Annulla</Button>
-            <Button onClick={handleAddPhotoSubmit} disabled={!selectedFile || isUploading} className="bg-primary text-white">
-              {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : "CARICA"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+                {isLoading ? (
+                    <div className="flex justify-center items-center py-20">
+                        <Loader2 className="h-12 w-12 animate-spin text-yellow-400" />
+                    </div>
+                ) : events.length === 0 ? (
+                    <div className="text-center bg-gray-900 rounded-lg p-12">
+                        <Info className="mx-auto h-12 w-12 text-gray-500" />
+                        <h3 className="mt-4 text-lg font-medium">Nessun evento in programma</h3>
+                        <p className="mt-2 text-sm text-gray-400">Al momento non ci sono nuove uscite. Torna a trovarci presto!</p>
+                         {isAdmin && <Button onClick={handleCreate} className="mt-6">CREA LA PRIMA USCITA</Button>}
+                    </div>
+                ) : (
+                    <div className="space-y-6">
+                        {events.map(event => (
+                            <Card key={event.id} className="bg-gray-900 border-gray-800 p-4 md:p-6 flex flex-col md:flex-row overflow-hidden">
+                                <div className="w-full md:w-1/4 mb-4 md:mb-0">
+                                    <img src={event.photos[0] || 'https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=500&q=80'} alt={event.title} className="rounded-lg object-cover w-full h-48 md:h-full transition-transform duration-300 hover:scale-105" />
+                                </div>
+                                <div className="w-full md:w-3/4 md:pl-6">
+                                    <div className="flex flex-col sm:flex-row justify-between sm:items-start">
+                                        <div>
+                                          <p className="text-sm text-yellow-400 font-semibold">{format(new Date(event.date), 'EEEE dd MMMM yyyy', { locale: it })}</p>
+                                          <h2 className="text-2xl font-bold text-white mt-1">{event.title}</h2>
+                                        </div>
+                                        {isAdmin && (
+                                          <div className="flex items-center space-x-2 mt-2 sm:mt-0 flex-shrink-0">
+                                            <Button variant="outline" size="sm" onClick={() => handleEdit(event)}><Edit className="h-4 w-4 mr-2"/>Modifica</Button>
+                                            <Button variant="destructive" size="sm" onClick={() => handleDelete(event.id, event.title)}><Trash2 className="h-4 w-4 mr-2"/>Elimina</Button>
+                                          </div>
+                                        )}
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm mt-4 text-gray-300">
+                                        <div className="flex items-center"><Clock className="h-4 w-4 mr-2 text-yellow-400" /><span>{event.time}</span></div>
+                                        <div className="flex items-center"><MapPin className="h-4 w-4 mr-2 text-yellow-400" /><span>{event.location}</span></div>
+                                        {weather[event.id] ? (
+                                            <div className="flex items-center">
+                                                {weather[event.id].weathercode < 3 ? <Sun className="h-4 w-4 mr-2 text-yellow-400"/> : <CloudRain className="h-4 w-4 mr-2 text-blue-400"/>}
+                                                <span>{weather[event.id].temperature}°C</span>
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center"><Loader2 className="h-4 w-4 mr-2 animate-spin"/> Carico meteo...</div>
+                                        )}
+                                    </div>
 
-      {editingEvent && (
-        <Dialog open={!!editingEvent} onOpenChange={(open) => !open && setEditingEvent(null)}>
-          <DialogContent className="bg-card border-border sm:max-w-[500px] text-foreground">
-            <DialogHeader><DialogTitle className="text-2xl font-headline">Modifica Uscita</DialogTitle></DialogHeader>
-            <div className="grid gap-4 py-4 max-h-[65vh] overflow-y-auto pr-2">
-              <div className="grid gap-2"><Label>Titolo *</Label><Input value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="bg-background" /></div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2"><Label>Data *</Label><Input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="bg-background" /></div>
-                <div className="grid gap-2"><Label>Orario</Label><Input type="time" value={formData.time} onChange={e => setFormData({...formData, time: e.target.value})} className="bg-background" /></div>
-              </div>
-              <div className="grid gap-2"><Label>Luogo</Label><Input value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} className="bg-background" /></div>
-              <div className="grid gap-2"><Label>Meteo Loc.</Label><Input value={formData.weatherLocation} onChange={e => setFormData({...formData, weatherLocation: e.target.value})} className="bg-background" /></div>
-              <div className="grid gap-2"><Label>Descrizione</Label><Textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="bg-background" /></div>
+                                    <p className="mt-4 text-gray-400 text-sm leading-relaxed">{event.description}</p>
+
+                                    <div className="mt-4 flex items-center space-x-4">
+                                        <Button variant="secondary" onClick={() => window.open(event.mapUrl, '_blank')}>VEDI MAPPA</Button>
+                                        {isAdmin && (
+                                          <Button variant="outline" onClick={handleAddPhoto}>
+                                            <Camera className="h-4 w-4 mr-2"/>AGGIUNGI FOTO
+                                          </Button>
+                                        )}
+                                    </div>
+                                </div>
+                            </Card>
+                        ))}
+                    </div>
+                )}
             </div>
-            <DialogFooter><Button variant="ghost" onClick={() => setEditingEvent(null)}>Annulla</Button><Button onClick={handleSaveEvent} className="bg-accent text-accent-foreground font-bold">Salva Modifiche</Button></DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
-    </div>
-  )
+
+            <Dialog open={isAdding} onOpenChange={setIsAdding}>
+                <DialogContent className="sm:max-w-[625px]">
+                    <DialogHeader>
+                        <DialogTitle>{editingEvent ? "Modifica Uscita" : "Crea Nuova Uscita"}</DialogTitle>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="title" className="text-right">Titolo</Label>
+                            <Input id="title" name="title" value={formData.title} onChange={handleFormChange} className="col-span-3" />
+                        </div>
+                         <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="date" className="text-right">Data</Label>
+                            <Input id="date" name="date" type="date" value={formData.date} onChange={handleFormChange} className="col-span-3" />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="time" className="text-right">Ora</Label>
+                            <Input id="time" name="time" type="time" value={formData.time} onChange={handleFormChange} className="col-span-3" />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="location" className="text-right">Località</Label> 
+                            <Input id="location" name="location" value={formData.location} onChange={handleFormChange} className="col-span-3" />
+                        </div>
+                         <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="weatherLocation" className="text-right">Lat/Lon Meteo</Label>
+                            <Input id="weatherLocation" name="weatherLocation" value={formData.weatherLocation} onChange={handleFormChange} className="col-span-3" placeholder="Es: 41.8902,12.4922"/>
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="mapUrl" className="text-right">URL Mappa</Label>
+                            <Input id="mapUrl" name="mapUrl" value={formData.mapUrl} onChange={handleFormChange} className="col-span-3" />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="type" className="text-right">Tipo</Label>
+                            <Select onValueChange={handleSelectChange} value={formData.type}>
+                                <SelectTrigger className="col-span-3">
+                                    <SelectValue placeholder="Seleziona il tipo di uscita" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Touring">Touring</SelectItem>
+                                    <SelectItem value="Endurance">Endurance</SelectItem>
+                                    <SelectItem value="Track">Track</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="description" className="text-right">Descrizione</Label>
+                            <Textarea id="description" name="description" value={formData.description} onChange={handleFormChange} className="col-span-3" />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <DialogClose asChild><Button variant="outline">Annulla</Button></DialogClose>
+                        <Button onClick={handleFormSubmit}>Salva</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </div>
+    );
 }

@@ -1,7 +1,5 @@
 import "./globals.css";
 import { SidebarProvider } from "@/components/ui/sidebar";
-import AppSidebar from "@/components/AppSidebar";
-import Navbar from "@/components/Navbar";
 
 export const metadata = {
   title: "RideRoute",
@@ -15,13 +13,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="it">
-      <body className="flex flex-col min-h-screen">
+      <body>
         <SidebarProvider>
-          <AppSidebar />
-          <Navbar />
-          <main className="flex-1 pt-16 w-full">
-            {children}
-          </main>
+          <main>{children}</main>
         </SidebarProvider>
       </body>
     </html>
