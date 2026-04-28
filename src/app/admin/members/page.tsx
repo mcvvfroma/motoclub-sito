@@ -166,6 +166,7 @@ export default function AdminMembersPage() {
             <CardDescription>Visualizzazione e modifica dei dati sensibili dei soci.</CardDescription>
           </CardHeader>
           <CardContent className="p-0">
+          <div className="w-full overflow-x-auto">
             <Table>
               <TableHeader className="bg-secondary/50">
                 <TableRow className="border-border">
@@ -243,6 +244,7 @@ export default function AdminMembersPage() {
                 )}
               </TableBody>
             </Table>
+            </div>
           </CardContent>
         </Card>
 
