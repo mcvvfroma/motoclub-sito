@@ -166,10 +166,9 @@ export default function AdminMembersPage() {
             <CardDescription>Visualizzazione e modifica dei dati sensibili dei soci.</CardDescription>
           </CardHeader>
           <CardContent className="p-0">
-{/* RIGA 169: Usiamo uno stile inline per essere sicuri al 100% */}
-<div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', width: '100%', display: 'block' }}>
-  <div style={{ minWidth: '850px', display: 'block' }}>
-    <Table className="w-full">
+  <div className="w-full overflow-x-auto touch-pan-x">
+    <div className="min-w-[800px]">
+      <Table className="w-full">
           
               <TableHeader className="bg-secondary/50">
                 <TableRow className="border-border">
