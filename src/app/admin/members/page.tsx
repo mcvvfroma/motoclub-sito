@@ -166,22 +166,20 @@ export default function AdminMembersPage() {
             <CardDescription>Visualizzazione e modifica dei dati sensibili dei soci.</CardDescription>
           </CardHeader>
           <CardContent className="p-0">
-  <div className="w-full overflow-x-auto touch-pan-x">
-    <div className="min-w-[800px]">
+  
       <Table className="w-full">
           
               <TableHeader className="bg-secondary/50">
                 <TableRow className="border-border">
                   <TableHead className="text-accent font-bold">Nome Completo</TableHead>
-                  <TableHead className="text-accent font-bold">Email</TableHead>
-                  <TableHead className="text-accent font-bold">Status</TableHead>
+                    <TableHead className="text-accent font-bold">Status</TableHead>
                   <TableHead className="text-accent font-bold text-right">Azioni</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {members.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center py-8 text-muted-foreground italic">
+                    <TableCell colSpan={3} className="text-center py-8 text-muted-foreground italic">
                       Nessun socio trovato.
                     </TableCell>
                   </TableRow>
@@ -191,17 +189,15 @@ export default function AdminMembersPage() {
                       <TableCell className="font-medium text-foreground">
                         {socio.nome} {socio.cognome}
                       </TableCell>
-                      <TableCell className="text-muted-foreground font-mono text-xs">
-                        {socio.email}
-                      </TableCell>
                       <TableCell>
-                        <Badge 
-                          variant={socio.status === "admin" ? "default" : "outline"} 
-                          className={socio.status === "admin" ? "bg-accent text-accent-foreground" : "border-muted-foreground text-muted-foreground"}
-                        >
-                          {socio.status.toUpperCase()}
-                        </Badge>
-                      </TableCell>
+  <Badge 
+    variant={socio.status === "admin" ? "default" : "outline"}
+    className={socio.status === "admin" ? "bg-accent text-accent-foreground" : "border-muted-foreground"}
+  >
+    {socio.status.toUpperCase()}
+  </Badge>
+</TableCell>
+                      
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           <Button 
@@ -246,8 +242,7 @@ export default function AdminMembersPage() {
                 )}
               </TableBody>
             </Table>
-            </div>
-            </div>
+           
           </CardContent>
         </Card>
 
