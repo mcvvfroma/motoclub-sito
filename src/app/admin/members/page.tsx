@@ -166,8 +166,10 @@ export default function AdminMembersPage() {
             <CardDescription>Visualizzazione e modifica dei dati sensibili dei soci.</CardDescription>
           </CardHeader>
           <CardContent className="p-0">
-          <div className="w-full overflow-x-auto min-w-full inline-block align-middle">
-          <Table className="min-w-[700px]">
+          {/* Modifica riga 169 e 170 così */}
+<div className="w-full overflow-x-scroll !block">
+  <Table className="w-full min-w-[800px] table-fixed md:table-auto">
+          
               <TableHeader className="bg-secondary/50">
                 <TableRow className="border-border">
                   <TableHead className="text-accent font-bold">Nome Completo</TableHead>
