@@ -1,183 +1,212 @@
+'use client';
 
-"use client";
-
-import React, { useState, useEffect, useCallback } from 'react';
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { useAdmin } from '@/hooks/use-admin';
-import Navbar from '@/components/Navbar';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/hooks/use-toast';
-import { Pencil, Trash2, PlusCircle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { PlusCircle, Edit, Trash2, X, ExternalLink } from 'lucide-react';
+import Navbar from '@/components/Navbar';
 import Link from 'next/link';
 
-type Convenzione = {
-    id: string;
-    title: string;
-    category: string;
-    description: string;
-    link: string;
-};
-
-const EMPTY_FORM = { title: "", category: "", description: "", link: "" };
+// Motore Firebase
+import { db } from '@/lib/firebase';
+import { 
+  collection, 
+  setDoc, 
+  deleteDoc, 
+  doc, 
+  serverTimestamp, 
+  query, 
+  orderBy, 
+  onSnapshot 
+} from 'firebase/firestore';
 
 export default function ConvenzioniPage() {
-    const { isAdmin } = useAdmin();
-    const { toast } = useToast();
-    const [convenzioni, setConvenzioni] = useState<Convenzione[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [editingConvenzione, setEditingConvenzione] = useState<Convenzione | null>(null);
-    const [formData, setFormData] = useState(EMPTY_FORM);
+  const [convenzioni, setConvenzioni] = useState<any[]>([]);
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Campi del database (mappati su image_78d59c.jpg)
+  const [name, setName] = useState("");
+  const [category, setCategory] = useState("");
+  const [description, setDescription] = useState("");
+  const [discount, setDiscount] = useState("");
+  const [address, setAddress] = useState("");
+  const [phone, setPhone] = useState("");
+  const [website, setWebsite] = useState("");
 
-    const fetchConvenzioni = useCallback(async () => {
-        setIsLoading(true);
-        try {
-            const querySnapshot = await getDocs(collection(db, "convenzioni"));
-            const convenzioniData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Convenzione[];
-            setConvenzioni(convenzioniData);
-        } catch (error) {
-            toast({ variant: "destructive", title: "Errore", description: "Impossibile caricare le convenzioni." });
-        } finally {
-            setIsLoading(false);
-        }
-    }, [toast]);
+  const isAdmin = true;
 
-    useEffect(() => {
-        fetchConvenzioni();
-    }, [fetchConvenzioni]);
+  // 1. RECUPERO DATI REAL-TIME (Collezione: conventions)
+  useEffect(() => {
+    const q = query(collection(db, "conventions"), orderBy("name", "asc"));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      setConvenzioni(snapshot.docs.map(d => ({
+        id: d.id,
+        ...d.data()
+      })));
+      setIsLoading(false);
+    }, (error) => {
+      console.error("Errore Firestore:", error);
+      setIsLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
 
-    const handleCreate = () => {
-        setEditingConvenzione(null);
-        setFormData(EMPTY_FORM);
-        setIsDialogOpen(true);
-    };
+  // 2. SALVATAGGIO
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name || !category) return;
 
-    const handleEdit = (convenzione: Convenzione) => {
-        setEditingConvenzione(convenzione);
-        setFormData(convenzione);
-        setIsDialogOpen(true);
-    };
+    try {
+      const docId = editingId || name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
 
-    const handleDelete = async (id: string) => {
-        if (window.confirm('Sei sicuro di voler eliminare questa convenzione? L\'azione è irreversibile.')) {
-            try {
-                await deleteDoc(doc(db, "convenzioni", id));
-                toast({ title: "Successo", description: "Convenzione eliminata correttamente." });
-                fetchConvenzioni();
-            } catch (error) {
-                toast({ variant: "destructive", title: "Errore", description: "Impossibile eliminare la convenzione." });
-            }
-        }
-    };
+      await setDoc(doc(db, "conventions", docId), {
+        name,
+        category,
+        description,
+        discount,
+        address,
+        phone,
+        website,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+      resetForm();
+    } catch (err) {
+      console.error("Errore salvataggio:", err);
+    }
+  };
 
-    const handleFormSubmit = async () => {
-        try {
-            if (editingConvenzione) {
-                const convenzioneRef = doc(db, "convenzioni", editingConvenzione.id);
-                await updateDoc(convenzioneRef, formData);
-                toast({ title: "Successo", description: "Convenzione aggiornata." });
-            } else {
-                await addDoc(collection(db, "convenzioni"), formData);
-                toast({ title: "Successo", description: "Nuova convenzione creata." });
-            }
-            setIsDialogOpen(false);
-            fetchConvenzioni();
-        } catch (error) {
-            toast({ variant: "destructive", title: "Errore", description: "Salvataggio fallito." });
-        }
-    };
+  const handleEdit = (conv: any) => {
+    setEditingId(conv.id);
+    setName(conv.name || "");
+    setCategory(conv.category || "");
+    setDescription(conv.description || "");
+    setDiscount(conv.discount || "");
+    setAddress(conv.address || "");
+    setPhone(conv.phone || "");
+    setWebsite(conv.website || "");
+    setShowForm(true);
+  };
 
-    const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
-    };
+  const resetForm = () => {
+    setName("");
+    setCategory("");
+    setDescription("");
+    setDiscount("");
+    setAddress("");
+    setPhone("");
+    setWebsite("");
+    setEditingId(null);
+    setShowForm(false);
+  };
 
-    return (
-        <div className="min-h-screen bg-black text-white">
-            <Navbar />
-            <div className="container mx-auto px-4 py-8">
-                <div className="flex justify-between items-center mb-8">
-                    <h1 className="text-3xl font-bold tracking-tight">CONVENZIONI SOCI</h1>
-                    {isAdmin && (
-                        <Button onClick={handleCreate} className="flex items-center gap-2">
-                            <PlusCircle className="h-5 w-5" />
-                            NUOVA CONVENZIONE
-                        </Button>
-                    )}
-                </div>
+  const handleDelete = async (id: string) => {
+    if (!window.confirm("Sei sicuro di voler eliminare questa convenzione?")) return;
+    try {
+      await deleteDoc(doc(db, "conventions", id));
+    } catch (err) {
+      console.error("Errore eliminazione:", err);
+    }
+  };
 
-                {isLoading ? (
-                    <div className="text-center"><p>Caricamento convenzioni...</p></div>
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {convenzioni.map((convenzione) => (
-                            <Card key={convenzione.id} className="bg-gray-900 border-gray-800 flex flex-col relative">
-                                {isAdmin && (
-                                    <div className="absolute top-2 right-2 z-10 flex items-center space-x-2">
-                                        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleEdit(convenzione)}>
-                                            <Pencil className="h-4 w-4" />
-                                        </Button>
-                                        <Button variant="destructive" size="icon" className="h-8 w-8" onClick={() => handleDelete(convenzione.id)}>
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                )}
-                                <CardHeader>
-                                    <CardTitle className="pr-16">{convenzione.title}</CardTitle>
-                                    <Badge variant="secondary" className="w-fit">{convenzione.category}</Badge>
-                                </CardHeader>
-                                <CardContent className="flex-grow">
-                                    <CardDescription>{convenzione.description}</CardDescription>
-                                </CardContent>
-                                <CardFooter>
-                                    <Link href={convenzione.link || '#'} passHref legacyBehavior>
-                                        <a target="_blank" rel="noopener noreferrer" className='w-full'>
-                                            <Button className='w-full' variant='outline'>Vedi Dettagli</Button>
-                                        </a>
-                                    </Link>
-                                </CardFooter>
-                            </Card>
-                        ))}
-                    </div>
-                )}
-            </div>
-
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="sm:max-w-[625px]">
-                    <DialogHeader>
-                        <DialogTitle>{editingConvenzione ? "Modifica Convenzione" : "Crea Nuova Convenzione"}</DialogTitle>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="title" className="text-right">Titolo</Label>
-                            <Input id="title" name="title" value={formData.title} onChange={handleFormChange} className="col-span-3" />
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="category" className="text-right">Categoria</Label>
-                            <Input id="category" name="category" value={formData.category} onChange={handleFormChange} className="col-span-3" />
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="link" className="text-right">Link</Label>
-                            <Input id="link" name="link" value={formData.link} onChange={handleFormChange} className="col-span-3" />
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="description" className="text-right">Descrizione</Label>
-                            <Textarea id="description" name="description" value={formData.description} onChange={handleFormChange} className="col-span-3" />
-                        </div>
-                    </div>
-                    <DialogFooter>
-                        <DialogClose asChild><Button variant="outline">Annulla</Button></DialogClose>
-                        <Button onClick={handleFormSubmit}>Salva</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+  return (
+    <div className="min-h-screen bg-black text-white">
+      <Navbar />
+      <div className="container mx-auto px-4 py-8">
+        
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold tracking-tight uppercase">Convenzioni Soci</h1>
+          {isAdmin && !showForm && (
+            <Button onClick={() => setShowForm(true)} className="bg-red-600 hover:bg-red-700 text-white border-none">
+              <PlusCircle className="h-4 w-4 mr-2" />
+              Nuova Convenzione
+            </Button>
+          )}
         </div>
-    );
+
+        {showForm && (
+          <Card className="mb-8 border-gray-800 bg-gray-900 text-white">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-white">{editingId ? "Modifica Convenzione" : "Nuova Convenzione"}</CardTitle>
+              <Button variant="ghost" size="icon" onClick={resetForm} className="text-white hover:bg-gray-800">
+                <X className="h-4 w-4" />
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input value={name} onChange={e => setName(e.target.value)} placeholder="Nome Attività..." className="bg-black border-gray-700 text-white" disabled={!!editingId} />
+                  <Input value={category} onChange={e => setCategory(e.target.value)} placeholder="Categoria (es. Officina)..." className="bg-black border-gray-700 text-white" />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input value={discount} onChange={e => setDiscount(e.target.value)} placeholder="Sconto (es. 10%)..." className="bg-black border-gray-700 text-white" />
+                  <Input value={address} onChange={e => setAddress(e.target.value)} placeholder="Indirizzo..." className="bg-black border-gray-700 text-white" />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="Telefono..." className="bg-black border-gray-700 text-white" />
+                  <Input value={website} onChange={e => setWebsite(e.target.value)} placeholder="Sito Web..." className="bg-black border-gray-700 text-white" />
+                </div>
+                <Textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Descrizione dettagliata..." className="min-h-[100px] bg-black border-gray-700 text-white" />
+                <div className="flex gap-2">
+                  <Button type="submit" className="bg-red-600 text-white hover:bg-red-700 border-none">
+                    {editingId ? "Aggiorna" : "Pubblica"}
+                  </Button>
+                  <Button type="button" variant="outline" onClick={resetForm} className="border-gray-700 text-white hover:bg-gray-800">Annulla</Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        )}
+
+        {isLoading ? (
+          <div className="text-center py-10 text-gray-500">Caricamento in corso...</div>
+        ) : (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {convenzioni.map((c) => (
+              <Card key={c.id} className="bg-gray-900 border-gray-800 flex flex-col relative text-white">
+                <CardHeader>
+                  <div className="flex justify-between items-start">
+                    <div className='flex-grow pr-2'>
+                      <CardTitle className="uppercase text-xl font-bold text-white">{c.name}</CardTitle>
+                      <Badge variant="secondary" className="mt-2 bg-gray-800 text-gray-300 border-none uppercase text-[10px]">
+                        {c.category}
+                      </Badge>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="flex-grow space-y-3">
+                  <p className="text-red-500 font-bold">{c.discount}</p>
+                  <p className="text-gray-400 text-sm italic">"{c.description}"</p>
+                  <p className="text-gray-500 text-[11px] uppercase tracking-wider">{c.address}</p>
+                </CardContent>
+                <CardFooter className="flex flex-col gap-4 border-t border-gray-800 pt-4">
+                  {c.website && (
+                    <Link href={c.website.startsWith('http') ? c.website : `https://${c.website}`} target="_blank" rel="noopener noreferrer" className="w-full">
+                      <Button variant="outline" className="w-full border-gray-700 hover:bg-gray-800 gap-2 text-white">
+                        <ExternalLink className="h-4 w-4" /> Vedi Sito
+                      </Button>
+                    </Link>
+                  )}
+                  {isAdmin && (
+                    <div className="flex justify-end w-full gap-2 pt-2">
+                      <Button variant="ghost" size="icon" onClick={() => handleEdit(c)} className="hover:bg-gray-800 text-white">
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleDelete(c.id)} className="hover:bg-gray-800 text-red-500">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }

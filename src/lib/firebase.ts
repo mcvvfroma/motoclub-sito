@@ -1,26 +1,42 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc } from "firebase/firestore";
+import { 
+  initializeFirestore, 
+  collection, 
+  getDocs, 
+  addDoc, 
+  deleteDoc, 
+  doc, 
+  setDoc,
+  persistentLocalCache,
+  persistentMultipleTabManager
+} from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyD2-vK9SYV2ljQ5_Cq5KETl8_CBG95bnjU",
-  authDomain: "rideroute-ufficiale.firebaseapp.com",
-  projectId: "rideroute-ufficiale",
-  storageBucket: "rideroute-ufficiale.appspot.com",
+  apiKey: "AIzaSy02-vk9SYV2ljQ5_Cq5KETL8_CBG95bnjU",
+  authDomain: "studio-6923057624-dea08.firebaseapp.com",
+  projectId: "studio-6923057624-dea08",
+  storageBucket: "studio-6923057624-dea08.appspot.com",
   messagingSenderId: "367355152864",
-  appId: "1:367355152864:web:65f727c62b406e10787e9e"
+  appId: "1:367355152864:web:65f727c62b486e18787c9e"
 };
 
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
-const db = getFirestore(app);
+
+// Versione ultra-compatibile per evitare errori di trasporto e CORS
+export const db = initializeFirestore(app, {
+  localCache: persistentLocalCache({tabManager: persistentMultipleTabManager()}),
+  experimentalForceLongPolling: true,
+});
+
 const storage = getStorage(app);
 
 // 1. Recupera utenti
 export const getAuthorizedUsers = async () => {
   try {
-    const querySnapshot = await getDocs(collection(db, "authorized_users"));
+    const querySnapshot = await getDocs(collection(db, "users"));
     return querySnapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
@@ -34,7 +50,7 @@ export const getAuthorizedUsers = async () => {
 // 2. Aggiunge utente
 export const addAuthorizedUser = async (userData: any) => {
   try {
-    const docRef = await addDoc(collection(db, "authorized_users"), userData);
+    const docRef = await addDoc(collection(db, "users"), userData);
     return { id: docRef.id, ...userData };
   } catch (error) {
     console.error("Errore nell'aggiunta utente:", error);
@@ -45,11 +61,11 @@ export const addAuthorizedUser = async (userData: any) => {
 // 3. Rimuove utente (L'ultimo errore che vedevi!)
 export const removeAuthorizedUser = async (userId: string) => {
   try {
-    await deleteDoc(doc(db, "authorized_users", userId));
+    await deleteDoc(doc(db, "users", userId));
   } catch (error) {
     console.error("Errore nella rimozione utente:", error);
     throw error;
   }
 };
 
-export { app, auth, db, storage };
+export { app, auth, storage };

@@ -38,3 +38,16 @@
     @apply font-headline;
   }
 }
+
+/* Centering and Overflow Fix */
+body, html {
+  overflow-x: hidden;
+  width: 100%;
+}
+
+main {
+  width: 100% !important;
+  margin: 0 !important;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}

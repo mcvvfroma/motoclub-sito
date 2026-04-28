@@ -1,218 +1,187 @@
+'use client';
 
-"use client";
-
-import React, { useState, useEffect, useCallback } from 'react';
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, orderBy } from 'firebase/firestore';
+import { useEffect, useState } from 'react';
 import { db } from '@/lib/firebase';
-import { useAdmin } from '@/hooks/use-admin';
-import Navbar from '@/components/Navbar';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
-import { Edit, Trash2, PlusCircle, Loader2 } from 'lucide-react';
+import { collection, onSnapshot, query, setDoc, updateDoc, deleteDoc, doc, addDoc } from 'firebase/firestore';
+// ... gli altri import (PlusCircle, Button, Card, ecc.) restano uguali
 
-type Member = {
-    id: string;
-    nome: string;
-    cognome: string;
-    email: string;
-    status: 'socio' | 'admin';
+import { PlusCircle, MoreHorizontal } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import MemberDialog from '@/components/MemberDialog';
+import ConfirmationDialog from '@/components/ConfirmationDialog';
+
+export type Member = {
+  id: string;
+  nome: string;
+  cognome: string;
+  email: string;
+  status: 'admin' | 'socio';
+  createdAt?: string;
 };
 
-const EMPTY_FORM = { nome: "", cognome: "", email: "", status: "socio" as const };
-
 export default function MembersPage() {
-    const { isAdmin, isLoading: isAdminLoading } = useAdmin();
-    const { toast } = useToast();
-    const [members, setMembers] = useState<Member[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [editingMember, setEditingMember] = useState<Member | null>(null);
-    const [formData, setFormData] = useState<Omit<Member, 'id'> | Member>(EMPTY_FORM);
+  const [soci, setSoci] = useState<Member[]>([]);
+  const [isMemberDialogOpen, setIsMemberDialogOpen] = useState(false);
+  const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+  const [idSocioDaEliminare, setIdSocioDaEliminare] = useState<string | null>(null);
 
-    const fetchMembers = useCallback(async () => {
-        setIsLoading(true);
-        try {
-            const q = query(collection(db, "users"), orderBy("cognome", "asc"));
-            const querySnapshot = await getDocs(q);
-            const membersData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Member[];
-            setMembers(membersData);
-        } catch (error) {
-            toast({ variant: "destructive", title: "Errore", description: "Impossibile caricare i soci." });
-        } finally {
-            setIsLoading(false);
-        }
-    }, [toast]);
+  const isAdmin = true;
 
-    useEffect(() => {
-        if (isAdmin) {
-            fetchMembers();
-        }
-    }, [isAdmin, fetchMembers]);
+  useEffect(() => {
+    const q = query(collection(db, 'users'));
+    const unsubscribe = onSnapshot(q, (snap) => {
+      const dati = snap.docs.map(d => ({
+        id: d.id,
+        ...d.data()
+      })) as Member[];
+      setSoci(dati);
+    });
+    return () => unsubscribe();
+  }, []);
 
-    const handleCreate = () => {
-        setEditingMember(null);
-        setFormData(EMPTY_FORM);
-        setIsDialogOpen(true);
-    };
+  const openMemberDialog = (s: Member | null = null) => {
+    setSelectedMember(s);
 
-    const handleEdit = (member: Member) => {
-        setEditingMember(member);
-        setFormData(member);
-        setIsDialogOpen(true);
-    };
+    setIsMemberDialogOpen(true);
+  };
 
-    const handleDelete = async (id: string, nome: string, cognome: string) => {
-        if (window.confirm(`Sei sicuro di voler eliminare ${nome} ${cognome}?`)) {
-            try {
-                await deleteDoc(doc(db, "users", id));
-                toast({ title: "Successo", description: "Socio eliminato correttamente." });
-                fetchMembers();
-            } catch (error) {
-                toast({ variant: "destructive", title: "Errore", description: "Impossibile eliminare il socio." });
-            }
-        }
-    };
+  const openDeleteConfirmation = (id: string) => {
+    setIdSocioDaEliminare(id);
+    setIsConfirmDialogOpen(true);
+  };
 
-    const handleFormSubmit = async () => {
-        if (!formData.nome || !formData.cognome || !formData.email) {
-            toast({ variant: "destructive", title: "Errore", description: "Tutti i campi sono obbligatori." });
-            return;
-        }
-
-        try {
-            if (editingMember) {
-                const memberRef = doc(db, "users", editingMember.id);
-                await updateDoc(memberRef, formData);
-                toast({ title: "Successo", description: "Dati del socio aggiornati." });
-            } else {
-                await addDoc(collection(db, "users"), { ...formData, createdAt: new Date().toISOString() });
-                toast({ title: "Successo", description: "Nuovo socio aggiunto." });
-            }
-            setIsDialogOpen(false);
-            fetchMembers();
-        } catch (error) {
-            toast({ variant: "destructive", title: "Errore", description: "Salvataggio fallito." });
-        }
-    };
-
-    const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
-    };
-
-    const handleSelectChange = (value: string) => {
-        setFormData(prev => ({ ...prev, status: value as Member['status'] }));
-    };
-
-    if (isAdminLoading) {
-        return <div className="min-h-screen flex items-center justify-center bg-black text-white">Caricamento...</div>;
+  const executeDelete = async () => {
+    if (!idSocioDaEliminare) return;
+    try {
+      // Usiamo firestoreDoc per non confonderlo con i dati
+      await deleteDoc(doc(db, 'users', idSocioDaEliminare));
+      setIsConfirmDialogOpen(false);
+      setIdSocioDaEliminare(null);
+    } catch (e) {
+      console.error("Errore eliminazione:", e);
     }
+  };
+  const handleSaveMember = async (data: any) => {
+    setIsMemberDialogOpen(false);
+    setSelectedMember(null);
 
-    if (!isAdmin) {
-        return (
-            <div className="min-h-screen bg-black text-white">
-                <Navbar />
-                <div className="container mx-auto px-4 py-8 text-center">
-                    <h1 className="text-3xl font-bold text-red-500">Accesso Negato</h1>
-                    <p className="mt-4">Solo gli amministratori possono visualizzare questa pagina.</p>
-                </div>
-            </div>
-        );
+    try {
+      if (selectedMember) {
+        await updateDoc(doc(db, 'users', selectedMember.id), data);
+      } else {
+        const userEmail = data.email.trim().toLowerCase();
+        await setDoc(doc(db, 'users', userEmail), {
+          nome: data.nome || '',
+          cognome: data.cognome || '',
+          email: userEmail,
+          status: data.status || 'socio',
+          createdAt: new Date().toISOString()
+        });
+      }
+      console.log("Salvataggio riuscito!");
+    } catch (e: any) {
+      console.error("ERRORE FIREBASE:", e);
+      alert("Errore nel salvataggio: " + e.message);
     }
+  };
 
-    return (
-        <div className="min-h-screen bg-black text-white">
-            <Navbar />
-            <div className="container mx-auto px-4 py-8">
-                <div className="flex justify-between items-center mb-8">
-                    <h1 className="text-3xl font-bold tracking-tight">ANAGRAFICA SOCI</h1>
-                    <Button onClick={handleCreate} className="flex items-center gap-2">
-                        <PlusCircle className="h-5 w-5" />
-                        AGGIUNGI SOCIO
-                    </Button>
-                </div>
+  return (
+    <div className="p-6 space-y-6">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Gestione Soci</CardTitle>
+          {isAdmin && (
+            <Button onClick={() => {
+              setSelectedMember(null);
+              setIsMemberDialogOpen(true);
+            }}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Aggiungi Socio
+            </Button>
+          )}
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nome</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Stato</TableHead>
+                <TableHead className="w-[100px]"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {soci.map((s) => (
+                <TableRow key={s.id}>
+                  <TableCell>{s.nome} {s.cognome}</TableCell>
+                  <TableCell>{s.email}</TableCell>
+                  <TableCell>{s.status}</TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => {
+                          setSelectedMember(s);
+                          setIsMemberDialogOpen(true);
+                        }}>
+                          Modifica
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          className="text-red-600"
+                          onClick={() => {
+                            setIdSocioDaEliminare(s.id);
+                            setIsConfirmDialogOpen(true);
+                          }}
+                        >
+                          Elimina
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
-                <Card className="bg-gray-900 border-gray-800">
-                    <CardContent className="p-0">
-                        <Table>
-                            <TableHeader>
-                                <TableRow className="border-gray-800">
-                                    <TableHead className="text-white">Cognome</TableHead>
-                                    <TableHead className="text-white">Nome</TableHead>
-                                    <TableHead className="text-white">Email</TableHead>
-                                    <TableHead className="text-white">Status</TableHead>
-                                    <TableHead className="text-right text-white">Azioni</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {isLoading ? (
-                                    <TableRow><TableCell colSpan={5} className="text-center py-12"><Loader2 className="mx-auto animate-spin" /></TableCell></TableRow>
-                                ) : members.length === 0 ? (
-                                    <TableRow><TableCell colSpan={5} className="text-center py-12">Nessun socio trovato.</TableCell></TableRow>
-                                ) : (
-                                    members.map((socio) => (
-                                        <TableRow key={socio.id} className="border-gray-800">
-                                            <TableCell>{socio.cognome}</TableCell>
-                                            <TableCell>{socio.nome}</TableCell>
-                                            <TableCell className="text-gray-400">{socio.email}</TableCell>
-                                            <TableCell><Badge variant={socio.status === 'admin' ? 'default' : 'secondary'}>{socio.status}</Badge></TableCell>
-                                            <TableCell className="text-right">
-                                                <Button variant="ghost" size="icon" onClick={() => handleEdit(socio)}><Edit className="h-4 w-4" /></Button>
-                                                <Button variant="ghost" size="icon" onClick={() => handleDelete(socio.id, socio.nome, socio.cognome)}><Trash2 className="h-4 w-4 text-red-500" /></Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                )}
-                            </TableBody>
-                        </Table>
-                    </CardContent>
-                </Card>
-            </div>
-
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>{editingMember ? "Modifica Socio" : "Nuovo Socio"}</DialogTitle>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="cognome" className="text-right">Cognome</Label>
-                            <Input id="cognome" name="cognome" value={formData.cognome} onChange={handleFormChange} className="col-span-3" />
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="nome" className="text-right">Nome</Label>
-                            <Input id="nome" name="nome" value={formData.nome} onChange={handleFormChange} className="col-span-3" />
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="email" className="text-right">Email</Label>
-                            <Input id="email" name="email" type="email" value={formData.email} onChange={handleFormChange} className="col-span-3" disabled={!!editingMember} />
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="status" className="text-right">Status</Label>
-                            <Select onValueChange={handleSelectChange} value={formData.status}>
-                                <SelectTrigger className="col-span-3">
-                                    <SelectValue placeholder="Seleziona status" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="socio">Socio</SelectItem>
-                                    <SelectItem value="admin">Admin</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
-                    <DialogFooter>
-                        <DialogClose asChild><Button variant="outline">Annulla</Button></DialogClose>
-                        <Button onClick={handleFormSubmit}>Salva</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-        </div>
-    );
+      {isAdmin && (
+        <>
+          <MemberDialog
+            isOpen={isMemberDialogOpen}
+            setIsOpen={setIsMemberDialogOpen}
+            member={selectedMember}
+            onSave={handleSaveMember}
+          />
+          <ConfirmationDialog
+            isOpen={isConfirmDialogOpen}
+            setIsOpen={setIsConfirmDialogOpen}
+            onConfirm={executeDelete}
+            title="Sei sicuro?"
+            description="L'azione rimuoverà il socio permanentemente."
+          />
+        </>
+      )}
+    </div>
+  );
 }
