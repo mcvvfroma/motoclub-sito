@@ -23,7 +23,7 @@ export default function RootLayout({
 
         {/* Layout principale con classi per la centratura universale */}
         <main className="flex-1 w-full flex flex-col items-center justify-start pt-24">
-          <div className="w-full max-w-4xl px-4 flex flex-col items-center">
+        <div className="w-full max-w-4xl px-4 flex flex-col items-center overflow-x-clip">
             {children}
           </div>
         </main>
