@@ -7,7 +7,6 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { PlusCircle, Edit, Trash2, X, ExternalLink } from 'lucide-react';
-import Navbar from '@/components/Navbar';
 import Link from 'next/link';
 
 // Motore Firebase
@@ -115,8 +114,7 @@ export default function ConvenzioniPage() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <Navbar />
-      <div className="container mx-auto px-4 py-8">
+            <div className="container mx-auto px-4 py-8">
         
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold tracking-tight uppercase">Convenzioni Soci</h1>
