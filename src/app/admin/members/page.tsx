@@ -160,7 +160,7 @@ export default function AdminMembersPage() {
           </Dialog>
         </header>
 
-        <Card className="bg-card border-border overflow-hidden shadow-xl">
+        <Card className="bg-card border-border overflow-x-auto shadow-xl">
           <CardHeader className="bg-secondary/30 border-b border-border">
             <CardTitle className="text-xl">Elenco Anagrafico</CardTitle>
             <CardDescription>Visualizzazione e modifica dei dati sensibili dei soci.</CardDescription>
