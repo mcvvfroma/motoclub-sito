@@ -121,7 +121,6 @@ export default function MembersPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Nome</TableHead>
-                <TableHead>Email</TableHead>
                 <TableHead>Stato</TableHead>
                 <TableHead className="w-[100px]"></TableHead>
               </TableRow>
@@ -130,7 +129,6 @@ export default function MembersPage() {
               {soci.map((s) => (
                 <TableRow key={s.id}>
                   <TableCell>{s.nome} {s.cognome}</TableCell>
-                  <TableCell>{s.email}</TableCell>
                   <TableCell>{s.status}</TableCell>
                   <TableCell>
                     <DropdownMenu>

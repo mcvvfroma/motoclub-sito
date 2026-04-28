@@ -169,13 +169,13 @@ export default function AdminMembersPage() {
   
       <Table className="w-full">
           
-              <TableHeader className="bg-secondary/50">
-                <TableRow className="border-border">
-                  <TableHead className="text-accent font-bold">Nome Completo</TableHead>
-                    <TableHead className="text-accent font-bold">Status</TableHead>
-                  <TableHead className="text-accent font-bold text-right">Azioni</TableHead>
-                </TableRow>
-              </TableHeader>
+      <TableHeader className="bg-secondary/50">
+            <TableRow className="border-border">
+              <TableHead className="text-accent font-bold">Nome Completo</TableHead>
+              <TableHead className="text-accent font-bold">Status</TableHead>
+              <TableHead className="text-accent font-bold text-right">Azioni</TableHead>
+            </TableRow>
+          </TableHeader>
               <TableBody>
                 {members.length === 0 ? (
                   <TableRow>
