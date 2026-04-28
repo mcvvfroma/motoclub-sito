@@ -5,7 +5,6 @@ import { useEffect, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { useParams } from "next/navigation"
-import { Navbar } from "@/components/Navbar"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -60,8 +59,7 @@ export default function EventDetailPage() {
 
   return (
     <div className="min-h-screen pb-20 md:pb-0 md:pt-16 bg-background">
-      <Navbar />
-      
+            
       <main className="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-3 gap-8 text-foreground">
         
         <div className="lg:col-span-2 space-y-8">

@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Navbar } from "@/components/Navbar"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
@@ -94,8 +93,7 @@ export default function AdminMembersPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background text-foreground">
-        <Navbar />
-        <div className="flex flex-col items-center gap-4">
+                <div className="flex flex-col items-center gap-4">
           <Loader2 className="w-8 h-8 text-primary animate-spin" />
           <p className="text-muted-foreground font-medium">Caricamento dati amministrativi...</p>
         </div>
@@ -105,8 +103,7 @@ export default function AdminMembersPage() {
 
   return (
     <div className="min-h-screen pb-20 md:pb-0 md:pt-16 bg-background">
-      <Navbar />
-      
+           
       <main className="max-w-7xl mx-auto px-4 py-8">
         <header className="mb-12 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
