@@ -166,9 +166,10 @@ export default function AdminMembersPage() {
             <CardDescription>Visualizzazione e modifica dei dati sensibili dei soci.</CardDescription>
           </CardHeader>
           <CardContent className="p-0">
-          {/* Modifica riga 169 e 170 così */}
-<div className="w-full overflow-x-scroll !block">
-  <Table className="w-full min-w-[800px] table-fixed md:table-auto">
+{/* RIGA 169: Usiamo uno stile inline per essere sicuri al 100% */}
+<div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', width: '100%', display: 'block' }}>
+  <div style={{ minWidth: '850px', display: 'block' }}>
+    <Table className="w-full">
           
               <TableHeader className="bg-secondary/50">
                 <TableRow className="border-border">
@@ -246,6 +247,7 @@ export default function AdminMembersPage() {
                 )}
               </TableBody>
             </Table>
+            </div>
             </div>
           </CardContent>
         </Card>
