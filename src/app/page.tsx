@@ -1,6 +1,19 @@
 'use client';
 
 import Image from 'next/image';
+import { Black_Ops_One, Kanit } from 'next/font/google';
+
+// Configurazione font Black Ops One per la prima e terza riga
+const blackOps = Black_Ops_One({ 
+  subsets: ['latin'],
+  weight: ['400'], 
+});
+
+// Configurazione font Kanit per la riga centrale "Italia"
+const kanit = Kanit({ 
+  subsets: ['latin'],
+  weight: ['700'], 
+});
 
 export default function HomePage() {
   return (
@@ -13,19 +26,19 @@ export default function HomePage() {
         priority
       />
       
-      <div className="mt-8 font-extrabold tracking-tight uppercase">
-        {/* Prima Riga: Rosso */}
-        <h2 className="text-2xl md:text-3xl text-red-600 mb-1">
+      <div className="mt-8 tracking-tight uppercase">
+        {/* Prima Riga: Rosso - Black Ops One */}
+        <h2 className={`${blackOps.className} text-3xl md:text-4xl text-red-600 mb-1 leading-tight`}>
           Motoclub Vigili del Fuoco
         </h2>
         
-        {/* Seconda Riga: Rosso */}
-        <h3 className="text-xl md:text-2xl text-red-600 mb-2">
+        {/* Seconda Riga: Rosso - Kanit */}
+        <h3 className={`${kanit.className} text-xl md:text-2xl text-red-600 mb-2 leading-none italic`}>
           Italia
         </h3>
         
-        {/* Terza Riga: Oro */}
-        <h2 className="text-2xl md:text-3xl text-yellow-500">
+        {/* Terza Riga: Oro - Black Ops One (Formato più piccolo) */}
+        <h2 className={`${blackOps.className} text-2xl md:text-3xl text-yellow-500 leading-tight`}>
           Sezione di Roma
         </h2>
       </div>
