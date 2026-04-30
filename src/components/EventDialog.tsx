@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Upload, MapPin } from 'lucide-react'; // Aggiunto MapPin
+import { Upload, MapPin, CloudSun } from 'lucide-react';
 import { Event } from '@/app/events/page';
 
 interface EventDialogProps {
@@ -16,10 +16,9 @@ interface EventDialogProps {
   onSave: (event: Event) => void;
 }
 
-const DEFAULT_EVENT_IMAGE = '/logo_motoclub.gif';
+const DEFAULT_EVENT_IMAGE = '/cascovigili.jpg';
 
 export default function EventDialog({ isOpen, setIsOpen, event, onSave }: EventDialogProps) {
-  // formData ora include esplicitamente 'percorso'
   const [formData, setFormData] = useState<Partial<Event>>({});
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -30,8 +29,7 @@ export default function EventDialog({ isOpen, setIsOpen, event, onSave }: EventD
           setFormData(event);
           setPreviewImage(event.image);
         } else {
-          // Reset per un nuovo evento
-          setFormData({ title: '', date: '', description: '', image: '', percorso: '' });
+          setFormData({ title: '', date: '', description: '', image: '', percorso: '', metaMeteo: '' });
           setPreviewImage(null);
         }
     }
@@ -53,10 +51,7 @@ export default function EventDialog({ isOpen, setIsOpen, event, onSave }: EventD
 
   const handleSubmit = () => {
     const dataToSave = { ...formData };
-    if (!dataToSave.image) {
-        dataToSave.image = DEFAULT_EVENT_IMAGE;
-    }
-    
+    if (!dataToSave.image) dataToSave.image = DEFAULT_EVENT_IMAGE;
     onSave(dataToSave as Event);
     setIsOpen(false);
   };
@@ -76,25 +71,32 @@ export default function EventDialog({ isOpen, setIsOpen, event, onSave }: EventD
             <Label htmlFor="date" className="text-right">Data</Label>
             <Input id="date" name="date" type="date" value={formData.date || ''} onChange={handleInputChange} className="col-span-3" />
           </div>
+          
+          {/* NUOVO CAMPO META METEO */}
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="metaMeteo" className="text-right flex items-center justify-end text-orange-600">
+              <CloudSun className="h-3 w-3 mr-1" /> Meta
+            </Label>
+            <Input 
+              id="metaMeteo" 
+              name="metaMeteo" 
+              placeholder="Es: Bormio" 
+              value={formData.metaMeteo || ''} 
+              onChange={handleInputChange} 
+              className="col-span-3 border-orange-200 focus:border-orange-500" 
+            />
+          </div>
+
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="percorso" className="text-right flex items-center justify-end text-blue-600">
+              <MapPin className="h-3 w-3 mr-1" /> Percorso
+            </Label>
+            <Input id="percorso" name="percorso" placeholder="Link Google Maps" value={formData.percorso || ''} onChange={handleInputChange} className="col-span-3 border-blue-200" />
+          </div>
+
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="description" className="text-right">Descrizione</Label>
             <Textarea id="description" name="description" value={formData.description || ''} onChange={handleInputChange} className="col-span-3" />
-          </div>
-
-          {/* NUOVO CAMPO PERCORSO */}
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="percorso" className="text-right flex items-center justify-end">
-              <MapPin className="h-3 w-3 mr-1 text-blue-600" />
-              Percorso
-            </Label>
-            <Input 
-              id="percorso" 
-              name="percorso" 
-              placeholder="Incolla link Google Maps" 
-              value={formData.percorso || ''} 
-              onChange={handleInputChange} 
-              className="col-span-3 border-blue-100 focus:border-blue-400" 
-            />
           </div>
 
           <div className="grid grid-cols-4 items-start gap-4">
@@ -106,19 +108,11 @@ export default function EventDialog({ isOpen, setIsOpen, event, onSave }: EventD
                     </div>
                 )}
                 <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
-                    <Upload className="h-4 w-4 mr-2"/>
-                    {previewImage ? 'Cambia Immagine' : 'Carica Immagine'}
+                    <Upload className="h-4 w-4 mr-2"/> Carica
                 </Button>
-                <Input 
-                    type="file" 
-                    accept="image/*" 
-                    ref={fileInputRef} 
-                    onChange={handleFileChange} 
-                    className="hidden" 
-                />
+                <Input type="file" accept="image/*" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
             </div>
           </div>
-
         </div>
         <DialogFooter>
           <Button type="submit" onClick={handleSubmit}>Salva</Button>

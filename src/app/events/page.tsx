@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Edit, Trash2, MapPin } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, MapPin, CloudSun } from 'lucide-react';
 import EventDialog from '@/components/EventDialog';
 import WeatherBadge from '@/components/WeatherBadge';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog';
@@ -18,6 +18,7 @@ export type Event = {
   description: string;
   image: string;
   percorso?: string;
+  metaMeteo?: string;
 };
 
 export default function EventsPage() {
@@ -43,24 +44,20 @@ export default function EventsPage() {
   const handleSaveEvent = async (eventData: Event) => {
     if (!isAdmin) return;
     try {
-      const customId = eventData.title
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)+/g, '');
-
+      const customId = eventData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
       const docId = eventData.id || customId;
 
       await setDoc(doc(db, "events", docId), {
         title: eventData.title,
         date: eventData.date,
         description: eventData.description,
-        image: eventData.image || '/logo_motoclub.gif',
-        percorso: eventData.percorso || ''
+        image: eventData.image || '/cascovigili.jpg',
+        percorso: eventData.percorso || '',
+        metaMeteo: eventData.metaMeteo || ''
       });
-      
       setIsDialogOpen(false);
     } catch (error) {
-      console.error("Errore durante il salvataggio:", error);
+      console.error("Errore salvataggio:", error);
     }
   };
 
@@ -69,17 +66,8 @@ export default function EventsPage() {
       try {
         await deleteDoc(doc(db, "events", eventToDelete));
         setIsDeleteConfirmOpen(false);
-        setEventToDelete(null);
-      } catch (error) {
-        console.error("Errore durante l'eliminazione:", error);
-      }
+      } catch (error) {}
     }
-  };
-
-  const handleDeleteClick = (id: string) => {
-    if (!isAdmin) return;
-    setEventToDelete(id);
-    setIsDeleteConfirmOpen(true);
   };
 
   const openDialog = (event: Event | null = null) => {
@@ -88,71 +76,72 @@ export default function EventsPage() {
     setIsDialogOpen(true);
   };
 
-  if (loading) return <div className="p-8 text-center">Caricamento autorizzazioni...</div>;
+  if (loading) return <div className="p-8 text-center text-zinc-400">Caricamento...</div>;
 
   return (
     <div className="w-full py-8">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">Calendario Eventi</h1>
-        {isAdmin && (
-          <Button onClick={() => openDialog()}>
-            <PlusCircle className="h-4 w-4 mr-2" />
-            Aggiungi Evento
-          </Button>
-        )}
+        <h1 className="text-3xl font-bold">Calendario Eventi</h1>
+        {isAdmin && <Button onClick={() => openDialog()}><PlusCircle className="h-4 w-4 mr-2" /> Aggiungi</Button>}
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {events.map(event => (
-          <Card key={event.id} className="flex flex-col border-2 border-zinc-800 hover:border-yellow-600/50 transition-colors bg-card">
-            <CardHeader>
-              <div
-                onClick={() => { if (isAdmin) openDialog(event); }}
-                className={`rounded-t-lg overflow-hidden ${isAdmin ? 'cursor-pointer' : ''}`}>
-                <img 
-                  src={event.image} 
-                  alt={event.title} 
-                  className={`object-cover h-48 w-full transition-transform duration-300 ${isAdmin ? 'hover:scale-105' : ''}`}
-                />
+          <Card key={event.id} className="flex flex-col border border-zinc-800 bg-zinc-950/50 overflow-hidden">
+            <CardHeader className="p-0">
+              <div onClick={() => { if (isAdmin) openDialog(event); }} className={`group ${isAdmin ? 'cursor-pointer' : ''}`}>
+                
+                <div className="bg-black/80 flex items-center justify-center h-52 w-full overflow-hidden">
+                  <img 
+                    src={event.image} 
+                    alt={event.title} 
+                    className="object-contain h-full w-full transform scale-110 transition-transform duration-500 group-hover:scale-125" 
+                  />
+                </div>
+
               </div>
-              <div className="flex justify-between items-start pt-4">
-                  <div className='flex-grow pr-2'>
-                    <CardTitle className="text-xl font-bold">{event.title}</CardTitle>
-                    <CardDescription>
-                      {new Date(event.date).toLocaleDateString('it-IT', { year: 'numeric', month: 'long', day: 'numeric' })}
-                    </CardDescription>
-                  </div>
-                  <WeatherBadge date={event.date} />
+              <div className="flex justify-between items-start p-4 pb-0">
+                <div>
+                  <CardTitle className="text-lg font-bold leading-none mb-1">{event.title}</CardTitle>
+                  <CardDescription className="text-[10px] uppercase tracking-wider text-zinc-500">{new Date(event.date).toLocaleDateString('it-IT')}</CardDescription>
+                </div>
+                <WeatherBadge date={event.date} />
               </div>
             </CardHeader>
-            <CardContent className="flex-grow flex flex-col">
-              <p className="mb-6 text-muted-foreground">{event.description}</p>
+            <CardContent className="flex-grow flex flex-col p-4 pt-2">
+              <p className="text-xs text-zinc-400 mb-4 line-clamp-3">{event.description}</p>
               
-              <div className="mt-auto">
-                {/* PULSANTE PERCORSO: TRASFORMATO IN LINK DIRETTO PER EVITARE BLOCCHI */}
+              <div className="mt-auto flex flex-wrap gap-2">
                 {event.percorso && (
                   <a 
-                    href={event.percorso.startsWith('http') ? event.percorso : `https://${event.percorso}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center w-full h-10 px-4 py-2 bg-black hover:bg-zinc-800 text-yellow-500 border border-yellow-600 rounded-md font-bold uppercase tracking-wider shadow-md transition-all no-underline"
-                    onClick={(e) => e.stopPropagation()} // Impedisce di aprire il dialog admin cliccando il link
+                    href={event.percorso.startsWith('http') ? event.percorso : `https://${event.percorso}`} 
+                    target="_blank" 
+                    rel="noopener" 
+                    className="inline-flex items-center px-2 py-1 bg-zinc-900 text-yellow-500 border border-yellow-700/30 rounded text-[10px] font-bold uppercase tracking-tighter hover:bg-black transition-colors no-underline"
+                    onClick={(e) => e.stopPropagation()}
                   >
-                    <MapPin className="h-4 w-4 mr-2 text-yellow-500" />
-                    Vedi Percorso
+                    <MapPin className="h-3 w-3 mr-1" /> Mappa
+                  </a>
+                )}
+
+                {event.metaMeteo && (
+                  <a 
+                    href={`https://www.ilmeteo.it/meteo/${encodeURIComponent(event.metaMeteo)}`} 
+                    target="_blank" 
+                    rel="noopener" 
+                    className="inline-flex items-center px-2 py-1 bg-yellow-600 text-black rounded text-[10px] font-bold uppercase tracking-tighter hover:bg-yellow-500 transition-colors no-underline"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <CloudSun className="h-3 w-3 mr-1" /> Meteo
                   </a>
                 )}
               </div>
             </CardContent>
-              
-             {isAdmin && (
-                <div className="flex justify-end p-4 border-t gap-2 bg-muted/30">
-                    <Button variant="outline" size="icon" onClick={() => openDialog(event)}>
-                        <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button variant="destructive" size="icon" onClick={() => handleDeleteClick(event.id)}>
-                        <Trash2 className="h-4 w-4" />
-                    </Button>
+
+            {isAdmin && (
+                <div className="flex justify-end px-3 py-2 border-t border-zinc-900 bg-black/20 gap-2">
+                    <button onClick={() => openDialog(event)} className="text-zinc-600 hover:text-white transition-colors"><Edit className="h-3.5 w-3.5" /></button>
+                    <button onClick={() => { setEventToDelete(event.id); setIsDeleteConfirmOpen(true); }} className="text-zinc-600 hover:text-red-500 transition-colors"><Trash2 className="h-3.5 w-3.5" /></button>
                 </div>
             )}
           </Card>
@@ -161,19 +150,8 @@ export default function EventsPage() {
 
       {isAdmin && (
         <>
-          <EventDialog
-            isOpen={isDialogOpen}
-            setIsOpen={setIsDialogOpen}
-            event={selectedEvent}
-            onSave={handleSaveEvent}
-          />
-          <ConfirmDeleteDialog
-            isOpen={isDeleteConfirmOpen}
-            onOpenChange={setIsDeleteConfirmOpen}
-            onConfirm={confirmDelete}
-            title="Conferma Eliminazione Evento"
-            description="Sei sicuro di voler eliminare questo evento? L'azione è irreversibile."
-          />
+          <EventDialog isOpen={isDialogOpen} setIsOpen={setIsDialogOpen} event={selectedEvent} onSave={handleSaveEvent} />
+          <ConfirmDeleteDialog isOpen={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen} onConfirm={confirmDelete} title="Elimina Evento" description="Sei sicuro?" />
         </>
       )}
     </div>
