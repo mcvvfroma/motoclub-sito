@@ -3,15 +3,11 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Edit, Trash2 } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, MapPin } from 'lucide-react';
 import EventDialog from '@/components/EventDialog';
 import WeatherBadge from '@/components/WeatherBadge';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog';
-
-// Importiamo l'hook per il controllo permessi reale
 import { useAdmin } from '@/hooks/use-admin'; 
-
-// Importiamo il motore Firebase
 import { db } from '@/lib/firebase';
 import { collection, deleteDoc, doc, setDoc, onSnapshot } from 'firebase/firestore';
 
@@ -21,6 +17,7 @@ export type Event = {
   date: string;
   description: string;
   image: string;
+  percorso?: string;
 };
 
 export default function EventsPage() {
@@ -30,10 +27,8 @@ export default function EventsPage() {
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [eventToDelete, setEventToDelete] = useState<string | null>(null);
   
-  // USARE IL CONTROLLO REALE INVECE DI "true"
   const { isAdmin, loading } = useAdmin();
 
-  // 1. RECUPERO DATI IN TEMPO REALE
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, "events"), (snapshot) => {
       const firebaseEvents = snapshot.docs.map(doc => ({
@@ -45,9 +40,8 @@ export default function EventsPage() {
     return () => unsubscribe();
   }, []);
 
-  // 2. SALVATAGGIO CON ID "PARLANTE"
   const handleSaveEvent = async (eventData: Event) => {
-    if (!isAdmin) return; // Protezione extra lato codice
+    if (!isAdmin) return;
     try {
       const customId = eventData.title
         .toLowerCase()
@@ -60,7 +54,8 @@ export default function EventsPage() {
         title: eventData.title,
         date: eventData.date,
         description: eventData.description,
-        image: eventData.image || '/logo_motoclub.gif'
+        image: eventData.image || '/logo_motoclub.gif',
+        percorso: eventData.percorso || ''
       });
       
       setIsDialogOpen(false);
@@ -69,7 +64,6 @@ export default function EventsPage() {
     }
   };
 
-  // 3. ELIMINAZIONE REALE
   const confirmDelete = async () => {
     if (eventToDelete && isAdmin) {
       try {
@@ -94,14 +88,12 @@ export default function EventsPage() {
     setIsDialogOpen(true);
   };
 
-  // Se sta ancora caricando i permessi, mostriamo un feedback minimo
   if (loading) return <div className="p-8 text-center">Caricamento autorizzazioni...</div>;
 
   return (
     <div className="w-full py-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold tracking-tight text-foreground">Calendario Eventi</h1>
-        {/* IL TASTO AGGIUNGI ORA È PROTETTO */}
         {isAdmin && (
           <Button onClick={() => openDialog()}>
             <PlusCircle className="h-4 w-4 mr-2" />
@@ -112,7 +104,7 @@ export default function EventsPage() {
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {events.map(event => (
-          <Card key={event.id} className="flex flex-col">
+          <Card key={event.id} className="flex flex-col border-2 border-zinc-800 hover:border-yellow-600/50 transition-colors bg-card">
             <CardHeader>
               <div
                 onClick={() => { if (isAdmin) openDialog(event); }}
@@ -125,7 +117,7 @@ export default function EventsPage() {
               </div>
               <div className="flex justify-between items-start pt-4">
                   <div className='flex-grow pr-2'>
-                    <CardTitle>{event.title}</CardTitle>
+                    <CardTitle className="text-xl font-bold">{event.title}</CardTitle>
                     <CardDescription>
                       {new Date(event.date).toLocaleDateString('it-IT', { year: 'numeric', month: 'long', day: 'numeric' })}
                     </CardDescription>
@@ -133,14 +125,29 @@ export default function EventsPage() {
                   <WeatherBadge date={event.date} />
               </div>
             </CardHeader>
-            <CardContent className="flex-grow">
-              <p>{event.description}</p>
+            <CardContent className="flex-grow flex flex-col">
+              <p className="mb-6 text-muted-foreground">{event.description}</p>
+              
+              <div className="mt-auto">
+                {/* PULSANTE PERCORSO: TRASFORMATO IN LINK DIRETTO PER EVITARE BLOCCHI */}
+                {event.percorso && (
+                  <a 
+                    href={event.percorso.startsWith('http') ? event.percorso : `https://${event.percorso}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center w-full h-10 px-4 py-2 bg-black hover:bg-zinc-800 text-yellow-500 border border-yellow-600 rounded-md font-bold uppercase tracking-wider shadow-md transition-all no-underline"
+                    onClick={(e) => e.stopPropagation()} // Impedisce di aprire il dialog admin cliccando il link
+                  >
+                    <MapPin className="h-4 w-4 mr-2 text-yellow-500" />
+                    Vedi Percorso
+                  </a>
+                )}
+              </div>
             </CardContent>
-             
-             {/* I TASTI MODIFICA ED ELIMINA ORA SONO PROTETTI */}
+              
              {isAdmin && (
-                <div className="flex justify-end p-4 border-t">
-                    <Button variant="ghost" size="icon" onClick={() => openDialog(event)}>
+                <div className="flex justify-end p-4 border-t gap-2 bg-muted/30">
+                    <Button variant="outline" size="icon" onClick={() => openDialog(event)}>
                         <Edit className="h-4 w-4" />
                     </Button>
                     <Button variant="destructive" size="icon" onClick={() => handleDeleteClick(event.id)}>
@@ -152,7 +159,6 @@ export default function EventsPage() {
         ))}
       </div>
 
-      {/* I DIALOGHI DI EDIT SONO RENDERIZZATI SOLO PER ADMIN */}
       {isAdmin && (
         <>
           <EventDialog

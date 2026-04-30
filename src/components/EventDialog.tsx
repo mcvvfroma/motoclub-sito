@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Upload } from 'lucide-react';
+import { Upload, MapPin } from 'lucide-react'; // Aggiunto MapPin
 import { Event } from '@/app/events/page';
 
 interface EventDialogProps {
@@ -19,7 +19,8 @@ interface EventDialogProps {
 const DEFAULT_EVENT_IMAGE = '/logo_motoclub.gif';
 
 export default function EventDialog({ isOpen, setIsOpen, event, onSave }: EventDialogProps) {
-  const [formData, setFormData] = useState<Omit<Event, 'id'> & { id?: number }>({});
+  // formData ora include esplicitamente 'percorso'
+  const [formData, setFormData] = useState<Partial<Event>>({});
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -30,7 +31,7 @@ export default function EventDialog({ isOpen, setIsOpen, event, onSave }: EventD
           setPreviewImage(event.image);
         } else {
           // Reset per un nuovo evento
-          setFormData({ title: '', date: '', description: '', image: '' });
+          setFormData({ title: '', date: '', description: '', image: '', percorso: '' });
           setPreviewImage(null);
         }
     }
@@ -67,7 +68,6 @@ export default function EventDialog({ isOpen, setIsOpen, event, onSave }: EventD
           <DialogTitle>{event ? 'Modifica Evento' : 'Aggiungi Nuovo Evento'}</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          {/* Campi di testo non modificati */}
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="title" className="text-right">Titolo</Label>
             <Input id="title" name="title" value={formData.title || ''} onChange={handleInputChange} className="col-span-3" />
@@ -81,7 +81,22 @@ export default function EventDialog({ isOpen, setIsOpen, event, onSave }: EventD
             <Textarea id="description" name="description" value={formData.description || ''} onChange={handleInputChange} className="col-span-3" />
           </div>
 
-          {/* Sezione Immagine Migliorata */}
+          {/* NUOVO CAMPO PERCORSO */}
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="percorso" className="text-right flex items-center justify-end">
+              <MapPin className="h-3 w-3 mr-1 text-blue-600" />
+              Percorso
+            </Label>
+            <Input 
+              id="percorso" 
+              name="percorso" 
+              placeholder="Incolla link Google Maps" 
+              value={formData.percorso || ''} 
+              onChange={handleInputChange} 
+              className="col-span-3 border-blue-100 focus:border-blue-400" 
+            />
+          </div>
+
           <div className="grid grid-cols-4 items-start gap-4">
             <Label className="text-right pt-2">Immagine</Label>
             <div className="col-span-3 flex flex-col gap-2">
