@@ -14,12 +14,12 @@ import {
 import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
-  apiKey: "AIzaSy02-vk9SYV2ljQ5_Cq5KETL8_CBG95bnjU",
+  apiKey: "AIzaSyD2-vK9SYV2ljQ5_Cq5KETl8_CBG95bnjU",
   authDomain: "studio-6923057624-dea08.firebaseapp.com",
   projectId: "studio-6923057624-dea08",
-  storageBucket: "studio-6923057624-dea08.appspot.com",
-  messagingSenderId: "367355152864",
-  appId: "1:367355152864:web:65f727c62b486e18787c9e"
+  storageBucket: "studio-6923057624-dea08.firebasestorage.app",
+  messagingSenderId: "582138073080",
+  appId: "1:582138073080:web:fe9fbda987770a89c5d00d"
 };
 
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();

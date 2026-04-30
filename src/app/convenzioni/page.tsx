@@ -9,8 +9,9 @@ import { Badge } from '@/components/ui/badge';
 import { PlusCircle, Edit, Trash2, X, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 
-// Motore Firebase
+// Motore Firebase e Sicurezza
 import { db } from '@/lib/firebase';
+import { useAdmin } from "@/hooks/use-admin"; // Importiamo il controllo reale
 import { 
   collection, 
   setDoc, 
@@ -26,9 +27,9 @@ export default function ConvenzioniPage() {
   const [convenzioni, setConvenzioni] = useState<any[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isDataLoading, setIsDataLoading] = useState(true);
   
-  // Campi del database (mappati su image_78d59c.jpg)
+  // Campi del form
   const [name, setName] = useState("");
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
@@ -37,9 +38,10 @@ export default function ConvenzioniPage() {
   const [phone, setPhone] = useState("");
   const [website, setWebsite] = useState("");
 
-  const isAdmin = true;
+  // Controllo permessi REALE
+  const { isAdmin, loading: authLoading } = useAdmin();
 
-  // 1. RECUPERO DATI REAL-TIME (Collezione: conventions)
+  // 1. RECUPERO DATI REAL-TIME
   useEffect(() => {
     const q = query(collection(db, "conventions"), orderBy("name", "asc"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -47,18 +49,18 @@ export default function ConvenzioniPage() {
         id: d.id,
         ...d.data()
       })));
-      setIsLoading(false);
+      setIsDataLoading(false);
     }, (error) => {
       console.error("Errore Firestore:", error);
-      setIsLoading(false);
+      setIsDataLoading(false);
     });
     return () => unsubscribe();
   }, []);
 
-  // 2. SALVATAGGIO
+  // 2. SALVATAGGIO (Protetto)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !category) return;
+    if (!isAdmin || !name || !category) return;
 
     try {
       const docId = editingId || name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
@@ -80,6 +82,7 @@ export default function ConvenzioniPage() {
   };
 
   const handleEdit = (conv: any) => {
+    if (!isAdmin) return;
     setEditingId(conv.id);
     setName(conv.name || "");
     setCategory(conv.category || "");
@@ -104,6 +107,7 @@ export default function ConvenzioniPage() {
   };
 
   const handleDelete = async (id: string) => {
+    if (!isAdmin) return;
     if (!window.confirm("Sei sicuro di voler eliminare questa convenzione?")) return;
     try {
       await deleteDoc(doc(db, "conventions", id));
@@ -112,12 +116,18 @@ export default function ConvenzioniPage() {
     }
   };
 
+  // Caricamento permessi
+  if (authLoading) {
+    return <div className="min-h-screen bg-black text-white flex items-center justify-center">Verifica permessi...</div>;
+  }
+
   return (
     <div className="min-h-screen bg-black text-white">
-            <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8">
         
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold tracking-tight uppercase">Convenzioni Soci</h1>
+          {/* Tasto visibile solo agli Admin */}
           {isAdmin && !showForm && (
             <Button onClick={() => setShowForm(true)} className="bg-red-600 hover:bg-red-700 text-white border-none">
               <PlusCircle className="h-4 w-4 mr-2" />
@@ -126,7 +136,8 @@ export default function ConvenzioniPage() {
           )}
         </div>
 
-        {showForm && (
+        {/* Form protetto */}
+        {isAdmin && showForm && (
           <Card className="mb-8 border-gray-800 bg-gray-900 text-white">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-white">{editingId ? "Modifica Convenzione" : "Nuova Convenzione"}</CardTitle>
@@ -160,8 +171,8 @@ export default function ConvenzioniPage() {
           </Card>
         )}
 
-        {isLoading ? (
-          <div className="text-center py-10 text-gray-500">Caricamento in corso...</div>
+        {isDataLoading ? (
+          <div className="text-center py-10 text-gray-500">Caricamento dati in corso...</div>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {convenzioni.map((c) => (
@@ -189,6 +200,7 @@ export default function ConvenzioniPage() {
                       </Button>
                     </Link>
                   )}
+                  {/* Tasti Edit/Delete visibili solo se Admin */}
                   {isAdmin && (
                     <div className="flex justify-end w-full gap-2 pt-2">
                       <Button variant="ghost" size="icon" onClick={() => handleEdit(c)} className="hover:bg-gray-800 text-white">

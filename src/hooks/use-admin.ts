@@ -2,34 +2,42 @@
 
 import { useState, useEffect } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
-// Questo è l'UID che dovrà essere sostituito con il tuo
-const ADMIN_UID = 'zW9bY4v3Z8V7a2X6c5E9F1gH3'; // Placeholder
-
-export const useAdmin = () => {
-  const [isAdmin, setIsAdmin] = useState(false);
+export function useAdmin() {
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true); // <-- Chiamiamolo 'loading' per uniformità
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setLoading(true);
       if (currentUser) {
-        // ***ECCO IL TUO UID!***
-        // Apri la console del browser (F12) per vederlo dopo il login
-        console.log('UID Utente Loggato:', currentUser.uid);
-
         setUser(currentUser);
-        setIsAdmin(currentUser.uid === ADMIN_UID);
+        try {
+          const cleanEmail = (currentUser.email || '').toLowerCase().trim();
+          const userDoc = await getDoc(doc(db, 'users', cleanEmail));
+          
+          // Verifichiamo il campo 'status' come visto nel database
+          if (userDoc.exists() && userDoc.data().status === 'admin') {
+            setIsAdmin(true);
+          } else {
+            setIsAdmin(false);
+          }
+        } catch (error) {
+          console.error("Errore controllo admin:", error);
+          setIsAdmin(false);
+        }
       } else {
         setUser(null);
         setIsAdmin(false);
       }
-      setIsLoading(false);
+      setLoading(false);
     });
 
     return () => unsubscribe();
   }, []);
 
-  return { isLoading, isAdmin, user };
-};
+  return { isAdmin, user, loading }; // <-- Restituiamo 'loading'
+}

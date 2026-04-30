@@ -9,6 +9,7 @@ import { PlusCircle, Edit, Trash2, X } from 'lucide-react';
 
 // Motore Firebase
 import { db } from '@/lib/firebase';
+import { useAdmin } from "@/hooks/use-admin";
 import { 
   collection, 
   setDoc, 
@@ -29,9 +30,10 @@ export default function ComunicazioniPage() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
 
-  const isAdmin = true; // Mantengo la logica di controllo che hai in eventi
+  // Usiamo isAdmin e loading per la sicurezza
+  const { isAdmin, loading } = useAdmin();
 
-  // 1. RECUPERO DATI (Stessa logica real-time di eventi)
+  // 1. RECUPERO DATI
   useEffect(() => {
     const q = query(collection(db, "communications"), orderBy("createdAt", "desc"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -43,13 +45,12 @@ export default function ComunicazioniPage() {
     return () => unsubscribe();
   }, []);
 
-  // 2. SALVATAGGIO (Con ID pulito come chiesto per gli eventi)
+  // 2. SALVATAGGIO (PROTETTO)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title || !content) return;
+    if (!isAdmin || !title || !content) return; // Blocco se non admin
 
     try {
-      // Se è modifica usiamo l'ID esistente, altrimenti ne creiamo uno dal titolo
       const docId = editingId || title.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
 
       await setDoc(doc(db, "communications", docId), {
@@ -67,6 +68,7 @@ export default function ComunicazioniPage() {
   };
 
   const handleEdit = (com: any) => {
+    if (!isAdmin) return;
     setEditingId(com.id);
     setTitle(com.title);
     setContent(com.content);
@@ -81,6 +83,7 @@ export default function ComunicazioniPage() {
   };
 
   const handleDelete = async (id: string) => {
+    if (!isAdmin) return; // Blocco se non admin
     if (!window.confirm("Sei sicuro di voler eliminare questa comunicazione?")) return;
     try {
       await deleteDoc(doc(db, "communications", id));
@@ -89,11 +92,16 @@ export default function ComunicazioniPage() {
     }
   };
 
+  // Se l'app sta ancora verificando se sei Admin, mostriamo un caricamento
+  if (loading) {
+    return <div className="w-full py-20 text-center">Verifica permessi in corso...</div>;
+  }
+
   return (
     <div className="w-full py-8">
-      {/* HEADER: Identico a Eventi */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold tracking-tight text-foreground">Bacheca Comunicazioni</h1>
+        {/* IL TASTO AGGIUNGI SCOMPARE PER I SOCI */}
         {isAdmin && !showForm && (
           <Button onClick={() => setShowForm(true)}>
             <PlusCircle className="h-4 w-4 mr-2" />
@@ -102,8 +110,8 @@ export default function ComunicazioniPage() {
         )}
       </div>
 
-      {/* FORM DI INSERIMENTO/MODIFICA (Stile Card di Eventi) */}
-      {showForm && (
+      {/* IL FORM NON È SOLO NASCOSTO, È PROTETTO DALLA CONDIZIONE isAdmin */}
+      {isAdmin && showForm && (
         <Card className="mb-8 border-2">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>{editingId ? "Modifica Comunicazione" : "Nuova Comunicazione"}</CardTitle>
@@ -136,7 +144,6 @@ export default function ComunicazioniPage() {
         </Card>
       )}
 
-      {/* GRIGLIA COMUNICAZIONI: Stessa struttura di Eventi */}
       <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
         {communications.map((c) => (
           <Card key={c.id} className="flex flex-col">
@@ -154,6 +161,8 @@ export default function ComunicazioniPage() {
               <p className="text-slate-600 italic">"{c.content}"</p>
               <p className="text-[10px] mt-4 uppercase text-gray-400 tracking-widest font-bold">Autore: {c.author || "Direttivo"}</p>
             </CardContent>
+            
+            {/* I TASTI DI GESTIONE COMPAIONO SOLO SE SEI ADMIN */}
             {isAdmin && (
               <div className="flex justify-end p-4 border-t gap-2">
                 <Button variant="ghost" size="icon" onClick={() => handleEdit(c)}>

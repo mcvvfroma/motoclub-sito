@@ -4,6 +4,7 @@ import { menuItems } from '@/config/menu';
 import { X, LogOut } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useAdmin } from '@/hooks/use-admin'; // <-- IMPORTIAMO IL CONTROLLO ADMIN
 
 interface AppSidebarProps {
   isOpen: boolean;
@@ -12,12 +13,21 @@ interface AppSidebarProps {
 
 export default function AppSidebar({ isOpen, setIsOpen }: AppSidebarProps) {
   const router = useRouter();
+  const { isAdmin, loading } = useAdmin(); // <-- USIAMO IL CONTROLLO
 
   const handleLogout = () => {
     console.log("Stato di autenticazione resettato (da sidebar).");
     setIsOpen(false);
     router.push('/login');
   };
+
+  // Cambia '/soci' in '/members'
+const filteredMenuItems = menuItems.filter(item => {
+  if (item.href === '/members' && !isAdmin) {
+    return false; 
+  }
+  return true;
+});
 
   return (
     <>
@@ -38,9 +48,9 @@ export default function AppSidebar({ isOpen, setIsOpen }: AppSidebarProps) {
           </button>
         </div>
         <nav className="flex-1 flex flex-col p-4 space-y-2">
-          {menuItems.map((item) => (
+          {!loading && filteredMenuItems.map((item) => ( // <-- USIAMO I LINK FILTRATI
             <Link
-              key={item.href} // <-- CHIAVE UNICA CORRETTA
+              key={item.href}
               href={item.href}
               onClick={() => setIsOpen(false)}
               className="flex items-center space-x-3 rounded-md p-2 text-base font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground"

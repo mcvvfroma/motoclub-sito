@@ -8,9 +8,12 @@ import EventDialog from '@/components/EventDialog';
 import WeatherBadge from '@/components/WeatherBadge';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog';
 
+// Importiamo l'hook per il controllo permessi reale
+import { useAdmin } from '@/hooks/use-admin'; 
+
 // Importiamo il motore Firebase
 import { db } from '@/lib/firebase';
-import { collection, getDocs, deleteDoc, doc, setDoc, onSnapshot } from 'firebase/firestore';
+import { collection, deleteDoc, doc, setDoc, onSnapshot } from 'firebase/firestore';
 
 export type Event = {
   id: string;
@@ -26,7 +29,9 @@ export default function EventsPage() {
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [eventToDelete, setEventToDelete] = useState<string | null>(null);
-  const isAdmin = true;
+  
+  // USARE IL CONTROLLO REALE INVECE DI "true"
+  const { isAdmin, loading } = useAdmin();
 
   // 1. RECUPERO DATI IN TEMPO REALE
   useEffect(() => {
@@ -40,10 +45,10 @@ export default function EventsPage() {
     return () => unsubscribe();
   }, []);
 
-  // 2. SALVATAGGIO CON ID "PARLANTE" (Logica Umana)
+  // 2. SALVATAGGIO CON ID "PARLANTE"
   const handleSaveEvent = async (eventData: Event) => {
+    if (!isAdmin) return; // Protezione extra lato codice
     try {
-      // Trasformiamo il titolo in un ID pulito (es: "Giro del Lazio" -> "giro-del-lazio")
       const customId = eventData.title
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
@@ -55,7 +60,7 @@ export default function EventsPage() {
         title: eventData.title,
         date: eventData.date,
         description: eventData.description,
-        image: eventData.image || '/logo_motoclub.gif' // Immagine di default se manca
+        image: eventData.image || '/logo_motoclub.gif'
       });
       
       setIsDialogOpen(false);
@@ -64,9 +69,9 @@ export default function EventsPage() {
     }
   };
 
-  // 3. ELIMINAZIONE REALE DAL DATABASE
+  // 3. ELIMINAZIONE REALE
   const confirmDelete = async () => {
-    if (eventToDelete) {
+    if (eventToDelete && isAdmin) {
       try {
         await deleteDoc(doc(db, "events", eventToDelete));
         setIsDeleteConfirmOpen(false);
@@ -78,19 +83,25 @@ export default function EventsPage() {
   };
 
   const handleDeleteClick = (id: string) => {
+    if (!isAdmin) return;
     setEventToDelete(id);
     setIsDeleteConfirmOpen(true);
   };
 
   const openDialog = (event: Event | null = null) => {
+    if (!isAdmin) return;
     setSelectedEvent(event);
     setIsDialogOpen(true);
   };
+
+  // Se sta ancora caricando i permessi, mostriamo un feedback minimo
+  if (loading) return <div className="p-8 text-center">Caricamento autorizzazioni...</div>;
 
   return (
     <div className="w-full py-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold tracking-tight text-foreground">Calendario Eventi</h1>
+        {/* IL TASTO AGGIUNGI ORA È PROTETTO */}
         {isAdmin && (
           <Button onClick={() => openDialog()}>
             <PlusCircle className="h-4 w-4 mr-2" />
@@ -125,6 +136,8 @@ export default function EventsPage() {
             <CardContent className="flex-grow">
               <p>{event.description}</p>
             </CardContent>
+             
+             {/* I TASTI MODIFICA ED ELIMINA ORA SONO PROTETTI */}
              {isAdmin && (
                 <div className="flex justify-end p-4 border-t">
                     <Button variant="ghost" size="icon" onClick={() => openDialog(event)}>
@@ -139,6 +152,7 @@ export default function EventsPage() {
         ))}
       </div>
 
+      {/* I DIALOGHI DI EDIT SONO RENDERIZZATI SOLO PER ADMIN */}
       {isAdmin && (
         <>
           <EventDialog
@@ -152,7 +166,7 @@ export default function EventsPage() {
             onOpenChange={setIsDeleteConfirmOpen}
             onConfirm={confirmDelete}
             title="Conferma Eliminazione Evento"
-            description="Sei sicuro di voler eliminare questo evento? L'azione è irreversibile dal database."
+            description="Sei sicuro di voler eliminare questo evento? L'azione è irreversibile."
           />
         </>
       )}
