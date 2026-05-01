@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Edit, Trash2, X, ExternalLink, Handshake } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, X, ExternalLink, Handshake, Phone, MapPin } from 'lucide-react';
 import Link from 'next/link';
 
 // Componenti di supporto
@@ -32,11 +32,9 @@ export default function ConvenzioniPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isDataLoading, setIsDataLoading] = useState(true);
   
-  // STATI PER LA CANCELLAZIONE SICURA
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [convToDelete, setConvToDelete] = useState<string | null>(null);
   
-  // Campi del form
   const [name, setName] = useState("");
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
@@ -112,7 +110,6 @@ export default function ConvenzioniPage() {
     <div className="min-h-screen bg-black text-white">
       <div className="container mx-auto px-4 py-8">
         
-        {/* INTESTAZIONE RESPONSIVE: Corregge il taglio su mobile */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
           <div className="flex items-center gap-2">
             <Handshake className="h-8 w-8 text-red-600 shrink-0" />
@@ -179,18 +176,46 @@ export default function ConvenzioniPage() {
                 <CardContent className="flex-grow space-y-3">
                   <p className="text-red-500 font-bold">{c.discount}</p>
                   <p className="text-zinc-400 text-sm italic">"{c.description}"</p>
-                  <p className="text-zinc-500 text-[11px] uppercase tracking-wider">{c.address}</p>
-                </CardContent>
-                <CardFooter className="flex flex-col gap-4 border-t border-zinc-900 pt-4">
-                  {c.website && (
-                    <Link href={c.website.startsWith('http') ? c.website : `https://${c.website}`} target="_blank" className="w-full">
-                      <Button variant="outline" className="w-full border-zinc-700 hover:bg-zinc-800 text-white">
-                        <ExternalLink className="h-4 w-4 mr-2" /> Vedi Sito
-                      </Button>
-                    </Link>
+                  
+                  {/* INDIRIZZO CLICCABILE MAPS */}
+                  {c.address && (
+                    <a 
+                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.address)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-start gap-2 text-zinc-500 hover:text-zinc-200 transition-colors group mt-2"
+                    >
+                      <MapPin className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
+                      <span className="text-[11px] uppercase tracking-wider group-hover:underline italic">
+                        {c.address}
+                      </span>
+                    </a>
                   )}
+                </CardContent>
+                <CardFooter className="flex flex-col gap-3 border-t border-zinc-900 pt-4">
+                  
+                  <div className="grid grid-cols-2 gap-2 w-full">
+                    {/* PULSANTE CHIAMA */}
+                    {c.phone && (
+                      <a href={`tel:${c.phone.replace(/\s+/g, '')}`} className="w-full">
+                        <Button variant="outline" className="w-full border-zinc-700 hover:bg-green-900/30 hover:text-green-400 text-white text-[11px] uppercase font-bold">
+                          <Phone className="h-4 w-4 mr-2 text-green-500" /> Chiama
+                        </Button>
+                      </a>
+                    )}
+
+                    {/* PULSANTE SITO WEB */}
+                    {c.website && (
+                      <Link href={c.website.startsWith('http') ? c.website : `https://${c.website}`} target="_blank" className="w-full">
+                        <Button variant="outline" className="w-full border-zinc-700 hover:bg-zinc-800 text-white text-[11px] uppercase font-bold">
+                          <ExternalLink className="h-4 w-4 mr-2 text-red-600" /> Sito Web
+                        </Button>
+                      </Link>
+                    )}
+                  </div>
+
                   {isAdmin && (
-                    <div className="flex justify-end w-full gap-2 pt-2">
+                    <div className="flex justify-end w-full gap-2 pt-2 border-t border-zinc-900/50">
                       <Button variant="ghost" size="icon" onClick={() => handleEdit(c)} className="text-white h-8 w-8">
                         <Edit className="h-4 w-4" />
                       </Button>
