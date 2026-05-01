@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { menuItems } from '@/config/menu';
 import { X, LogOut } from 'lucide-react';
-import { useRouter, usePathname } from 'next/navigation'; // Aggiunto usePathname
+import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAdmin } from '@/hooks/use-admin';
 import { db } from '@/lib/firebase';
@@ -16,57 +16,62 @@ interface AppSidebarProps {
 
 export default function AppSidebar({ isOpen, setIsOpen }: AppSidebarProps) {
   const router = useRouter();
-  const pathname = usePathname(); // Monitora il cambio pagina
+  const pathname = usePathname();
   const { isAdmin, loading } = useAdmin();
-  const [hasNewNotices, setHasNewNotices] = useState(false);
-  const [latestNoticeId, setLatestNoticeId] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
 
+  const [notifs, setNotifs] = useState<{ [key: string]: boolean }>({
+    '/comunicazioni': false,
+    '/convenzioni': false,
+    '/events': false
+  });
+
+  const [latestIds, setLatestIds] = useState<{ [key: string]: string }>({
+    '/comunicazioni': '',
+    '/convenzioni': '',
+    '/events': ''
+  });
+
+  useEffect(() => { setMounted(true); }, []);
+
   useEffect(() => {
-    setMounted(true);
+    const sections = [
+      { path: '/comunicazioni', coll: 'communications', field: 'createdAt' },
+      { path: '/convenzioni', coll: 'conventions', field: 'updatedAt' },
+      { path: '/events', coll: 'events', field: 'publishedAt' }
+    ];
+
+    const unsubscribes = sections.map(s => {
+      const q = query(collection(db, s.coll), orderBy(s.field, "desc"), limit(1));
+      return onSnapshot(q, (snip) => {
+        if (!snip.empty) {
+          setLatestIds(prev => ({ ...prev, [s.path]: snip.docs[0].id }));
+        }
+      });
+    });
+
+    return () => unsubscribes.forEach(unsub => unsub());
   }, []);
 
-  // Sync con Firebase
   useEffect(() => {
-    const q = query(collection(db, "communications"), orderBy("createdAt", "desc"), limit(1));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      if (!snapshot.empty) {
-        setLatestNoticeId(snapshot.docs[0].id);
+    const updated = { ...notifs };
+    Object.keys(latestIds).forEach(path => {
+      const storageKey = `lastRead_${path}`;
+      if (pathname === path) {
+        if (latestIds[path]) localStorage.setItem(storageKey, latestIds[path]);
+        updated[path] = false;
+      } else {
+        const lastRead = localStorage.getItem(storageKey);
+        updated[path] = latestIds[path] !== '' && lastRead !== latestIds[path];
       }
     });
-    return () => unsubscribe();
-  }, []);
-
-  // CONTROLLO AUTOMATICO: Se sono in /comunicazioni, il pallino deve sparire
-  useEffect(() => {
-    if (latestNoticeId) {
-      if (pathname === '/comunicazioni') {
-        localStorage.setItem('lastReadNoticeId', latestNoticeId);
-        setHasNewNotices(false);
-      } else {
-        const lastReadId = localStorage.getItem('lastReadNoticeId');
-        setHasNewNotices(lastReadId !== latestNoticeId);
-      }
-    }
-  }, [pathname, latestNoticeId]);
-
-  const handleLinkClick = (href: string) => {
-    if (href === '/comunicazioni' && latestNoticeId) {
-      localStorage.setItem('lastReadNoticeId', latestNoticeId);
-      setHasNewNotices(false);
-    }
-    setIsOpen(false);
-  };
+    setNotifs(updated);
+  }, [pathname, latestIds]);
 
   const handleLogout = () => {
     setIsOpen(false);
     router.push('/login');
   };
-
-  const filteredMenuItems = menuItems.filter(item => {
-    if (item.href === '/members' && !isAdmin) return false; 
-    return true;
-  });
 
   return (
     <>
@@ -75,21 +80,21 @@ export default function AppSidebar({ isOpen, setIsOpen }: AppSidebarProps) {
       )}
       <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-background transform ${isOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out md:hidden flex flex-col`}>
         <div className="flex items-center justify-between p-4 border-b">
-          <h2 className="text-lg font-bold uppercase italic">Menu</h2>
+          <h2 className="text-lg font-bold uppercase tracking-tighter italic">Menu</h2>
           <button onClick={() => setIsOpen(false)} className="text-muted-foreground hover:text-foreground">
             <X className="h-6 w-6" />
           </button>
         </div>
         <nav className="flex-1 flex flex-col p-4 space-y-2">
-          {!loading && filteredMenuItems.map((item) => (
+          {!loading && menuItems.filter(item => item.href !== '/members' || isAdmin).map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              onClick={() => handleLinkClick(item.href)}
+              onClick={() => setIsOpen(false)}
               className="relative flex items-center space-x-3 rounded-md p-2 text-base font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground"
             >
               <span>{item.label}</span>
-              {mounted && item.href === '/comunicazioni' && hasNewNotices && (
+              {mounted && notifs[item.href] && (
                 <span className="absolute right-2 flex h-3 w-3">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-3 w-3 bg-red-600"></span>
@@ -99,9 +104,9 @@ export default function AppSidebar({ isOpen, setIsOpen }: AppSidebarProps) {
           ))}
         </nav>
         <div className="p-4 border-t">
-          <button onClick={handleLogout} className="flex w-full items-center space-x-3 rounded-md p-2 text-base font-medium text-red-500 hover:bg-accent">
+          <button onClick={handleLogout} className="flex w-full items-center space-x-3 rounded-md p-2 text-base font-medium text-red-500 hover:bg-accent hover:text-red-600">
              <LogOut className="h-6 w-6" />
-             <span className="font-bold uppercase">Logout</span>
+             <span className="font-bold uppercase tracking-tighter">Logout</span>
           </button>
         </div>
       </aside>

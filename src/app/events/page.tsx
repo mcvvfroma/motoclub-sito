@@ -63,7 +63,8 @@ export default function EventsPage() {
         description: eventData.description,
         image: eventData.image || '/cascovigili.jpg',
         percorso: eventData.percorso || '',
-        metaMeteo: eventData.metaMeteo || ''
+        metaMeteo: eventData.metaMeteo || '',
+        publishedAt: serverTimestamp() // Fondamentale per il pallino rosso
       }, { merge: true });
       setIsDialogOpen(false);
     } catch (error) {
@@ -92,7 +93,6 @@ export default function EventsPage() {
 
   return (
     <div className="w-full py-8 px-4 sm:px-6 lg:px-8">
-      {/* TESTATA RESPONSIVA: Titolo e Pulsante Aggiungi */}
       <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center mb-10">
         <div className="flex items-center gap-3">
           <Calendar className="h-8 w-8 text-red-600 shrink-0" />

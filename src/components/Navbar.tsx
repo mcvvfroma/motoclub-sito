@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation'; // Aggiunto usePathname
+import { usePathname } from 'next/navigation';
 import { Menu, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { menuItems } from '@/config/menu';
@@ -19,36 +19,51 @@ interface NavbarProps {
 export default function Navbar({ setIsOpen }: NavbarProps) {
   const pathname = usePathname();
   const { isAdmin, loading } = useAdmin();
-  const [hasNewNotices, setHasNewNotices] = useState(false);
-  const [latestNoticeId, setLatestNoticeId] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
+  
+  const [notifs, setNotifs] = useState<{ [key: string]: boolean }>({
+    '/comunicazioni': false,
+    '/convenzioni': false,
+    '/events': false
+  });
+  const [latestIds, setLatestIds] = useState<{ [key: string]: string }>({
+    '/comunicazioni': '',
+    '/convenzioni': '',
+    '/events': ''
+  });
+
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
-    setMounted(true);
+    const sections = [
+      { path: '/comunicazioni', coll: 'communications', field: 'createdAt' },
+      { path: '/convenzioni', coll: 'conventions', field: 'updatedAt' },
+      { path: '/events', coll: 'events', field: 'publishedAt' }
+    ];
+    const unsubscribes = sections.map(s => {
+      return onSnapshot(query(collection(db, s.coll), orderBy(s.field, "desc"), limit(1)), (snip) => {
+        if (!snip.empty) setLatestIds(prev => ({ ...prev, [s.path]: snip.docs[0].id }));
+      });
+    });
+    return () => unsubscribes.forEach(u => u());
   }, []);
 
   useEffect(() => {
-    const q = query(collection(db, "communications"), orderBy("createdAt", "desc"), limit(1));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      if (!snapshot.empty) {
-        setLatestNoticeId(snapshot.docs[0].id);
+    const updated = { ...notifs };
+    Object.keys(latestIds).forEach(path => {
+      const storageKey = `lastRead_${path}`;
+      if (pathname === path) {
+        if (latestIds[path]) localStorage.setItem(storageKey, latestIds[path]);
+        updated[path] = false;
+      } else {
+        const lastRead = localStorage.getItem(storageKey);
+        updated[path] = latestIds[path] !== '' && lastRead !== latestIds[path];
       }
     });
-    return () => unsubscribe();
-  }, []);
+    setNotifs(updated);
+  }, [pathname, latestIds]);
 
-  // LOGICA DI AGGIORNAMENTO REALE: Se l'URL cambia in /comunicazioni, resetta tutto
-  useEffect(() => {
-    if (latestNoticeId) {
-      if (pathname === '/comunicazioni') {
-        localStorage.setItem('lastReadNoticeId', latestNoticeId);
-        setHasNewNotices(false);
-      } else {
-        const lastReadId = localStorage.getItem('lastReadNoticeId');
-        setHasNewNotices(lastReadId !== latestNoticeId);
-      }
-    }
-  }, [pathname, latestNoticeId]);
+  const hasAnyNotif = Object.values(notifs).some(v => v);
 
   const handleLogoff = async () => {
     try {
@@ -61,11 +76,6 @@ export default function Navbar({ setIsOpen }: NavbarProps) {
     }
   };
 
-  const filteredMenuItems = menuItems.filter(item => {
-    if (item.href === '/members' && !isAdmin) return false;
-    return true;
-  });
-
   return (
     <header className="fixed top-0 left-0 right-0 z-40 bg-background/80 backdrop-blur-sm border-b">
       <div className="container mx-auto flex h-16 max-w-screen-xl items-center justify-between px-4">
@@ -75,10 +85,10 @@ export default function Navbar({ setIsOpen }: NavbarProps) {
         </Link>
 
         <nav className="hidden md:flex items-center space-x-4">
-          {!loading && filteredMenuItems.map((item) => (
-            <Link key={item.href} href={item.href} className="relative text-sm font-medium text-muted-foreground hover:text-foreground px-2">
+          {!loading && menuItems.filter(i => i.href !== '/members' || isAdmin).map((item) => (
+            <Link key={item.href} href={item.href} className="relative text-sm font-medium text-muted-foreground transition-colors hover:text-foreground px-2">
               {item.label}
-              {mounted && item.href === '/comunicazioni' && hasNewNotices && (
+              {mounted && notifs[item.href] && (
                 <span className="absolute -top-1 -right-1 flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span>
@@ -94,7 +104,7 @@ export default function Navbar({ setIsOpen }: NavbarProps) {
             </Button>
             <Button variant="ghost" size="icon" className="md:hidden relative" onClick={() => setIsOpen(true)}>
                 <Menu className="h-6 w-6" />
-                {mounted && hasNewNotices && (
+                {mounted && hasAnyNotif && (
                   <span className="absolute top-2 right-2 flex h-3 w-3">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-3 w-3 bg-red-600"></span>
