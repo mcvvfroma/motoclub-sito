@@ -9,10 +9,15 @@ import { Badge } from '@/components/ui/badge';
 import { PlusCircle, Edit, Trash2, X, ExternalLink, Handshake, Phone, MapPin } from 'lucide-react';
 import Link from 'next/link';
 
-// Componenti di supporto
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog';
 
-// Motore Firebase e Sicurezza
 import { db } from '@/lib/firebase';
 import { useAdmin } from "@/hooks/use-admin";
 import { 
@@ -28,7 +33,7 @@ import {
 
 export default function ConvenzioniPage() {
   const [convenzioni, setConvenzioni] = useState<any[]>([]);
-  const [showForm, setShowForm] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isDataLoading, setIsDataLoading] = useState(true);
   
@@ -83,13 +88,14 @@ export default function ConvenzioniPage() {
     setAddress(conv.address || "");
     setPhone(conv.phone || "");
     setWebsite(conv.website || "");
-    setShowForm(true);
+    setIsDialogOpen(true);
   };
 
   const resetForm = () => {
     setName(""); setCategory(""); setDescription(""); setDiscount("");
     setAddress(""); setPhone(""); setWebsite("");
-    setEditingId(null); setShowForm(false);
+    setEditingId(null); 
+    setIsDialogOpen(false);
   };
 
   const confirmDelete = async () => {
@@ -118,10 +124,10 @@ export default function ConvenzioniPage() {
             </h1>
           </div>
           
-          {isAdmin && !showForm && (
+          {isAdmin && (
             <Button 
-              onClick={() => setShowForm(true)} 
-              className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white"
+              onClick={() => setIsDialogOpen(true)} 
+              className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white font-bold uppercase"
             >
               <PlusCircle className="h-4 w-4 mr-2" />
               Aggiungi
@@ -129,39 +135,55 @@ export default function ConvenzioniPage() {
           )}
         </div>
 
-        {isAdmin && showForm && (
-          <Card className="mb-8 border-zinc-800 bg-zinc-900 text-white">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>{editingId ? "Modifica Convenzione" : "Nuova Convenzione"}</CardTitle>
-              <Button variant="ghost" size="icon" onClick={resetForm} className="text-white hover:bg-zinc-800">
-                <X className="h-4 w-4" />
-              </Button>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Input value={name} onChange={e => setName(e.target.value)} placeholder="Nome Attività..." className="bg-black border-zinc-700 text-white" />
-                  <Input value={category} onChange={e => setCategory(e.target.value)} placeholder="Categoria..." className="bg-black border-zinc-700 text-white" />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Input value={discount} onChange={e => setDiscount(e.target.value)} placeholder="Sconto..." className="bg-black border-zinc-700 text-white" />
-                  <Input value={address} onChange={e => setAddress(e.target.value)} placeholder="Indirizzo..." className="bg-black border-zinc-700 text-white" />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="Telefono..." className="bg-black border-zinc-700 text-white" />
-                  <Input value={website} onChange={e => setWebsite(e.target.value)} placeholder="Sito Web..." className="bg-black border-zinc-700 text-white" />
-                </div>
-                <Textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Descrizione..." className="min-h-[100px] bg-black border-zinc-700 text-white" />
-                <div className="flex gap-2">
-                  <Button type="submit" className="bg-red-600 text-white hover:bg-red-700">
-                    {editingId ? "Aggiorna" : "Pubblica"}
-                  </Button>
-                  <Button type="button" variant="outline" onClick={resetForm} className="border-zinc-700 text-white">Annulla</Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        )}
+        <Dialog open={isDialogOpen} onOpenChange={(open) => !open && resetForm()}>
+          <DialogContent className="bg-zinc-900 border-zinc-800 text-white sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold uppercase tracking-tight">
+                {editingId ? "Modifica Convenzione" : "Nuova Convenzione"}
+              </DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4 pt-4">
+              
+              {/* 1. NOME ATTIVITÀ */}
+              <Input value={name} onChange={e => setName(e.target.value)} placeholder="Nome Attività..." className="bg-black border-zinc-700 text-white" />
+
+              {/* 2. CATEGORIA */}
+              <Input value={category} onChange={e => setCategory(e.target.value)} placeholder="Categoria..." className="bg-black border-zinc-700 text-white" />
+
+              {/* 3. CONDIZIONI RISERVATE (SCROLLABILE - 3 RIGHE) */}
+              <Textarea 
+                value={discount} 
+                onChange={e => setDiscount(e.target.value)} 
+                placeholder="Le condizioni sopra indicate saranno riservate..." 
+                className="h-[80px] overflow-y-auto bg-black border-zinc-700 text-white resize-none" 
+              />
+
+              {/* 4. AGEVOLAZIONI (SCROLLABILE - 3 RIGHE) */}
+              <Textarea 
+                value={description} 
+                onChange={e => setDescription(e.target.value)} 
+                placeholder="La convenzione prevede le seguenti agevolazioni..." 
+                className="h-[80px] overflow-y-auto bg-black border-zinc-700 text-white resize-none" 
+              />
+
+              {/* 5. INDIRIZZO */}
+              <Input value={address} onChange={e => setAddress(e.target.value)} placeholder="Indirizzo..." className="bg-black border-zinc-700 text-white" />
+
+              {/* 6. TELEFONO */}
+              <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="Telefono..." className="bg-black border-zinc-700 text-white" />
+              
+              {/* 7. SITO WEB */}
+              <Input value={website} onChange={e => setWebsite(e.target.value)} placeholder="Sito Web..." className="bg-black border-zinc-700 text-white" />
+              
+              <div className="flex gap-2 pt-2">
+                <Button type="submit" className="flex-1 bg-red-600 text-white hover:bg-red-700 font-bold uppercase">
+                  {editingId ? "Aggiorna" : "Pubblica"}
+                </Button>
+                <Button type="button" variant="outline" onClick={resetForm} className="flex-1 border-zinc-700 text-white uppercase font-bold">Annulla</Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
 
         {!isDataLoading && (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -177,10 +199,9 @@ export default function ConvenzioniPage() {
                   <p className="text-red-500 font-bold">{c.discount}</p>
                   <p className="text-zinc-400 text-sm italic">"{c.description}"</p>
                   
-                  {/* INDIRIZZO CLICCABILE MAPS */}
                   {c.address && (
                     <a 
-                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.address)}`}
+                      href={`http://googleusercontent.com/maps.google.com/?q=${encodeURIComponent(c.address)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-start gap-2 text-zinc-500 hover:text-zinc-200 transition-colors group mt-2"
@@ -193,9 +214,7 @@ export default function ConvenzioniPage() {
                   )}
                 </CardContent>
                 <CardFooter className="flex flex-col gap-3 border-t border-zinc-900 pt-4">
-                  
                   <div className="grid grid-cols-2 gap-2 w-full">
-                    {/* PULSANTE CHIAMA */}
                     {c.phone && (
                       <a href={`tel:${c.phone.replace(/\s+/g, '')}`} className="w-full">
                         <Button variant="outline" className="w-full border-zinc-700 hover:bg-green-900/30 hover:text-green-400 text-white text-[11px] uppercase font-bold">
@@ -203,8 +222,6 @@ export default function ConvenzioniPage() {
                         </Button>
                       </a>
                     )}
-
-                    {/* PULSANTE SITO WEB */}
                     {c.website && (
                       <Link href={c.website.startsWith('http') ? c.website : `https://${c.website}`} target="_blank" className="w-full">
                         <Button variant="outline" className="w-full border-zinc-700 hover:bg-zinc-800 text-white text-[11px] uppercase font-bold">
