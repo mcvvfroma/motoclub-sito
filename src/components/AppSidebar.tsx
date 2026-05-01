@@ -21,32 +21,28 @@ export default function AppSidebar({ isOpen, setIsOpen }: AppSidebarProps) {
   const [latestNoticeId, setLatestNoticeId] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
 
-  // Risolve l'errore di Hydration
   useEffect(() => {
     setMounted(true);
   }, []);
 
   useEffect(() => {
     const q = query(collection(db, "communications"), orderBy("createdAt", "desc"), limit(1));
-    
     const unsubscribe = onSnapshot(q, (snapshot) => {
       if (!snapshot.empty) {
-        const latestDoc = snapshot.docs[0];
-        const latestId = latestDoc.id;
+        const latestId = snapshot.docs[0].id;
         setLatestNoticeId(latestId);
-
         const lastReadId = localStorage.getItem('lastReadNoticeId');
         setHasNewNotices(lastReadId !== latestId);
       }
     });
-
     return () => unsubscribe();
   }, []);
 
+  // CORREZIONE: Aggiorniamo lo stato locale immediatamente al click
   const handleLinkClick = (href: string) => {
     if (href === '/comunicazioni' && latestNoticeId) {
       localStorage.setItem('lastReadNoticeId', latestNoticeId);
-      setHasNewNotices(false);
+      setHasNewNotices(false); // <--- Questo lo fa sparire subito!
     }
     setIsOpen(false);
   };
@@ -73,7 +69,7 @@ export default function AppSidebar({ isOpen, setIsOpen }: AppSidebarProps) {
         className={`fixed inset-y-0 left-0 z-50 w-64 bg-background transform ${isOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out md:hidden flex flex-col`}
       >
         <div className="flex items-center justify-between p-4 border-b">
-          <h2 className="text-lg font-bold">Menu</h2>
+          <h2 className="text-lg font-bold uppercase tracking-tighter italic">Menu</h2>
           <button onClick={() => setIsOpen(false)} className="text-muted-foreground hover:text-foreground">
             <X className="h-6 w-6" />
           </button>
@@ -87,7 +83,6 @@ export default function AppSidebar({ isOpen, setIsOpen }: AppSidebarProps) {
               className="relative flex items-center space-x-3 rounded-md p-2 text-base font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground"
             >
               <span>{item.label}</span>
-              {/* Mostra il pallino solo dopo il mount per evitare errori HTML */}
               {mounted && item.href === '/comunicazioni' && hasNewNotices && (
                 <span className="absolute right-2 flex h-3 w-3">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
@@ -103,7 +98,7 @@ export default function AppSidebar({ isOpen, setIsOpen }: AppSidebarProps) {
             className="flex w-full items-center space-x-3 rounded-md p-2 text-base font-medium text-red-500 hover:bg-accent hover:text-red-600"
           >
              <LogOut className="h-6 w-6" />
-             <span>Logout</span>
+             <span className="font-bold uppercase tracking-tighter">Logout</span>
           </button>
         </div>
       </aside>

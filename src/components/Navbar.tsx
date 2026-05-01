@@ -21,7 +21,6 @@ export default function Navbar({ setIsOpen }: NavbarProps) {
   const [latestNoticeId, setLatestNoticeId] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
 
-  // Risolve l'errore di Hydration
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -39,10 +38,11 @@ export default function Navbar({ setIsOpen }: NavbarProps) {
     return () => unsubscribe();
   }, []);
 
+  // CORREZIONE: Forza lo stato a false non appena l'utente clicca
   const handleLinkClick = (href: string) => {
     if (href === '/comunicazioni' && latestNoticeId) {
       localStorage.setItem('lastReadNoticeId', latestNoticeId);
-      setHasNewNotices(false);
+      setHasNewNotices(false); // <--- Sparisce istantaneamente!
     }
   };
 
@@ -80,7 +80,6 @@ export default function Navbar({ setIsOpen }: NavbarProps) {
           </span>
         </Link>
 
-        {/* Desktop Menu */}
         <nav className="hidden md:flex items-center space-x-4">
           {!loading && filteredMenuItems.map((item) => (
             <Link 
@@ -105,7 +104,6 @@ export default function Navbar({ setIsOpen }: NavbarProps) {
                 <LogOut className="h-5 w-5" />
             </Button>
 
-            {/* Hamburger per Mobile */}
             <Button variant="ghost" size="icon" className="md:hidden relative" onClick={() => setIsOpen(true)}>
                 <Menu className="h-6 w-6" />
                 {mounted && hasNewNotices && (
