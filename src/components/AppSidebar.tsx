@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { menuItems } from '@/config/menu';
 import { X, LogOut } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation'; // Aggiunto usePathname
 import Link from 'next/link';
 import { useAdmin } from '@/hooks/use-admin';
 import { db } from '@/lib/firebase';
@@ -16,6 +16,7 @@ interface AppSidebarProps {
 
 export default function AppSidebar({ isOpen, setIsOpen }: AppSidebarProps) {
   const router = useRouter();
+  const pathname = usePathname(); // Monitora il cambio pagina
   const { isAdmin, loading } = useAdmin();
   const [hasNewNotices, setHasNewNotices] = useState(false);
   const [latestNoticeId, setLatestNoticeId] = useState<string | null>(null);
@@ -25,24 +26,34 @@ export default function AppSidebar({ isOpen, setIsOpen }: AppSidebarProps) {
     setMounted(true);
   }, []);
 
+  // Sync con Firebase
   useEffect(() => {
     const q = query(collection(db, "communications"), orderBy("createdAt", "desc"), limit(1));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       if (!snapshot.empty) {
-        const latestId = snapshot.docs[0].id;
-        setLatestNoticeId(latestId);
-        const lastReadId = localStorage.getItem('lastReadNoticeId');
-        setHasNewNotices(lastReadId !== latestId);
+        setLatestNoticeId(snapshot.docs[0].id);
       }
     });
     return () => unsubscribe();
   }, []);
 
-  // CORREZIONE: Aggiorniamo lo stato locale immediatamente al click
+  // CONTROLLO AUTOMATICO: Se sono in /comunicazioni, il pallino deve sparire
+  useEffect(() => {
+    if (latestNoticeId) {
+      if (pathname === '/comunicazioni') {
+        localStorage.setItem('lastReadNoticeId', latestNoticeId);
+        setHasNewNotices(false);
+      } else {
+        const lastReadId = localStorage.getItem('lastReadNoticeId');
+        setHasNewNotices(lastReadId !== latestNoticeId);
+      }
+    }
+  }, [pathname, latestNoticeId]);
+
   const handleLinkClick = (href: string) => {
     if (href === '/comunicazioni' && latestNoticeId) {
       localStorage.setItem('lastReadNoticeId', latestNoticeId);
-      setHasNewNotices(false); // <--- Questo lo fa sparire subito!
+      setHasNewNotices(false);
     }
     setIsOpen(false);
   };
@@ -60,16 +71,11 @@ export default function AppSidebar({ isOpen, setIsOpen }: AppSidebarProps) {
   return (
     <>
       {isOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
-          onClick={() => setIsOpen(false)}
-        />
+        <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden" onClick={() => setIsOpen(false)} />
       )}
-      <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-background transform ${isOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out md:hidden flex flex-col`}
-      >
+      <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-background transform ${isOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out md:hidden flex flex-col`}>
         <div className="flex items-center justify-between p-4 border-b">
-          <h2 className="text-lg font-bold uppercase tracking-tighter italic">Menu</h2>
+          <h2 className="text-lg font-bold uppercase italic">Menu</h2>
           <button onClick={() => setIsOpen(false)} className="text-muted-foreground hover:text-foreground">
             <X className="h-6 w-6" />
           </button>
@@ -93,12 +99,9 @@ export default function AppSidebar({ isOpen, setIsOpen }: AppSidebarProps) {
           ))}
         </nav>
         <div className="p-4 border-t">
-          <button
-            onClick={handleLogout}
-            className="flex w-full items-center space-x-3 rounded-md p-2 text-base font-medium text-red-500 hover:bg-accent hover:text-red-600"
-          >
+          <button onClick={handleLogout} className="flex w-full items-center space-x-3 rounded-md p-2 text-base font-medium text-red-500 hover:bg-accent">
              <LogOut className="h-6 w-6" />
-             <span className="font-bold uppercase tracking-tighter">Logout</span>
+             <span className="font-bold uppercase">Logout</span>
           </button>
         </div>
       </aside>
