@@ -34,7 +34,7 @@ export default function HomePage() {
         
         {/* L'effetto luce (Shimmer) */}
         <div className="absolute inset-0 z-20 pointer-events-none overflow-hidden">
-          <div className="absolute inset-0 w-[40%] h-full bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer" />
+          <div className="absolute inset-0 w-[40%] h-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer" />
         </div>
 
       </div>
