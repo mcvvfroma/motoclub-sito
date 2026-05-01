@@ -1,13 +1,15 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Menu, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { menuItems } from '@/config/menu';
 import { useAdmin } from '@/hooks/use-admin';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { signOut } from 'firebase/auth';
+import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
 
 interface NavbarProps {
   setIsOpen: (isOpen: boolean) => void;
@@ -15,33 +17,49 @@ interface NavbarProps {
 
 export default function Navbar({ setIsOpen }: NavbarProps) {
   const { isAdmin, loading } = useAdmin();
+  const [hasNewNotices, setHasNewNotices] = useState(false);
+  const [latestNoticeId, setLatestNoticeId] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  // Risolve l'errore di Hydration
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    const q = query(collection(db, "communications"), orderBy("createdAt", "desc"), limit(1));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      if (!snapshot.empty) {
+        const latestId = snapshot.docs[0].id;
+        setLatestNoticeId(latestId);
+        const lastReadId = localStorage.getItem('lastReadNoticeId');
+        setHasNewNotices(lastReadId !== latestId);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleLinkClick = (href: string) => {
+    if (href === '/comunicazioni' && latestNoticeId) {
+      localStorage.setItem('lastReadNoticeId', latestNoticeId);
+      setHasNewNotices(false);
+    }
+  };
 
   const handleLogoff = async () => {
     try {
-      // 1. Esci da Firebase
       await signOut(auth);
-      
-      // 2. Svuota completamente la memoria locale del browser
       window.localStorage.clear();
       window.sessionStorage.clear();
-
-      // 3. Forza il reindirizzamento e il ricaricamento totale della pagina
-      // Questo impedisce il "rimbalzo" all'interno dell'app
       window.location.href = '/login';
-      
     } catch (error) {
       console.error("Errore durante il logout:", error);
-      // In caso di errore, proviamo comunque a resettare la pagina
       window.location.href = '/login';
     }
   };
 
-  // Filtriamo i link del menu: se l'utente non è admin, rimuoviamo '/members'
   const filteredMenuItems = menuItems.filter(item => {
-    // La rotta corretta nel tuo sistema è /members
-    if (item.href === '/members' && !isAdmin) {
-      return false;
-    }
+    if (item.href === '/members' && !isAdmin) return false;
     return true;
   });
 
@@ -49,7 +67,6 @@ export default function Navbar({ setIsOpen }: NavbarProps) {
     <header className="fixed top-0 left-0 right-0 z-40 bg-background/80 backdrop-blur-sm border-b">
       <div className="container mx-auto flex h-16 max-w-screen-xl items-center justify-between px-4">
         
-        {/* SINISTRA: Logo e Titolo */}
         <Link href="/" className="flex items-center space-x-3">
           <Image 
             src="/logo_motoclub.gif"
@@ -63,44 +80,42 @@ export default function Navbar({ setIsOpen }: NavbarProps) {
           </span>
         </Link>
 
-        {/* CENTRO: Menu Desktop (nascosto su mobile) */}
+        {/* Desktop Menu */}
         <nav className="hidden md:flex items-center space-x-4">
           {!loading && filteredMenuItems.map((item) => (
             <Link 
               key={item.href} 
               href={item.href} 
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+              onClick={() => handleLinkClick(item.href)}
+              className="relative text-sm font-medium text-muted-foreground transition-colors hover:text-foreground px-2"
             >
               {item.label}
+              {mounted && item.href === '/comunicazioni' && hasNewNotices && (
+                <span className="absolute -top-1 -right-1 flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span>
+                </span>
+              )}
             </Link>
           ))}
-          {loading && <span className="text-xs text-muted-foreground animate-pulse">...</span>}
         </nav>
 
-        {/* DESTRA: Pulsante Logout e Menu Mobile */}
         <div className="flex items-center space-x-2">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={handleLogoff} 
-              className="text-red-500 hover:text-red-600 hover:bg-red-50"
-            >
+            <Button variant="ghost" size="icon" onClick={handleLogoff} className="text-red-500 hover:text-red-600">
                 <LogOut className="h-5 w-5" />
-                <span className="sr-only">Logoff</span>
             </Button>
 
-            {/* Pulsante Hamburger (solo mobile) */}
-            <Button
-                variant="ghost"
-                size="icon"
-                className="md:hidden"
-                onClick={() => setIsOpen(true)}
-            >
+            {/* Hamburger per Mobile */}
+            <Button variant="ghost" size="icon" className="md:hidden relative" onClick={() => setIsOpen(true)}>
                 <Menu className="h-6 w-6" />
-                <span className="sr-only">Apri menu</span>
+                {mounted && hasNewNotices && (
+                  <span className="absolute top-2 right-2 flex h-3 w-3">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-red-600"></span>
+                  </span>
+                )}
             </Button>
         </div>
-
       </div>
     </header>
   );
