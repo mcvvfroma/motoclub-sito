@@ -2,10 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, onSnapshot, query, setDoc, updateDoc, deleteDoc, doc, addDoc } from 'firebase/firestore';
-// ... gli altri import (PlusCircle, Button, Card, ecc.) restano uguali
+import { collection, onSnapshot, query, setDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 
-import { PlusCircle, MoreHorizontal } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, Users } from 'lucide-react'; // Aggiunto Users per coerenza
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -55,21 +54,9 @@ export default function MembersPage() {
     return () => unsubscribe();
   }, []);
 
-  const openMemberDialog = (s: Member | null = null) => {
-    setSelectedMember(s);
-
-    setIsMemberDialogOpen(true);
-  };
-
-  const openDeleteConfirmation = (id: string) => {
-    setIdSocioDaEliminare(id);
-    setIsConfirmDialogOpen(true);
-  };
-
   const executeDelete = async () => {
     if (!idSocioDaEliminare) return;
     try {
-      // Usiamo firestoreDoc per non confonderlo con i dati
       await deleteDoc(doc(db, 'users', idSocioDaEliminare));
       setIsConfirmDialogOpen(false);
       setIdSocioDaEliminare(null);
@@ -77,6 +64,7 @@ export default function MembersPage() {
       console.error("Errore eliminazione:", e);
     }
   };
+
   const handleSaveMember = async (data: any) => {
     setIsMemberDialogOpen(false);
     setSelectedMember(null);
@@ -94,7 +82,6 @@ export default function MembersPage() {
           createdAt: new Date().toISOString()
         });
       }
-      console.log("Salvataggio riuscito!");
     } catch (e: any) {
       console.error("ERRORE FIREBASE:", e);
       alert("Errore nel salvataggio: " + e.message);
@@ -102,50 +89,63 @@ export default function MembersPage() {
   };
 
   return (
-    <div className="p-6 space-y-6">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Gestione Soci</CardTitle>
+    <div className="p-4 sm:p-6 space-y-6 bg-black min-h-screen text-white">
+      <Card className="bg-zinc-950 border-zinc-800">
+        {/* INTESTAZIONE RESPONSIVE: Corregge il pulsante tagliato */}
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <Users className="h-6 w-6 text-red-600" />
+            <CardTitle className="text-white uppercase tracking-tight">Gestione Soci</CardTitle>
+          </div>
+          
           {isAdmin && (
-            <Button onClick={() => {
-              setSelectedMember(null);
-              setIsMemberDialogOpen(true);
-            }}>
+            <Button 
+              className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white"
+              onClick={() => {
+                setSelectedMember(null);
+                setIsMemberDialogOpen(true);
+              }}
+            >
               <PlusCircle className="mr-2 h-4 w-4" />
               Aggiungi Socio
             </Button>
           )}
         </CardHeader>
-        <CardContent>
+
+        <CardContent className="overflow-x-auto"> {/* Permette lo scroll orizzontale della tabella su piccoli schermi */}
           <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead>Stato</TableHead>
+            <TableHeader className="border-zinc-800">
+              <TableRow className="hover:bg-transparent border-zinc-800">
+                <TableHead className="text-zinc-400">Nome</TableHead>
+                <TableHead className="text-zinc-400">Stato</TableHead>
                 <TableHead className="w-[100px]"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {soci.map((s) => (
-                <TableRow key={s.id}>
-                  <TableCell>{s.nome} {s.cognome}</TableCell>
-                  <TableCell>{s.status}</TableCell>
+                <TableRow key={s.id} className="border-zinc-800 hover:bg-zinc-900/50">
+                  <TableCell className="font-medium">{s.nome} {s.cognome}</TableCell>
+                  <TableCell className="capitalize">
+                    <span className={s.status === 'admin' ? "text-red-500 font-bold" : "text-zinc-300"}>
+                      {s.status}
+                    </span>
+                  </TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
+                        <Button variant="ghost" size="sm" className="hover:bg-zinc-800 text-white">
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => {
+                      <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-800 text-white">
+                        <DropdownMenuItem className="hover:bg-zinc-800" onClick={() => {
                           setSelectedMember(s);
                           setIsMemberDialogOpen(true);
                         }}>
                           Modifica
                         </DropdownMenuItem>
                         <DropdownMenuItem 
-                          className="text-red-600"
+                          className="text-red-600 hover:bg-red-950/30"
                           onClick={() => {
                             setIdSocioDaEliminare(s.id);
                             setIsConfirmDialogOpen(true);
