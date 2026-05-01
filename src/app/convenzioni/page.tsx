@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { PlusCircle, Edit, Trash2, X, ExternalLink, Handshake } from 'lucide-react';
 import Link from 'next/link';
 
-// Componenti di supporto (Importanti per non avere errori rossi)
+// Componenti di supporto
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog';
 
 // Motore Firebase e Sicurezza
@@ -32,7 +32,7 @@ export default function ConvenzioniPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isDataLoading, setIsDataLoading] = useState(true);
   
-  // STATI PER LA CANCELLAZIONE (Essenziali per la logica Events)
+  // STATI PER LA CANCELLAZIONE SICURA
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [convToDelete, setConvToDelete] = useState<string | null>(null);
   
@@ -47,7 +47,6 @@ export default function ConvenzioniPage() {
 
   const { isAdmin, loading: authLoading } = useAdmin();
 
-  // 1. RECUPERO DATI
   useEffect(() => {
     const q = query(collection(db, "conventions"), orderBy("name", "asc"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -63,7 +62,6 @@ export default function ConvenzioniPage() {
     return () => unsubscribe();
   }, []);
 
-  // 2. SALVATAGGIO
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isAdmin || !name || !category) return;
@@ -96,7 +94,6 @@ export default function ConvenzioniPage() {
     setEditingId(null); setShowForm(false);
   };
 
-  // 3. LOGICA CANCELLAZIONE (Presa da Events per evitare il blocco browser)
   const confirmDelete = async () => {
     if (convToDelete && isAdmin) {
       try {
@@ -109,28 +106,32 @@ export default function ConvenzioniPage() {
     }
   };
 
-  if (authLoading) return <div className="min-h-screen bg-black flex items-center justify-center">Verifica permessi...</div>;
+  if (authLoading) return <div className="min-h-screen bg-black text-white flex items-center justify-center">Verifica permessi...</div>;
 
   return (
     <div className="min-h-screen bg-black text-white">
       <div className="container mx-auto px-4 py-8">
         
-        {/* INTESTAZIONE: Handshake in rosso h-8 w-8 */}
-        <div className="flex justify-between items-center mb-8">
+        {/* INTESTAZIONE RESPONSIVE: Corregge il taglio su mobile */}
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
           <div className="flex items-center gap-2">
-            <Handshake className="h-8 w-8 text-red-600" />
-            <h1 className="text-3xl font-bold tracking-tight uppercase">Convenzioni Soci</h1>
+            <Handshake className="h-8 w-8 text-red-600 shrink-0" />
+            <h1 className="text-3xl font-bold tracking-tight uppercase leading-tight">
+              Convenzioni Soci
+            </h1>
           </div>
           
           {isAdmin && !showForm && (
-            <Button onClick={() => setShowForm(true)} className="bg-red-600 hover:bg-red-700 text-white">
+            <Button 
+              onClick={() => setShowForm(true)} 
+              className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white"
+            >
               <PlusCircle className="h-4 w-4 mr-2" />
               Aggiungi
             </Button>
           )}
         </div>
 
-        {/* FORM DI EDITING */}
         {isAdmin && showForm && (
           <Card className="mb-8 border-zinc-800 bg-zinc-900 text-white">
             <CardHeader className="flex flex-row items-center justify-between">
@@ -165,7 +166,6 @@ export default function ConvenzioniPage() {
           </Card>
         )}
 
-        {/* GRIGLIA CARTE */}
         {!isDataLoading && (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {convenzioni.map((c) => (
@@ -211,14 +211,13 @@ export default function ConvenzioniPage() {
         )}
       </div>
 
-      {/* DIALOG DI CONFERMA (Stessa logica di Events) */}
       {isAdmin && (
         <ConfirmDeleteDialog 
           isOpen={isDeleteConfirmOpen} 
           onOpenChange={setIsDeleteConfirmOpen} 
           onConfirm={confirmDelete} 
           title="Elimina Convenzione" 
-          description="Sei sicuro di voler rimuovere questa convenzione? L'azione non è reversibile." 
+          description="Sei sicuro di voler rimuovere questa convenzione?" 
         />
       )}
     </div>
