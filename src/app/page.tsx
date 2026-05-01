@@ -18,13 +18,27 @@ const kanit = Kanit({
 export default function HomePage() {
   return (
     <div className="flex flex-col items-center justify-center pt-16 px-4 text-center">
-      <Image
-        src="/logo_motoclub.gif"
-        alt="Logo Moto Club"
-        width={250}
-        height={250}
-        priority
-      />
+      
+      {/* CONTENITORE LOGO ANIMATO */}
+      <div className="relative group overflow-hidden rounded-full inline-block">
+        
+        {/* Il tuo logo originale */}
+        <Image
+          src="/logo_motoclub.gif"
+          alt="Logo Moto Club"
+          width={250}
+          height={250}
+          priority
+          className="relative z-10"
+        />
+        
+        {/* L'effetto luce (Shimmer) */}
+        <div className="absolute inset-0 z-20 pointer-events-none overflow-hidden">
+          <div className="absolute inset-0 w-[40%] h-full bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer" />
+        </div>
+
+      </div>
+      {/* FINE LOGO ANIMATO */}
       
       <div className="mt-8 tracking-tight uppercase">
         {/* Prima Riga: Rosso - Black Ops One */}
