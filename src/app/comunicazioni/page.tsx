@@ -5,7 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { PlusCircle, Edit, Trash2, X } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, X, Megaphone } from 'lucide-react';
+
+// Importiamo il componente di conferma (lo stesso che salva Events e Convenzioni)
+import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog';
 
 // Motore Firebase
 import { db } from '@/lib/firebase';
@@ -18,7 +21,8 @@ import {
   serverTimestamp, 
   query, 
   orderBy, 
-  onSnapshot 
+  onSnapshot,
+  Timestamp 
 } from 'firebase/firestore';
 
 export default function ComunicazioniPage() {
@@ -26,11 +30,16 @@ export default function ComunicazioniPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   
+  // STATI PER LA CANCELLAZIONE (Logica sicura)
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [idToDelete, setIdToDelete] = useState<string | null>(null);
+
   // Campi del form
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [author, setAuthor] = useState(""); 
+  const [date, setDate] = useState(""); 
 
-  // Usiamo isAdmin e loading per la sicurezza
   const { isAdmin, loading } = useAdmin();
 
   // 1. RECUPERO DATI
@@ -45,19 +54,20 @@ export default function ComunicazioniPage() {
     return () => unsubscribe();
   }, []);
 
-  // 2. SALVATAGGIO (PROTETTO)
+  // 2. SALVATAGGIO
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isAdmin || !title || !content) return; // Blocco se non admin
+    if (!isAdmin || !title || !content) return;
 
     try {
       const docId = editingId || title.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+      const customDate = date ? Timestamp.fromDate(new Date(date)) : serverTimestamp();
 
       await setDoc(doc(db, "communications", docId), {
         title,
         content,
-        author: "Direttivo",
-        createdAt: editingId ? (communications.find(c => c.id === editingId)?.createdAt || serverTimestamp()) : serverTimestamp(),
+        author: author.trim() || "Direttivo",
+        createdAt: customDate,
         lastUpdate: serverTimestamp()
       }, { merge: true });
 
@@ -72,47 +82,54 @@ export default function ComunicazioniPage() {
     setEditingId(com.id);
     setTitle(com.title);
     setContent(com.content);
+    setAuthor(com.author || "Direttivo");
+    
+    if (com.createdAt?.toDate) {
+      const d = com.createdAt.toDate();
+      const formattedDate = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+      setDate(formattedDate);
+    }
     setShowForm(true);
   };
 
   const resetForm = () => {
-    setTitle("");
-    setContent("");
-    setEditingId(null);
-    setShowForm(false);
+    setTitle(""); setContent(""); setAuthor(""); setDate("");
+    setEditingId(null); setShowForm(false);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!isAdmin) return; // Blocco se non admin
-    if (!window.confirm("Sei sicuro di voler eliminare questa comunicazione?")) return;
-    try {
-      await deleteDoc(doc(db, "communications", id));
-    } catch (err) {
-      console.error("Errore eliminazione:", err);
+  // 3. LOGICA CANCELLAZIONE (Sincronizzata con Events/Convenzioni)
+  const confirmDelete = async () => {
+    if (idToDelete && isAdmin) {
+      try {
+        await deleteDoc(doc(db, "communications", idToDelete));
+        setIsDeleteConfirmOpen(false);
+        setIdToDelete(null);
+      } catch (err) {
+        console.error("Errore eliminazione:", err);
+      }
     }
   };
 
-  // Se l'app sta ancora verificando se sei Admin, mostriamo un caricamento
-  if (loading) {
-    return <div className="w-full py-20 text-center">Verifica permessi in corso...</div>;
-  }
+  if (loading) return <div className="w-full py-20 text-center">Verifica permessi...</div>;
 
   return (
     <div className="w-full py-8">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">Bacheca Comunicazioni</h1>
-        {/* IL TASTO AGGIUNGI SCOMPARE PER I SOCI */}
+        <div className="flex items-center gap-2">
+          <Megaphone className="h-8 w-8 text-red-600" />
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Bacheca Comunicazioni</h1>
+        </div>
+
         {isAdmin && !showForm && (
           <Button onClick={() => setShowForm(true)}>
             <PlusCircle className="h-4 w-4 mr-2" />
-            Aggiungi Comunicazione
+            Aggiungi
           </Button>
         )}
       </div>
 
-      {/* IL FORM NON È SOLO NASCOSTO, È PROTETTO DALLA CONDIZIONE isAdmin */}
       {isAdmin && showForm && (
-        <Card className="mb-8 border-2">
+        <Card className="mb-8 border-2 border-zinc-800 bg-zinc-950">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>{editingId ? "Modifica Comunicazione" : "Nuova Comunicazione"}</CardTitle>
             <Button variant="ghost" size="icon" onClick={resetForm}>
@@ -121,22 +138,16 @@ export default function ComunicazioniPage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <Input 
-                value={title} 
-                onChange={e => setTitle(e.target.value)} 
-                placeholder="Titolo..." 
-                disabled={!!editingId}
-              />
-              <Textarea 
-                value={content} 
-                onChange={e => setContent(e.target.value)} 
-                placeholder="Testo del messaggio..." 
-                className="min-h-[150px]"
-              />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Titolo..." />
+                <Input value={author} onChange={e => setAuthor(e.target.value)} placeholder="Pubblicato da (Default: Direttivo)" />
+                <div className="md:col-span-2">
+                   <Input type="datetime-local" value={date} onChange={e => setDate(e.target.value)} />
+                </div>
+              </div>
+              <Textarea value={content} onChange={e => setContent(e.target.value)} placeholder="Testo..." className="min-h-[120px]" />
               <div className="flex gap-2">
-                <Button type="submit" className="bg-red-600 text-white hover:bg-red-700">
-                  {editingId ? "Aggiorna" : "Pubblica"}
-                </Button>
+                <Button type="submit" className="bg-red-600 hover:bg-red-700 text-white">Pubblica</Button>
                 <Button type="button" variant="outline" onClick={resetForm}>Annulla</Button>
               </div>
             </form>
@@ -146,29 +157,29 @@ export default function ComunicazioniPage() {
 
       <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
         {communications.map((c) => (
-          <Card key={c.id} className="flex flex-col">
+          <Card key={c.id} className="flex flex-col border-zinc-800 bg-zinc-950/50">
             <CardHeader>
-              <div className="flex justify-between items-start">
-                <div className='flex-grow pr-2'>
-                  <CardTitle className="uppercase">{c.title}</CardTitle>
-                  <CardDescription>
-                    {c.createdAt?.toDate ? c.createdAt.toDate().toLocaleDateString('it-IT', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : "In caricamento..."}
-                  </CardDescription>
-                </div>
-              </div>
+              <CardTitle className="uppercase text-red-500">{c.title}</CardTitle>
+              <CardDescription>
+                {c.createdAt?.toDate ? c.createdAt.toDate().toLocaleDateString('it-IT', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : "In caricamento..."}
+              </CardDescription>
             </CardHeader>
             <CardContent className="flex-grow">
-              <p className="text-slate-600 italic">"{c.content}"</p>
-              <p className="text-[10px] mt-4 uppercase text-gray-400 tracking-widest font-bold">Autore: {c.author || "Direttivo"}</p>
+              <p className="text-zinc-300 italic">"{c.content}"</p>
+              <p className="text-[10px] mt-4 uppercase text-zinc-500 tracking-widest font-bold">Autore: {c.author || "Direttivo"}</p>
             </CardContent>
             
-            {/* I TASTI DI GESTIONE COMPAIONO SOLO SE SEI ADMIN */}
             {isAdmin && (
-              <div className="flex justify-end p-4 border-t gap-2">
-                <Button variant="ghost" size="icon" onClick={() => handleEdit(c)}>
+              <div className="flex justify-end p-4 border-t border-zinc-900 gap-2">
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-white" onClick={() => handleEdit(c)}>
                   <Edit className="h-4 w-4" />
                 </Button>
-                <Button variant="destructive" size="icon" onClick={() => handleDelete(c.id)}>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8 text-red-500 hover:text-red-600" 
+                  onClick={() => { setIdToDelete(c.id); setIsDeleteConfirmOpen(true); }}
+                >
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
@@ -176,6 +187,17 @@ export default function ComunicazioniPage() {
           </Card>
         ))}
       </div>
+
+      {/* DIALOG DI CONFERMA GRAFICO (Evita il blocco del browser) */}
+      {isAdmin && (
+        <ConfirmDeleteDialog 
+          isOpen={isDeleteConfirmOpen} 
+          onOpenChange={setIsDeleteConfirmOpen} 
+          onConfirm={confirmDelete} 
+          title="Elimina Comunicazione" 
+          description="Sei sicuro di voler eliminare questo avviso dalla bacheca?" 
+        />
+      )}
     </div>
   );
 }

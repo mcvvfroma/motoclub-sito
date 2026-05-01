@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Edit, Trash2, MapPin, CloudSun } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, MapPin, CloudSun, Calendar } from 'lucide-react'; // Aggiunto Calendar
 import EventDialog from '@/components/EventDialog';
 import WeatherBadge from '@/components/WeatherBadge';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog';
@@ -81,7 +81,12 @@ export default function EventsPage() {
   return (
     <div className="w-full py-8">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Calendario Eventi</h1>
+        {/* STILE IDENTICO ALLA BACHECA: Megafono -> Calendario */}
+        <div className="flex items-center gap-2">
+          <Calendar className="h-8 w-8 text-red-600" />
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Calendario Eventi</h1>
+        </div>
+
         {isAdmin && <Button onClick={() => openDialog()}><PlusCircle className="h-4 w-4 mr-2" /> Aggiungi</Button>}
       </div>
 
