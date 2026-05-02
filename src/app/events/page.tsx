@@ -114,13 +114,13 @@ export default function EventsPage() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {events.map(event => (
+        {events?.map(event => (
           <Card key={event.id} className="flex flex-col border border-zinc-800 bg-zinc-950/50 overflow-hidden shadow-2xl">
             <CardHeader className="p-0 relative">
               <div onClick={() => { if (isAdmin) openDialog(event); }} className={`group ${isAdmin ? 'cursor-pointer' : ''}`}>
                 <div className="bg-black/80 flex items-center justify-center h-52 w-full overflow-hidden relative">
                   <img 
-                    src={event.image} 
+                    src={event.image || '/cascovigili.jpg'} 
                     alt={event.title} 
                     className="object-contain h-full w-full transform scale-110 transition-transform duration-700 group-hover:scale-125" 
                   />
@@ -130,7 +130,7 @@ export default function EventsPage() {
                 <div>
                   <CardTitle className="text-xl font-black leading-none mb-1 uppercase italic tracking-tighter">{event.title}</CardTitle>
                   <CardDescription className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold">
-                    {new Date(event.date).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}
+                    {event.date ? new Date(event.date).toLocaleDateString('it-IT') : 'Data da definire'}
                   </CardDescription>
                 </div>
                 <WeatherBadge date={event.date} />
@@ -144,10 +144,7 @@ export default function EventsPage() {
 
               <PhotoGallerySection eventId={event.id} isAdmin={isAdmin} user={user} />
 
-              {/* AREA AZIONI FINALI: TASTONE SOPRA, PICCOLI SOTTO */}
               <div className="mt-auto pt-4 border-t border-zinc-900/50 space-y-3">
-                
-                {/* 1. TASTO PERCORSO (LARGHEZZA PIENA) */}
                 {event.percorso && (
                   <a 
                     href={event.percorso.startsWith('http') ? event.percorso : `https://${event.percorso}`} 
@@ -159,7 +156,6 @@ export default function EventsPage() {
                   </a>
                 )}
 
-                {/* 2. RIGA TASTI PICCOLI (SOTTO IL TASTONE) */}
                 <div className="flex flex-wrap gap-2">
                   {user && (
                     <CldImageUploadWrapper 
@@ -217,18 +213,20 @@ function CldImageUploadWrapper({ eventId, isAdmin, user }: { eventId: string, is
   const [photosCount, setPhotosCount] = useState(0);
 
   useEffect(() => {
+    if (!user?.email) return;
     const q = query(collection(db, "events", eventId, "photos"));
     const unsubscribe = onSnapshot(q, (snap) => {
-      const userPhotos = snap.docs.filter(d => d.data().userId === user?.email);
+      const userPhotos = snap.docs.filter(d => d.data()?.userId === user.email);
       setPhotosCount(userPhotos.length);
     });
     return () => unsubscribe();
   }, [eventId, user?.email]);
 
   const maxAllowed = isAdmin ? 10 : 4;
+  if (photosCount >= maxAllowed) return null;
 
   const handleUploadSuccess = async (result: any) => {
-    if (!user || !result?.info?.secure_url) return;
+    if (!user?.email || !result?.info?.secure_url) return;
     try {
       await addDoc(collection(db, "events", eventId, "photos"), {
         url: result.info.secure_url,
@@ -241,8 +239,6 @@ function CldImageUploadWrapper({ eventId, isAdmin, user }: { eventId: string, is
       console.error(error);
     }
   };
-
-  if (photosCount >= maxAllowed) return null;
 
   return (
     <CldImageUpload 
@@ -288,7 +284,7 @@ function PhotoGallerySection({ eventId, isAdmin, user }: { eventId: string; isAd
       </div>
 
       <div className="grid grid-cols-4 gap-2">
-        {photos.map((photo) => (
+        {photos?.map((photo) => (
           <div key={photo.id} className="relative aspect-square rounded overflow-hidden bg-zinc-900 group">
             <img src={photo.url} alt="Foto Evento" className="object-cover w-full h-full" />
             {(isAdmin || photo.userId === user?.email) && (
@@ -321,9 +317,9 @@ function ParticipationSection({ eventId, isAdmin, user }: { eventId: string; isA
     return () => unsubscribe();
   }, [eventId]);
 
-  const totalePersone = partecipanti.reduce((acc, p) => acc + (p.quanti || 0), 0);
-  const totaleMoto = partecipanti.reduce((acc, p) => acc + (p.moto || 0), 0);
-  const giaPartecipa = partecipanti.some(p => p.email === user?.email);
+  const totalePersone = partecipanti?.reduce((acc, p) => acc + (p.quanti || 0), 0) || 0;
+  const totaleMoto = partecipanti?.reduce((acc, p) => acc + (p.moto || 0), 0) || 0;
+  const giaPartecipa = partecipanti?.some(p => p.email === user?.email) || false;
 
   const togglePartecipazione = async () => {
     if (!user?.email) return;
@@ -389,7 +385,7 @@ function ParticipationSection({ eventId, isAdmin, user }: { eventId: string; isA
           </button>
           {showLista && (
             <div className="mt-3 space-y-1.5 max-h-48 overflow-y-auto pr-1">
-              {partecipanti.map((p, i) => (
+              {partecipanti?.map((p, i) => (
                 <div key={i} className="flex justify-between items-center text-[10px] bg-zinc-900/60 p-2.5 rounded border border-zinc-800/50 uppercase font-black italic text-zinc-200 tracking-tighter">
                   {p.nome} <span className="font-mono text-zinc-500">P:{p.quanti} M:{p.moto}</span>
                 </div>
