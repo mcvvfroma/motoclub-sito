@@ -105,7 +105,7 @@ export default function EventsPage() {
         {isAdmin && (
           <Button 
             onClick={() => openDialog()} 
-            className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white font-black uppercase tracking-tighter py-6 sm:py-2"
+            className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white font-black uppercase tracking-tighter py-6 sm:py-2 shadow-lg"
           >
             <PlusCircle className="h-5 w-5 mr-2" /> 
             Aggiungi Evento
@@ -114,23 +114,23 @@ export default function EventsPage() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {events?.map(event => (
+        {events && events.length > 0 ? events.map(event => (
           <Card key={event.id} className="flex flex-col border border-zinc-800 bg-zinc-950/50 overflow-hidden shadow-2xl">
             <CardHeader className="p-0 relative">
               <div onClick={() => { if (isAdmin) openDialog(event); }} className={`group ${isAdmin ? 'cursor-pointer' : ''}`}>
                 <div className="bg-black/80 flex items-center justify-center h-52 w-full overflow-hidden relative">
                   <img 
                     src={event.image || '/cascovigili.jpg'} 
-                    alt={event.title} 
+                    alt={event.title || 'Evento'} 
                     className="object-contain h-full w-full transform scale-110 transition-transform duration-700 group-hover:scale-125" 
                   />
                 </div>
               </div>
               <div className="flex justify-between items-start p-4 pb-0">
                 <div>
-                  <CardTitle className="text-xl font-black leading-none mb-1 uppercase italic tracking-tighter">{event.title}</CardTitle>
+                  <CardTitle className="text-xl font-black leading-none mb-1 uppercase italic tracking-tighter">{event.title || 'Senza Titolo'}</CardTitle>
                   <CardDescription className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold">
-                    {event.date ? new Date(event.date).toLocaleDateString('it-IT') : 'Data da definire'}
+                    {event.date ? new Date(event.date).toLocaleDateString('it-IT') : 'Data TBD'}
                   </CardDescription>
                 </div>
                 <WeatherBadge date={event.date} />
@@ -138,12 +138,13 @@ export default function EventsPage() {
             </CardHeader>
 
             <CardContent className="flex-grow flex flex-col p-4 pt-2 gap-4">
-              <p className="text-xs text-zinc-400 italic leading-relaxed">"{event.description}"</p>
+              <p className="text-xs text-zinc-400 italic leading-relaxed">"{event.description || ""}"</p>
               
               <ParticipationSection eventId={event.id} isAdmin={isAdmin} user={user} />
 
               <PhotoGallerySection eventId={event.id} isAdmin={isAdmin} user={user} />
 
+              {/* AREA AZIONI: TASTONE ROSSO SOPRA, PICCOLI SOTTO */}
               <div className="mt-auto pt-4 border-t border-zinc-900/50 space-y-3">
                 {event.percorso && (
                   <a 
@@ -190,7 +191,7 @@ export default function EventsPage() {
               </div>
             )}
           </Card>
-        ))}
+        )) : <div className="text-zinc-600 text-center col-span-full py-10">Nessun evento in programma.</div>}
       </div>
 
       {isAdmin && (
