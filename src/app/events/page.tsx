@@ -7,18 +7,19 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { 
   PlusCircle, Edit, Trash2, MapPin, CloudSun, Calendar, 
-  Users, Bike, CheckCircle2, ChevronDown, ChevronUp 
+  Users, Bike, CheckCircle2, ChevronDown, ChevronUp, X 
 } from 'lucide-react';
 
 import EventDialog from '@/components/EventDialog';
 import WeatherBadge from '@/components/WeatherBadge';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog';
+import CldImageUpload from '@/components/CldImageUpload';
 
 import { useAdmin } from '@/hooks/use-admin'; 
 import { db } from '@/lib/firebase';
 import { 
   collection, deleteDoc, doc, setDoc, onSnapshot, 
-  serverTimestamp, getDoc 
+  serverTimestamp, getDoc, addDoc, query, orderBy 
 } from 'firebase/firestore';
 
 export type Event = {
@@ -64,7 +65,7 @@ export default function EventsPage() {
         image: eventData.image || '/cascovigili.jpg',
         percorso: eventData.percorso || '',
         metaMeteo: eventData.metaMeteo || '',
-        publishedAt: serverTimestamp() // Fondamentale per il pallino rosso
+        publishedAt: serverTimestamp()
       }, { merge: true });
       setIsDialogOpen(false);
     } catch (error) {
@@ -89,7 +90,7 @@ export default function EventsPage() {
     setIsDialogOpen(true);
   };
 
-  if (loading) return <div className="p-8 text-center text-zinc-400 font-bold uppercase tracking-widest">Caricamento in corso...</div>;
+  if (loading) return <div className="p-8 text-center text-zinc-400 font-black uppercase italic tracking-widest">In sella...</div>;
 
   return (
     <div className="w-full py-8 px-4 sm:px-6 lg:px-8">
@@ -136,33 +137,49 @@ export default function EventsPage() {
               </div>
             </CardHeader>
 
-            <CardContent className="flex-grow flex flex-col p-4 pt-2">
-              <p className="text-xs text-zinc-400 mb-6 line-clamp-3 italic leading-relaxed">"{event.description}"</p>
+            <CardContent className="flex-grow flex flex-col p-4 pt-2 gap-4">
+              <p className="text-xs text-zinc-400 italic leading-relaxed">"{event.description}"</p>
               
               <ParticipationSection eventId={event.id} isAdmin={isAdmin} user={user} />
 
-              <div className="mt-auto flex flex-wrap gap-2 pt-4 border-t border-zinc-900/50">
+              <PhotoGallerySection eventId={event.id} isAdmin={isAdmin} user={user} />
+
+              {/* AREA AZIONI FINALI: TASTONE SOPRA, PICCOLI SOTTO */}
+              <div className="mt-auto pt-4 border-t border-zinc-900/50 space-y-3">
+                
+                {/* 1. TASTO PERCORSO (LARGHEZZA PIENA) */}
                 {event.percorso && (
                   <a 
                     href={event.percorso.startsWith('http') ? event.percorso : `https://${event.percorso}`} 
                     target="_blank" 
                     rel="noopener" 
-                    className="inline-flex items-center px-3 py-1.5 bg-zinc-900 text-yellow-500 border border-yellow-700/20 rounded font-black text-[10px] uppercase tracking-tighter hover:bg-black transition-all"
+                    className="flex items-center justify-center w-full py-3.5 bg-red-600 hover:bg-red-700 text-white rounded font-black text-xs uppercase italic tracking-tighter transition-all shadow-xl border-b-4 border-red-900 active:border-b-0"
                   >
-                    <MapPin className="h-3 w-3 mr-1" /> Percorso
+                    <MapPin className="h-4 w-4 mr-2" /> Visualizza Percorso
                   </a>
                 )}
 
-                {event.metaMeteo && (
-                  <a 
-                    href={`https://www.ilmeteo.it/meteo/${encodeURIComponent(event.metaMeteo)}`} 
-                    target="_blank" 
-                    rel="noopener" 
-                    className="inline-flex items-center px-3 py-1.5 bg-yellow-600 text-black rounded font-black text-[10px] uppercase tracking-tighter hover:bg-yellow-500 transition-all"
-                  >
-                    <CloudSun className="h-3 w-3 mr-1" /> Meteo
-                  </a>
-                )}
+                {/* 2. RIGA TASTI PICCOLI (SOTTO IL TASTONE) */}
+                <div className="flex flex-wrap gap-2">
+                  {user && (
+                    <CldImageUploadWrapper 
+                      eventId={event.id} 
+                      isAdmin={isAdmin} 
+                      user={user} 
+                    />
+                  )}
+
+                  {event.metaMeteo && (
+                    <a 
+                      href={`https://www.ilmeteo.it/meteo/${encodeURIComponent(event.metaMeteo)}`} 
+                      target="_blank" 
+                      rel="noopener" 
+                      className="inline-flex items-center px-3 py-1.5 bg-yellow-600 text-black rounded font-black text-[10px] uppercase tracking-tighter hover:bg-yellow-500 transition-all h-8"
+                    >
+                      <CloudSun className="h-3.5 w-3.5 mr-1.5" /> Meteo
+                    </a>
+                  )}
+                </div>
               </div>
             </CardContent>
 
@@ -196,7 +213,101 @@ export default function EventsPage() {
   );
 }
 
-function ParticipationSection({ eventId, isAdmin, user }: any) {
+function CldImageUploadWrapper({ eventId, isAdmin, user }: { eventId: string, isAdmin: boolean, user: any }) {
+  const [photosCount, setPhotosCount] = useState(0);
+
+  useEffect(() => {
+    const q = query(collection(db, "events", eventId, "photos"));
+    const unsubscribe = onSnapshot(q, (snap) => {
+      const userPhotos = snap.docs.filter(d => d.data().userId === user?.email);
+      setPhotosCount(userPhotos.length);
+    });
+    return () => unsubscribe();
+  }, [eventId, user?.email]);
+
+  const maxAllowed = isAdmin ? 10 : 4;
+
+  const handleUploadSuccess = async (result: any) => {
+    if (!user || !result?.info?.secure_url) return;
+    try {
+      await addDoc(collection(db, "events", eventId, "photos"), {
+        url: result.info.secure_url,
+        publicId: result.info.public_id,
+        userId: user.email,
+        userName: user.displayName || user.email,
+        timestamp: serverTimestamp()
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  if (photosCount >= maxAllowed) return null;
+
+  return (
+    <CldImageUpload 
+      maxFiles={maxAllowed - photosCount} 
+      onUploadSuccess={(_, result) => handleUploadSuccess(result)} 
+      buttonText="Carica Foto"
+    />
+  );
+}
+
+function PhotoGallerySection({ eventId, isAdmin, user }: { eventId: string; isAdmin: boolean; user: any }) {
+  const [photos, setPhotos] = useState<any[]>([]);
+  
+  useEffect(() => {
+    const q = query(collection(db, "events", eventId, "photos"), orderBy("timestamp", "desc"));
+    const unsubscribe = onSnapshot(q, (snap) => {
+      setPhotos(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+    return () => unsubscribe();
+  }, [eventId]);
+
+  const handleDeletePhoto = async (e: React.MouseEvent, photoId: string, publicId?: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      await deleteDoc(doc(db, "events", eventId, "photos", photoId));
+      if (publicId) {
+        await fetch('/api/delete-photo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ publicId }),
+        });
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  return (
+    <div className="mt-4 pt-4 border-t border-zinc-900">
+      <div className="flex justify-between items-center mb-3">
+        <span className="text-[10px] font-black uppercase tracking-tighter text-zinc-500 italic">Galleria Foto</span>
+      </div>
+
+      <div className="grid grid-cols-4 gap-2">
+        {photos.map((photo) => (
+          <div key={photo.id} className="relative aspect-square rounded overflow-hidden bg-zinc-900 group">
+            <img src={photo.url} alt="Foto Evento" className="object-cover w-full h-full" />
+            {(isAdmin || photo.userId === user?.email) && (
+              <button 
+                type="button"
+                onClick={(e) => handleDeletePhoto(e, photo.id, photo.publicId)}
+                className="absolute top-1 right-1 bg-red-600/80 p-1 rounded-full z-10 hover:bg-red-600 transition-all"
+              >
+                <X className="h-2.5 w-2.5 text-white" />
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ParticipationSection({ eventId, isAdmin, user }: { eventId: string; isAdmin: boolean; user: any }) {
   const [partecipanti, setPartecipanti] = useState<any[]>([]);
   const [quanti, setQuanti] = useState(1);
   const [moto, setMoto] = useState(1);
@@ -215,7 +326,7 @@ function ParticipationSection({ eventId, isAdmin, user }: any) {
   const giaPartecipa = partecipanti.some(p => p.email === user?.email);
 
   const togglePartecipazione = async () => {
-    if (!user?.email) return alert("Esegui il login per confermare la presenza");
+    if (!user?.email) return;
     const eventPartRef = doc(db, "events", eventId, "partecipazioni", user.email);
     
     if (giaPartecipa) {
@@ -224,16 +335,11 @@ function ParticipationSection({ eventId, isAdmin, user }: any) {
       try {
         const userDocRef = doc(db, "users", user.email);
         const userSnap = await getDoc(userDocRef);
-        
         let nomeCompleto = user.email;
-
         if (userSnap.exists()) {
           const data = userSnap.data();
-          const n = data.nome || "";
-          const c = data.cognome || "";
-          nomeCompleto = `${n} ${c}`.trim().toUpperCase();
+          nomeCompleto = `${data.nome || ""} ${data.cognome || ""}`.trim().toUpperCase();
         }
-
         await setDoc(eventPartRef, {
           nome: nomeCompleto,
           email: user.email,
@@ -242,7 +348,7 @@ function ParticipationSection({ eventId, isAdmin, user }: any) {
           timestamp: serverTimestamp()
         });
       } catch (error) {
-        console.error("Errore database:", error);
+        console.error(error);
       }
     }
   };
@@ -260,53 +366,34 @@ function ParticipationSection({ eventId, isAdmin, user }: any) {
 
       {!giaPartecipa ? (
         <div className="grid grid-cols-3 gap-2 bg-zinc-900/40 p-3 rounded-lg border border-zinc-800">
-          <div className="flex flex-col">
-            <span className="text-[8px] uppercase text-zinc-500 mb-1 font-black">Persone</span>
-            <Input type="number" min="1" value={quanti} onChange={e => setQuanti(parseInt(e.target.value))} className="h-8 bg-black text-xs border-zinc-800 focus:ring-1 focus:ring-red-600" />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[8px] uppercase text-zinc-500 mb-1 font-black">Moto</span>
-            <Input type="number" min="0" value={moto} onChange={e => setMoto(parseInt(e.target.value))} className="h-8 bg-black text-xs border-zinc-800 focus:ring-1 focus:ring-red-600" />
-          </div>
-          <Button onClick={togglePartecipazione} className="h-8 mt-auto bg-red-600 hover:bg-red-700 text-[9px] font-black uppercase">
-            CONFERMA
-          </Button>
+          <Input type="number" min="1" value={quanti} onChange={e => setQuanti(parseInt(e.target.value))} className="h-8 bg-black text-xs border-zinc-800 text-white" />
+          <Input type="number" min="0" value={moto} onChange={e => setMoto(parseInt(e.target.value))} className="h-8 bg-black text-xs border-zinc-800 text-white" />
+          <Button onClick={togglePartecipazione} className="h-8 bg-red-600 hover:bg-red-700 text-[9px] font-black uppercase tracking-tighter">CONFERMA</Button>
         </div>
       ) : (
         <div className="flex items-center justify-between bg-green-950/20 p-3 rounded-lg border border-green-900/30">
           <span className="text-[9px] font-black text-green-500 uppercase flex items-center tracking-tighter">
-            <CheckCircle2 className="h-3.5 w-3.5 mr-2" /> Presenza Confermata
+            <CheckCircle2 className="h-3.5 w-3.5 mr-2" /> Presente
           </span>
-          <Button variant="ghost" onClick={togglePartecipazione} className="h-6 px-2 text-[8px] text-red-500 font-bold uppercase hover:bg-red-950/30">
-            Annulla
-          </Button>
+          <Button variant="ghost" onClick={togglePartecipazione} className="h-6 px-2 text-[8px] text-red-500 font-bold uppercase hover:bg-transparent tracking-tighter">Annulla</Button>
         </div>
       )}
 
       {isAdmin && (
         <div className="pt-2">
           <button 
-            onClick={() => setShowLista(!showLista)}
+            onClick={() => { setShowLista(!showLista); }}
             className="text-[10px] text-zinc-500 uppercase font-black flex items-center hover:text-white transition-all tracking-tighter"
           >
-            {showLista ? <ChevronUp className="h-3 w-3 mr-1.5" /> : <ChevronDown className="h-3 w-3 mr-1.5" />} 
-            Elenco Soci Prenotati
+            {showLista ? <ChevronUp className="h-3 w-3 mr-1.5" /> : <ChevronDown className="h-3 w-3 mr-1.5" />} Soci Prenotati
           </button>
           {showLista && (
-            <div className="mt-3 space-y-1.5 max-h-48 overflow-y-auto pr-1 scrollbar-hide">
-              {partecipanti.length > 0 ? partecipanti.map((p, i) => (
-                <div key={i} className="flex justify-between items-center text-[10px] bg-zinc-900/60 p-2.5 rounded border border-zinc-800/50">
-                  <span className="text-zinc-200 font-black truncate max-w-[150px] uppercase italic tracking-tight">
-                    {p.nome}
-                  </span>
-                  <div className="flex gap-3 font-mono">
-                    <span className="text-zinc-500">P:{p.quanti}</span>
-                    <span className="text-red-500 font-black">M:{p.moto}</span>
-                  </div>
+            <div className="mt-3 space-y-1.5 max-h-48 overflow-y-auto pr-1">
+              {partecipanti.map((p, i) => (
+                <div key={i} className="flex justify-between items-center text-[10px] bg-zinc-900/60 p-2.5 rounded border border-zinc-800/50 uppercase font-black italic text-zinc-200 tracking-tighter">
+                  {p.nome} <span className="font-mono text-zinc-500">P:{p.quanti} M:{p.moto}</span>
                 </div>
-              )) : (
-                <p className="text-[9px] text-zinc-600 italic px-2">Ancora nessuna prenotazione...</p>
-              )}
+              ))}
             </div>
           )}
         </div>
