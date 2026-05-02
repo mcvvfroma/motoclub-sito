@@ -2,17 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, onSnapshot, addDoc, serverTimestamp, deleteDoc, doc } from 'firebase/firestore';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { MapPin, CloudSun, Calendar, ImagePlus, Trash2 } from 'lucide-react';
+import { collection, onSnapshot } from 'firebase/firestore';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { MapPin, CloudSun, Calendar, ImagePlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import CldImageUpload from '@/components/CldImageUpload';
-import { useAdmin } from '@/hooks/use-admin';
 
 export default function EventsPage() {
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const { isAdmin, user } = useAdmin();
 
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, "events"), (snapshot) => {
@@ -23,24 +20,7 @@ export default function EventsPage() {
     return () => unsubscribe();
   }, []);
 
-  const handleUploadSuccess = async (eventId: string, result: any) => {
-    if (!user?.email || !result?.info?.secure_url) return;
-    try {
-      await addDoc(collection(db, "events", eventId, "photos"), {
-        url: result.info.secure_url,
-        userId: user.email,
-        timestamp: serverTimestamp()
-      });
-    } catch (e) { console.error(e); }
-  };
-
-  const handleDelete = async (id: string) => {
-    if (confirm("Vuoi davvero eliminare questo evento?")) {
-      await deleteDoc(doc(db, "events", id));
-    }
-  };
-
-  if (loading) return <div className="p-10 text-white text-center font-black uppercase italic">In sella...</div>;
+  if (loading) return <div className="p-10 text-white text-center font-black uppercase italic">CARICAMENTO MOTORI...</div>;
 
   return (
     <div className="w-full py-8 px-4 bg-black min-h-screen">
@@ -49,51 +29,44 @@ export default function EventsPage() {
         <h1 className="text-2xl font-black text-white uppercase italic tracking-tighter">Eventi</h1>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2">
         {events.map((event) => (
           <Card key={event.id} className="border border-zinc-800 bg-zinc-950 overflow-hidden flex flex-col">
             <CardHeader className="p-0">
               <div className="h-52 bg-black flex items-center justify-center overflow-hidden">
-                <img src={event.image || '/cascovigili.jpg'} alt="" className="w-full h-full object-contain" />
+                {event.image && (
+                  <img src={event.image} alt="" className="w-full h-full object-contain" />
+                )}
               </div>
               <div className="p-4">
-                <CardTitle className="text-xl font-black text-white uppercase italic tracking-tighter">
-                  {event.title}
-                </CardTitle>
-                <CardDescription className="text-[10px] font-bold text-zinc-500 uppercase">
-                  {event.date}
-                </CardDescription>
+                <CardTitle className="text-xl font-black text-white uppercase italic tracking-tighter">{event.title}</CardTitle>
+                <p className="text-zinc-500 text-[10px] font-bold uppercase">{event.date}</p>
               </div>
             </CardHeader>
-            
             <CardContent className="p-4 pt-0 flex-grow flex flex-col gap-4">
-              <p className="text-xs text-zinc-400 italic leading-relaxed">"{event.description}"</p>
+              <p className="text-xs text-zinc-400 italic">"{event.description}"</p>
               
-              <div className="mt-auto pt-4 border-t border-zinc-900/50 space-y-3">
-                {/* 1. TASTONE PERCORSO ROSSO SOPRA */}
+              <div className="mt-auto space-y-3">
+                {/* TASTO PERCORSO ROSSO SOPRA */}
                 {event.percorso && (
                   <a 
                     href={event.percorso} 
                     target="_blank" 
-                    rel="noopener"
-                    className="flex items-center justify-center w-full py-3 bg-red-600 text-white rounded font-black text-xs uppercase italic tracking-tighter"
+                    className="flex items-center justify-center w-full py-3.5 bg-red-600 text-white rounded font-black text-xs uppercase italic tracking-tighter"
                   >
                     <MapPin className="h-4 w-4 mr-2" /> Percorso
                   </a>
                 )}
 
-                {/* 2. RIGA TASTINI SOTTO */}
+                {/* RIGA TASTINI SOTTO */}
                 <div className="flex gap-2">
-                  {user && (
-                    <CldImageUpload 
-                      onUploadSuccess={(_, result) => handleUploadSuccess(event.id, result)}
-                      buttonText="Foto"
-                    />
-                  )}
+                  <Button className="bg-zinc-900 border border-zinc-800 h-8 text-[10px] font-black uppercase flex items-center">
+                    <ImagePlus className="h-3.5 w-3.5 mr-1.5 text-red-600" /> Foto
+                  </Button>
                   
                   {event.metaMeteo && (
                     <a 
-                      href={`https://www.ilmeteo.it/meteo/${encodeURIComponent(event.metaMeteo)}`}
+                      href={`https://www.ilmeteo.it/meteo/${event.metaMeteo}`}
                       target="_blank"
                       className="flex items-center px-3 bg-yellow-600 text-black rounded font-black text-[10px] uppercase h-8"
                     >
@@ -102,13 +75,6 @@ export default function EventsPage() {
                   )}
                 </div>
               </div>
-
-              {/* Tasto elimina semplice per admin */}
-              {isAdmin && (
-                <button onClick={() => handleDelete(event.id)} className="self-end text-zinc-600 hover:text-red-600 pt-2">
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              )}
             </CardContent>
           </Card>
         ))}
