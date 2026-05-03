@@ -54,40 +54,45 @@ export default function MembersPage() {
     return () => unsubscribe();
   }, []);
 
-  // FUNZIONE ELIMINAZIONE ANTI-BLOCCO
+  // FUNZIONE ELIMINAZIONE CON PULIZIA FORZATA DEL DOM
   const executeDelete = async () => {
     if (!idSocioDaEliminare) return;
     
-    // Memorizziamo l'ID da eliminare
     const targetId = idSocioDaEliminare;
 
-    // 1. Pulizia immediata dell'interfaccia (Sblocca i menu e i popup)
+    // 1. Reset degli stati
     setIsConfirmDialogOpen(false);
     setIdSocioDaEliminare(null);
     setSelectedMember(null);
 
-    // 2. Aggiornamento locale "ottimistico" (Rimuove il socio dalla tabella subito)
-    setSoci((currentSoci) => currentSoci.filter(s => s.id !== targetId));
+    // 2. TRUCCO "SBLOCCA-SCHERMO": Rimuoviamo forzatamente i blocchi che i dialoghi lasciano sul body
+    setTimeout(() => {
+      document.body.style.pointerEvents = 'auto';
+      document.body.style.overflow = 'auto';
+    }, 100);
 
     try {
-      // 3. Esecuzione effettiva su Firebase
+      // 3. Esecuzione su Firebase
       await deleteDoc(doc(db, 'users', targetId));
-      console.log("Cancellazione completata su database");
+      console.log("Cancellazione eseguita");
     } catch (e: any) {
-      console.error("Errore eliminazione:", e);
-      alert("Non hai i permessi per eliminare o errore di rete. Ricarica la pagina.");
-      // In caso di errore vero, la lista si riaggiornerà da sola grazie a onSnapshot
+      console.error("Errore:", e);
+      alert("Errore durante l'eliminazione.");
     }
   };
 
   const handleSaveMember = async (data: any) => {
     setIsMemberDialogOpen(false);
-    const memberToUpdate = selectedMember;
     setSelectedMember(null);
+    
+    // Pulizia anche qui per sicurezza dopo la chiusura del form
+    setTimeout(() => {
+      document.body.style.pointerEvents = 'auto';
+    }, 100);
 
     try {
-      if (memberToUpdate) {
-        await updateDoc(doc(db, 'users', memberToUpdate.id), data);
+      if (selectedMember) {
+        await updateDoc(doc(db, 'users', selectedMember.id), data);
       } else {
         const userEmail = data.email.trim().toLowerCase();
         await setDoc(doc(db, 'users', userEmail), {
@@ -100,7 +105,6 @@ export default function MembersPage() {
       }
     } catch (e: any) {
       console.error("ERRORE FIREBASE:", e);
-      alert("Errore nel salvataggio: " + e.message);
     }
   };
 
@@ -113,18 +117,16 @@ export default function MembersPage() {
             <CardTitle className="text-white uppercase tracking-tight">Gestione Soci</CardTitle>
           </div>
           
-          {isAdmin && (
-            <Button 
-              className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white"
-              onClick={() => {
-                setSelectedMember(null);
-                setIsMemberDialogOpen(true);
-              }}
-            >
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Aggiungi Socio
-            </Button>
-          )}
+          <Button 
+            className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white"
+            onClick={() => {
+              setSelectedMember(null);
+              setIsMemberDialogOpen(true);
+            }}
+          >
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Aggiungi Socio
+          </Button>
         </CardHeader>
 
         <CardContent className="overflow-x-auto">
@@ -140,27 +142,23 @@ export default function MembersPage() {
               {soci.map((s) => (
                 <TableRow key={s.id} className="border-zinc-800 hover:bg-zinc-900/50">
                   <TableCell className="font-medium">{s.nome} {s.cognome}</TableCell>
-                  <TableCell className="capitalize">
-                    <span className={s.status === 'admin' ? "text-red-500 font-bold" : "text-zinc-300"}>
-                      {s.status}
-                    </span>
-                  </TableCell>
+                  <TableCell className="capitalize text-zinc-300">{s.status}</TableCell>
                   <TableCell>
-                    <DropdownMenu>
+                    <DropdownMenu modal={false}> {/* Aggiunto modal={false} per evitare blocchi */}
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="sm" className="hover:bg-zinc-800 text-white">
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-800 text-white">
-                        <DropdownMenuItem className="hover:bg-zinc-800" onClick={() => {
+                        <DropdownMenuItem onClick={() => {
                           setSelectedMember(s);
                           setIsMemberDialogOpen(true);
                         }}>
                           Modifica
                         </DropdownMenuItem>
                         <DropdownMenuItem 
-                          className="text-red-600 hover:bg-red-950/30"
+                          className="text-red-600"
                           onClick={() => {
                             setIdSocioDaEliminare(s.id);
                             setIsConfirmDialogOpen(true);
@@ -178,23 +176,19 @@ export default function MembersPage() {
         </CardContent>
       </Card>
 
-      {isAdmin && (
-        <>
-          <MemberDialog
-            isOpen={isMemberDialogOpen}
-            setIsOpen={setIsMemberDialogOpen}
-            member={selectedMember}
-            onSave={handleSaveMember}
-          />
-          <ConfirmationDialog
-            isOpen={isConfirmDialogOpen}
-            setIsOpen={setIsConfirmDialogOpen}
-            onConfirm={executeDelete}
-            title="Sei sicuro?"
-            description="L'azione rimuoverà il socio permanentemente."
-          />
-        </>
-      )}
+      <MemberDialog
+        isOpen={isMemberDialogOpen}
+        setIsOpen={setIsMemberDialogOpen}
+        member={selectedMember}
+        onSave={handleSaveMember}
+      />
+      <ConfirmationDialog
+        isOpen={isConfirmDialogOpen}
+        setIsOpen={setIsConfirmDialogOpen}
+        onConfirm={executeDelete}
+        title="Sei sicuro?"
+        description="L'azione rimuoverà il socio permanentemente."
+      />
     </div>
   );
 }
