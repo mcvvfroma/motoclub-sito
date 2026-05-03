@@ -3,18 +3,19 @@
 import { HardHat, Truck } from 'lucide-react';
 
 export default function GalleryPage() {
+  // Animazione sequenziale per i caschi (6s totali)
   const helmetStyle = (delay: string) => ({
     animation: `ultraSoftFade 6s infinite ease-in-out`,
     animationDelay: delay,
     opacity: 0,
   });
 
-  // Stile per il mezzo in transito
+  // Stile per i due mezzi in transito (12s per completare il giro)
   const truckStyle = (delay: string) => ({
     animation: `transitoContinuo 12s linear infinite`,
     animationDelay: delay,
     position: 'absolute' as const,
-    left: '-150px', // Parte da fuori schermo
+    left: '-150px',
   });
 
   return (
@@ -39,36 +40,38 @@ export default function GalleryPage() {
         }
       `}</style>
 
-      {/* SEZIONE SUPERIORE */}
+      {/* SEZIONE SUPERIORE: Caschi e Titolo */}
       <div className="text-center space-y-16 z-10 relative">
-        <div className="flex justify-center items-center gap-12 pt-6">
+        
+        {/* Caschi con gap responsive: gap-4 su mobile, gap-12 su desktop */}
+        <div className="flex justify-center items-center gap-4 md:gap-12 pt-6">
           <div style={helmetStyle('0s')}>
-            <HardHat className="h-24 w-24 text-zinc-300 stroke-[1.2] drop-shadow-[0_0_30px_rgba(212,212,216,0.15)]" />
+            <HardHat className="h-20 w-20 md:h-24 md:w-24 text-zinc-300 stroke-[1.2] drop-shadow-[0_0_30px_rgba(212,212,216,0.15)]" />
           </div>
           <div style={helmetStyle('2s')}>
-            <HardHat className="h-24 w-24 text-red-600 stroke-[1.2] drop-shadow-[0_0_30px_rgba(220,38,38,0.2)]" />
+            <HardHat className="h-20 w-20 md:h-24 md:w-24 text-red-600 stroke-[1.2] drop-shadow-[0_0_30px_rgba(220,38,38,0.2)]" />
           </div>
           <div style={helmetStyle('4s')}>
-            <HardHat className="h-24 w-24 text-zinc-800 stroke-[1.2]" />
+            <HardHat className="h-20 w-20 md:h-24 md:w-24 text-zinc-800 stroke-[1.2]" />
           </div>
         </div>
         
         <div className="space-y-4">
-          <h1 className="text-5xl font-black uppercase italic tracking-tighter text-white">
+          <h1 className="text-4xl md:text-5xl font-black uppercase italic tracking-tighter text-white px-2">
             Galleria Immagini
           </h1>
           <div className="inline-block border border-zinc-800 bg-zinc-950 px-6 py-2 rounded-sm">
-            <span className="text-zinc-500 text-xs font-black uppercase tracking-[0.3em]">
+            <span className="text-zinc-500 text-[10px] md:text-xs font-black uppercase tracking-[0.3em]">
               Intervento Tecnico in Corso
             </span>
           </div>
         </div>
       </div>
 
-      {/* CORRIDOIO DI TRANSITO: Flusso continuo con due mezzi */}
+      {/* CORRIDOIO DI TRANSITO: Due mezzi in rotazione continua */}
       <div className="w-full h-24 flex items-center relative z-0">
         
-        {/* PRIMO MEZZO */}
+        {/* MEZZO 1 */}
         <div style={truckStyle('0s')}>
           <div className="relative flex items-center">
             <Truck className="h-14 w-14 text-red-700 stroke-[1] drop-shadow-[0_0_15px_rgba(185,28,28,0.3)]" />
@@ -76,7 +79,7 @@ export default function GalleryPage() {
           </div>
         </div>
 
-        {/* SECONDO MEZZO (Parte con 6 secondi di ritardo, a metà del ciclo del primo) */}
+        {/* MEZZO 2 */}
         <div style={truckStyle('6s')}>
           <div className="relative flex items-center">
             <Truck className="h-14 w-14 text-red-700 stroke-[1] drop-shadow-[0_0_15px_rgba(185,28,28,0.3)]" />
@@ -88,9 +91,9 @@ export default function GalleryPage() {
 
       {/* SEZIONE INFERIORE */}
       <div className="text-center space-y-12 z-10 relative">
-        <div className="max-w-xl mx-auto border-t border-zinc-900 pt-8">
+        <div className="max-w-xl mx-auto border-t border-zinc-900 pt-8 px-6">
           <p className="text-zinc-500 italic text-sm tracking-wide leading-relaxed">
-            "Le squadre stanno mettendo in sicurezza i ricordi più belli.<br/>
+            "Le squadre stanno mettendo in sicurezza i ricordi più belli.<br className="hidden md:block"/>
             La galleria sarà operativa non appena terminata la manutenzione."
           </p>
         </div>
