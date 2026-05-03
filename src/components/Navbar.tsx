@@ -57,7 +57,15 @@ export default function Navbar({ setIsOpen }: NavbarProps) {
         updated[path] = false;
       } else {
         const lastRead = localStorage.getItem(storageKey);
-        updated[path] = latestIds[path] !== '' && lastRead !== latestIds[path];
+        
+        // MODIFICA QUI: Se è un nuovo login (lastRead vuoto), segnamo come letto l'ID attuale
+        // così i pallini non appaiono per i vecchi contenuti.
+        if (!lastRead && latestIds[path]) {
+          localStorage.setItem(storageKey, latestIds[path]);
+          updated[path] = false;
+        } else {
+          updated[path] = latestIds[path] !== '' && lastRead !== latestIds[path];
+        }
       }
     });
     setNotifs(updated);
@@ -68,7 +76,7 @@ export default function Navbar({ setIsOpen }: NavbarProps) {
   const handleLogoff = async () => {
     try {
       await signOut(auth);
-      window.localStorage.clear();
+      // RIMOSSO localStorage.clear() per non perdere la memoria dei pallini letti
       window.sessionStorage.clear();
       window.location.href = '/login';
     } catch (error) {

@@ -62,7 +62,15 @@ export default function AppSidebar({ isOpen, setIsOpen }: AppSidebarProps) {
         updated[path] = false;
       } else {
         const lastRead = localStorage.getItem(storageKey);
-        updated[path] = latestIds[path] !== '' && lastRead !== latestIds[path];
+        
+        // LOGICA PERSISTENZA: Se non c'è memoria precedente (es. nuovo login),
+        // salviamo l'ID attuale come letto per non mostrare pallini su roba vecchia.
+        if (!lastRead && latestIds[path]) {
+          localStorage.setItem(storageKey, latestIds[path]);
+          updated[path] = false;
+        } else {
+          updated[path] = latestIds[path] !== '' && lastRead !== latestIds[path];
+        }
       }
     });
     setNotifs(updated);
@@ -70,6 +78,7 @@ export default function AppSidebar({ isOpen, setIsOpen }: AppSidebarProps) {
 
   const handleLogout = () => {
     setIsOpen(false);
+    // IMPORTANTE: Non usiamo localStorage.clear() qui per mantenere i pallini letti
     router.push('/login');
   };
 
