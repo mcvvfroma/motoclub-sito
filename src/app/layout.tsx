@@ -32,7 +32,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="Motoclub VVF Roma" />
-        <link rel="apple-touch-icon" href="/icon.png" />
+        <link rel="apple-touch-icon" href="/logo_motoclub.gif" />
         
         {/* Colore tema per la barra del browser */}
         <meta name="theme-color" content="#000000" />
