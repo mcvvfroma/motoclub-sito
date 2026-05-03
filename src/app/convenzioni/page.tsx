@@ -144,13 +144,10 @@ export default function ConvenzioniPage() {
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4 pt-4">
               
-              {/* 1. NOME ATTIVITÀ */}
               <Input value={name} onChange={e => setName(e.target.value)} placeholder="Nome Attività..." className="bg-black border-zinc-700 text-white" />
 
-              {/* 2. CATEGORIA */}
               <Input value={category} onChange={e => setCategory(e.target.value)} placeholder="Categoria..." className="bg-black border-zinc-700 text-white" />
 
-              {/* 3. CONDIZIONI RISERVATE (SCROLLABILE - 3 RIGHE) */}
               <Textarea 
                 value={discount} 
                 onChange={e => setDiscount(e.target.value)} 
@@ -158,7 +155,6 @@ export default function ConvenzioniPage() {
                 className="h-[80px] overflow-y-auto bg-black border-zinc-700 text-white resize-none" 
               />
 
-              {/* 4. AGEVOLAZIONI (SCROLLABILE - 3 RIGHE) */}
               <Textarea 
                 value={description} 
                 onChange={e => setDescription(e.target.value)} 
@@ -166,13 +162,10 @@ export default function ConvenzioniPage() {
                 className="h-[80px] overflow-y-auto bg-black border-zinc-700 text-white resize-none" 
               />
 
-              {/* 5. INDIRIZZO */}
               <Input value={address} onChange={e => setAddress(e.target.value)} placeholder="Indirizzo..." className="bg-black border-zinc-700 text-white" />
 
-              {/* 6. TELEFONO */}
               <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="Telefono..." className="bg-black border-zinc-700 text-white" />
               
-              {/* 7. SITO WEB */}
               <Input value={website} onChange={e => setWebsite(e.target.value)} placeholder="Sito Web..." className="bg-black border-zinc-700 text-white" />
               
               <div className="flex gap-2 pt-2">
@@ -201,7 +194,7 @@ export default function ConvenzioniPage() {
                   
                   {c.address && (
                     <a 
-                      href={`http://googleusercontent.com/maps.google.com/?q=${encodeURIComponent(c.address)}`}
+                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.address)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-start gap-2 text-zinc-500 hover:text-zinc-200 transition-colors group mt-2"

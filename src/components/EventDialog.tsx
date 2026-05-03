@@ -27,7 +27,7 @@ export default function EventDialog({ isOpen, setIsOpen, event, onSave }: EventD
     if (isOpen) {
         if (event) {
           setFormData(event);
-          setPreviewImage(event.image);
+          setPreviewImage(event.image || null);
         } else {
           setFormData({ title: '', date: '', description: '', image: '', percorso: '', metaMeteo: '' });
           setPreviewImage(null);

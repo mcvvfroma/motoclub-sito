@@ -2,13 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, onSnapshot, deleteDoc, doc } from 'firebase/firestore';
+import { collection, onSnapshot, deleteDoc, doc, updateDoc, addDoc } from 'firebase/firestore'; // Aggiunti updateDoc e addDoc
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { MapPin, CloudSun, Calendar, Trash2, Edit, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAdmin } from '@/hooks/use-admin';
 import EventDialog from '@/components/EventDialog';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog';
+
+export interface Event { id: string; title: string; date: string; description: string; image?: string; percorso?: string; metaMeteo?: string; }
 
 export default function EventsPage() {
   const [events, setEvents] = useState<any[]>([]);
@@ -28,6 +30,24 @@ export default function EventsPage() {
     });
     return () => unsubscribe();
   }, []);
+
+  // --- LOGICA DI SALVATAGGIO AGGIUNTA ---
+  const handleSaveEvent = async (formData: any) => {
+    if (!isAdmin) return;
+    try {
+      if (selectedEvent?.id) {
+        // Se l'evento esiste, aggiorna
+        await updateDoc(doc(db, "events", selectedEvent.id), formData);
+      } else {
+        // Se è nuovo, aggiungi
+        await addDoc(collection(db, "events"), formData);
+      }
+      setIsDialogOpen(false);
+      setSelectedEvent(null);
+    } catch (error) {
+      console.error("Errore durante il salvataggio:", error);
+    }
+  };
 
   const confirmDelete = async () => {
     if (eventToDelete && isAdmin) {
@@ -106,8 +126,21 @@ export default function EventsPage() {
         ))}
       </div>
 
-      <EventDialog isOpen={isDialogOpen} setIsOpen={setIsDialogOpen} event={selectedEvent} onSave={() => setIsDialogOpen(false)} />
-      <ConfirmDeleteDialog isOpen={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen} onConfirm={confirmDelete} title="Elimina Evento" description="Sei sicuro?" />
+      {/* MODIFICATO: onSave ora usa handleSaveEvent */}
+      <EventDialog 
+        isOpen={isDialogOpen} 
+        setIsOpen={setIsDialogOpen} 
+        event={selectedEvent} 
+        onSave={handleSaveEvent} 
+      />
+      
+      <ConfirmDeleteDialog 
+        isOpen={isDeleteConfirmOpen} 
+        onOpenChange={setIsDeleteConfirmOpen} 
+        onConfirm={confirmDelete} 
+        title="Elimina Evento" 
+        description="Sei sicuro?" 
+      />
     </div>
   );
 }
