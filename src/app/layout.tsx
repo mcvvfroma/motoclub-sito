@@ -5,7 +5,6 @@ import './globals.css';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 
-// Righe 9 e 10 esatte:
 import Navbar from '../components/Navbar';
 import AppSidebar from '../components/AppSidebar';
 
@@ -19,14 +18,27 @@ export default function RootLayout({
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const pathname = usePathname();
 
-  // Controllo se siamo nella pagina di login
   const isLoginPage = pathname === '/login';
 
   return (
     <html lang="it">
+      <head>
+        {/* Titolo e Manifest */}
+        <title>Motoclub VVF Roma</title>
+        <meta name="description" content="Sito ufficiale Motoclub Vigili del Fuoco Sezione di Roma" />
+        <link rel="manifest" href="/manifest.json" />
+        
+        {/* Configurazione specifica per iOS (Apple) */}
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="Motoclub VVF Roma" />
+        <link rel="apple-touch-icon" href="/icon.png" />
+        
+        {/* Colore tema per la barra del browser */}
+        <meta name="theme-color" content="#000000" />
+      </head>
       <body className={inter.className}>
         <div className="relative min-h-screen bg-background">
-          {/* Mostra Navbar e Sidebar SOLO se NON siamo in /login */}
           {!isLoginPage && (
             <>
               <Navbar setIsOpen={setIsSidebarOpen} />
