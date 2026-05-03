@@ -40,7 +40,6 @@ export default function MembersPage() {
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [idSocioDaEliminare, setIdSocioDaEliminare] = useState<string | null>(null);
 
-  // NOTA: In futuro qui potrai usare lo stato reale dell'utente loggato
   const isAdmin = true;
 
   useEffect(() => {
@@ -55,36 +54,40 @@ export default function MembersPage() {
     return () => unsubscribe();
   }, []);
 
-  // FUNZIONE ELIMINAZIONE OTTIMIZZATA
+  // FUNZIONE ELIMINAZIONE ANTI-BLOCCO
   const executeDelete = async () => {
     if (!idSocioDaEliminare) return;
     
-    // Chiudiamo subito il dialogo per liberare l'interfaccia
+    // Memorizziamo l'ID da eliminare
+    const targetId = idSocioDaEliminare;
+
+    // 1. Pulizia immediata dell'interfaccia (Sblocca i menu e i popup)
     setIsConfirmDialogOpen(false);
+    setIdSocioDaEliminare(null);
+    setSelectedMember(null);
+
+    // 2. Aggiornamento locale "ottimistico" (Rimuove il socio dalla tabella subito)
+    setSoci((currentSoci) => currentSoci.filter(s => s.id !== targetId));
 
     try {
-      // Eseguiamo la cancellazione su Firebase
-      await deleteDoc(doc(db, 'users', idSocioDaEliminare));
-      
-      // Resettiamo gli stati per evitare loop o riferimenti a dati nulli
-      setIdSocioDaEliminare(null);
-      setSelectedMember(null);
-      
-      console.log("Eliminazione completata con successo");
+      // 3. Esecuzione effettiva su Firebase
+      await deleteDoc(doc(db, 'users', targetId));
+      console.log("Cancellazione completata su database");
     } catch (e: any) {
       console.error("Errore eliminazione:", e);
-      alert("Errore durante l'eliminazione: " + e.message);
-      // Resettiamo comunque lo stato per sbloccare i tasti
-      setIdSocioDaEliminare(null);
+      alert("Non hai i permessi per eliminare o errore di rete. Ricarica la pagina.");
+      // In caso di errore vero, la lista si riaggiornerà da sola grazie a onSnapshot
     }
   };
 
   const handleSaveMember = async (data: any) => {
     setIsMemberDialogOpen(false);
-    
+    const memberToUpdate = selectedMember;
+    setSelectedMember(null);
+
     try {
-      if (selectedMember) {
-        await updateDoc(doc(db, 'users', selectedMember.id), data);
+      if (memberToUpdate) {
+        await updateDoc(doc(db, 'users', memberToUpdate.id), data);
       } else {
         const userEmail = data.email.trim().toLowerCase();
         await setDoc(doc(db, 'users', userEmail), {
@@ -95,7 +98,6 @@ export default function MembersPage() {
           createdAt: new Date().toISOString()
         });
       }
-      setSelectedMember(null);
     } catch (e: any) {
       console.error("ERRORE FIREBASE:", e);
       alert("Errore nel salvataggio: " + e.message);
