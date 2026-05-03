@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, onSnapshot, query, setDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 
-import { PlusCircle, MoreHorizontal, Users } from 'lucide-react'; // Aggiunto Users per coerenza
+import { PlusCircle, MoreHorizontal, Users } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -40,6 +40,7 @@ export default function MembersPage() {
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [idSocioDaEliminare, setIdSocioDaEliminare] = useState<string | null>(null);
 
+  // NOTA: In futuro qui potrai usare lo stato reale dell'utente loggato
   const isAdmin = true;
 
   useEffect(() => {
@@ -54,21 +55,33 @@ export default function MembersPage() {
     return () => unsubscribe();
   }, []);
 
+  // FUNZIONE ELIMINAZIONE OTTIMIZZATA
   const executeDelete = async () => {
     if (!idSocioDaEliminare) return;
+    
+    // Chiudiamo subito il dialogo per liberare l'interfaccia
+    setIsConfirmDialogOpen(false);
+
     try {
+      // Eseguiamo la cancellazione su Firebase
       await deleteDoc(doc(db, 'users', idSocioDaEliminare));
-      setIsConfirmDialogOpen(false);
+      
+      // Resettiamo gli stati per evitare loop o riferimenti a dati nulli
       setIdSocioDaEliminare(null);
-    } catch (e) {
+      setSelectedMember(null);
+      
+      console.log("Eliminazione completata con successo");
+    } catch (e: any) {
       console.error("Errore eliminazione:", e);
+      alert("Errore durante l'eliminazione: " + e.message);
+      // Resettiamo comunque lo stato per sbloccare i tasti
+      setIdSocioDaEliminare(null);
     }
   };
 
   const handleSaveMember = async (data: any) => {
     setIsMemberDialogOpen(false);
-    setSelectedMember(null);
-
+    
     try {
       if (selectedMember) {
         await updateDoc(doc(db, 'users', selectedMember.id), data);
@@ -82,6 +95,7 @@ export default function MembersPage() {
           createdAt: new Date().toISOString()
         });
       }
+      setSelectedMember(null);
     } catch (e: any) {
       console.error("ERRORE FIREBASE:", e);
       alert("Errore nel salvataggio: " + e.message);
@@ -91,7 +105,6 @@ export default function MembersPage() {
   return (
     <div className="p-4 sm:p-6 space-y-6 bg-black min-h-screen text-white">
       <Card className="bg-zinc-950 border-zinc-800">
-        {/* INTESTAZIONE RESPONSIVE: Corregge il pulsante tagliato */}
         <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <Users className="h-6 w-6 text-red-600" />
@@ -112,7 +125,7 @@ export default function MembersPage() {
           )}
         </CardHeader>
 
-        <CardContent className="overflow-x-auto"> {/* Permette lo scroll orizzontale della tabella su piccoli schermi */}
+        <CardContent className="overflow-x-auto">
           <Table>
             <TableHeader className="border-zinc-800">
               <TableRow className="hover:bg-transparent border-zinc-800">
