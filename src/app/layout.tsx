@@ -7,6 +7,7 @@ import { useState } from 'react';
 
 import Navbar from '../components/Navbar';
 import AppSidebar from '../components/AppSidebar';
+import InstallPrompt from '../components/InstallPrompt'; // <-- 1. AGGIUNGI QUESTO IMPORT
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -23,18 +24,15 @@ export default function RootLayout({
   return (
     <html lang="it">
       <head>
-        {/* Titolo e Manifest */}
         <title>Motoclub VVF Roma</title>
         <meta name="description" content="Sito ufficiale Motoclub Vigili del Fuoco Sezione di Roma" />
         <link rel="manifest" href="/manifest.json" />
         
-        {/* Configurazione specifica per iOS (Apple) */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="Motoclub VVF Roma" />
         <link rel="apple-touch-icon" href="/logo_motoclub.gif" />
         
-        {/* Colore tema per la barra del browser */}
         <meta name="theme-color" content="#000000" />
       </head>
       <body className={inter.className}>
@@ -49,6 +47,9 @@ export default function RootLayout({
           <main className={!isLoginPage ? "pt-16" : ""}>
             {children}
           </main>
+
+          {/* 2. AGGIUNGI IL COMPONENTE QUI SOTTO */}
+          {!isLoginPage && <InstallPrompt />} 
         </div>
       </body>
     </html>
