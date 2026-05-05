@@ -125,7 +125,6 @@ export default function EventsPage() {
     }
   };
 
-  // Calcoli per i totali Admin
   const totalPeople = participants.reduce((acc, p) => acc + (p.people || 0), 0);
   const totalBikes = participants.reduce((acc, p) => acc + (p.bikes || 0), 0);
 
@@ -204,7 +203,6 @@ export default function EventsPage() {
               {eventDetails?.title}
             </DialogTitle>
 
-            {/* BOX INFO VELOCI */}
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-zinc-900 p-4 rounded border border-zinc-800 flex flex-col gap-1">
@@ -230,7 +228,6 @@ export default function EventsPage() {
               </div>
             </div>
 
-            {/* ISCRIZIONE SOCIO */}
             <div className="bg-zinc-900 p-6 rounded-lg border border-zinc-800 space-y-6">
               <h3 className="text-sm font-black uppercase flex items-center gap-2 italic">
                 {isParticipating ? <CheckCircle2 className="text-green-500 h-5 w-5" /> : <PlusCircle className="text-red-600 h-5 w-5" />}
@@ -264,7 +261,6 @@ export default function EventsPage() {
               )}
             </div>
             
-            {/* VISTA DETTAGLIATA PER ADMIN */}
             {isAdmin && (
               <div className="space-y-4 border-t-2 border-red-600 pt-6 mt-6">
                 <h3 className="text-xs font-black uppercase text-red-600 flex items-center gap-2 italic">
@@ -287,7 +283,9 @@ export default function EventsPage() {
                           <td className="p-3 font-black text-white">{p.name}</td>
                           <td className="p-3 text-center text-zinc-300 font-bold">{p.people}</td>
                           <td className="p-3 text-center text-zinc-300 font-bold">{p.bikes}</td>
-                          <td className="p-3 text-[9px] text-zinc-500 italic max-w-[120px] truncate">{p.notes || "-"}</td>
+                          <td className="p-3 text-[9px] text-zinc-500 italic min-w-[120px] max-w-[200px] leading-relaxed break-words whitespace-normal">
+                            {p.notes || "-"}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -304,7 +302,6 @@ export default function EventsPage() {
               </div>
             )}
 
-            {/* VISTA SEMPLICE PER SOCI (solo se non Admin) */}
             {!isAdmin && (
                <div className="space-y-4 border-t border-zinc-900 pt-6">
                  <div className="flex justify-between items-end">
