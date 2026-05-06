@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { db, auth } from '@/lib/firebase';
 import { collection, onSnapshot, deleteDoc, doc, updateDoc, addDoc, setDoc, getDoc } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { MapPin, CloudSun, Calendar, Trash2, Edit, PlusCircle, Clock, Route, ChevronRight, Users, CheckCircle2, XCircle, ClipboardList } from 'lucide-react';
+import { MapPin, CloudSun, Calendar, Trash2, Edit, PlusCircle, Clock, Route, ChevronRight, Users, CheckCircle2, XCircle, ClipboardList, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAdmin } from '@/hooks/use-admin';
 import EventDialog from '@/components/EventDialog';
@@ -67,9 +67,11 @@ export default function EventsPage() {
       const userSnap = await getDoc(userDocRef);
       
       let nomeCompleto = "";
+      let photoURL = "";
 
       if (userSnap.exists()) {
         const d = userSnap.data();
+        photoURL = d.photoURL || "";
         if (d.nome && d.cognome) {
           nomeCompleto = `${d.nome} ${d.cognome}`;
         } else {
@@ -81,6 +83,7 @@ export default function EventsPage() {
 
       await setDoc(doc(db, `events/${eventDetails.id}/participants`, user.uid), {
         name: nomeCompleto.toUpperCase(),
+        photoURL: photoURL,
         people: Number(numPeople),
         bikes: Number(numBikes),
         notes: notes,
@@ -280,7 +283,18 @@ export default function EventsPage() {
                     <tbody>
                       {participants.map((p) => (
                         <tr key={p.id} className="border-b border-zinc-900 last:border-0 hover:bg-zinc-900/30">
-                          <td className="p-3 font-black text-white">{p.name}</td>
+                          <td className="p-3">
+                            <div className="flex items-center gap-2">
+                              <div className="h-10 w-10 rounded-full overflow-hidden bg-zinc-800 shrink-0 border border-zinc-700 flex items-center justify-center">
+                                {p.photoURL ? (
+                                  <img src={p.photoURL} className="w-full h-full object-cover" />
+                                ) : (
+                                  <User className="h-5 w-5 text-zinc-500" />
+                                )}
+                              </div>
+                              <span className="font-black text-white">{p.name}</span>
+                            </div>
+                          </td>
                           <td className="p-3 text-center text-zinc-300 font-bold">{p.people}</td>
                           <td className="p-3 text-center text-zinc-300 font-bold">{p.bikes}</td>
                           <td className="p-3 text-[9px] text-zinc-500 italic min-w-[120px] max-w-[200px] leading-relaxed break-words whitespace-normal">
@@ -290,10 +304,10 @@ export default function EventsPage() {
                       ))}
                     </tbody>
                     <tfoot className="bg-zinc-900/50">
-                      <tr className="font-black text-red-600">
+                      <tr className="font-black text-red-600 italic">
                         <td className="p-3">TOTALE EVENTO</td>
-                        <td className="p-3 text-center border-l border-zinc-800">{totalPeople} P</td>
-                        <td className="p-3 text-center border-l border-zinc-800">{totalBikes} M</td>
+                        <td className="p-3 text-center border-l border-zinc-800">{totalPeople} PERSONE</td>
+                        <td className="p-3 text-center border-l border-zinc-800">{totalBikes} MOTO</td>
                         <td className="p-3"></td>
                       </tr>
                     </tfoot>
@@ -309,14 +323,25 @@ export default function EventsPage() {
                      <Users className="h-4 w-4" /> Soci Iscritti ({participants.length})
                    </h3>
                    <div className="text-[11px] font-black text-red-600 uppercase italic">
-                      Tot: {totalPeople} P / {totalBikes} M
+                      Totale: {totalPeople} Persone / {totalBikes} Moto
                    </div>
                  </div>
                  <div className="grid gap-2">
                    {participants.map((p) => (
-                     <div key={p.id} className="bg-zinc-900/40 p-3 rounded border border-zinc-900/50 flex justify-between items-center">
-                       <span className="font-bold text-xs uppercase text-white tracking-tighter">{p.name}</span>
-                       <span className="text-[10px] font-black text-zinc-400 bg-black/50 px-2 py-1 rounded">{p.people}P / {p.bikes}M</span>
+                     <div key={p.id} className="bg-zinc-900/40 p-3 rounded border border-zinc-900/50 flex justify-between items-center group">
+                       <div className="flex items-center gap-3">
+                          <div className="h-12 w-12 rounded-full overflow-hidden bg-zinc-800 border border-zinc-700 group-hover:border-red-600 transition-colors shrink-0 flex items-center justify-center">
+                            {p.photoURL ? (
+                              <img src={p.photoURL} className="w-full h-full object-cover" />
+                            ) : (
+                              <User className="h-6 w-6 text-zinc-600" />
+                            )}
+                          </div>
+                          <span className="font-bold text-xs uppercase text-white tracking-tighter">{p.name}</span>
+                       </div>
+                       <span className="text-[10px] font-black text-zinc-400 bg-black/50 px-2 py-1 rounded">
+                         {p.people} Persone / {p.bikes} Moto
+                       </span>
                      </div>
                    ))}
                  </div>
