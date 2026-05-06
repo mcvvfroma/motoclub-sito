@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { db, auth } from '@/lib/firebase';
 import { collection, onSnapshot, deleteDoc, doc, updateDoc, addDoc, setDoc, getDoc } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { MapPin, CloudSun, Calendar, Trash2, Edit, PlusCircle, Clock, Route, ChevronRight, Users, CheckCircle2, XCircle, ClipboardList, User } from 'lucide-react';
+import { MapPin, CloudSun, Calendar, Trash2, Edit, PlusCircle, Clock, Route, ChevronRight, Users, CheckCircle2, XCircle, ClipboardList, User, Radio, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAdmin } from '@/hooks/use-admin';
 import EventDialog from '@/components/EventDialog';
@@ -258,9 +258,52 @@ export default function EventsPage() {
                   </Button>
                 </div>
               ) : (
-                <Button onClick={handleCancelParticipation} variant="outline" className="w-full border-zinc-800 text-zinc-500 hover:bg-red-600 hover:text-white font-black uppercase italic h-12 transition-all">
-                  <XCircle className="h-4 w-4 mr-2" /> Annulla Partecipazione
-                </Button>
+                <div className="space-y-4">
+                  <Button onClick={handleCancelParticipation} variant="outline" className="w-full border-zinc-800 text-zinc-500 hover:bg-red-600 hover:text-white font-black uppercase italic h-12 transition-all">
+                    <XCircle className="h-4 w-4 mr-2" /> Annulla Partecipazione
+                  </Button>
+                  
+                  {/* SEZIONE RADIO SOCIALE - VERSIONE TACTICAL DELICATA */}
+                  <div className="mt-4 p-5 bg-zinc-900/50 border border-zinc-800 rounded-2xl shadow-xl">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2">
+                        <div className="relative flex h-2 w-2">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500/50 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                        </div>
+                        <span className="text-zinc-400 text-[9px] font-bold uppercase tracking-[0.2em]">
+                          Frequenza MCVVF ROMA online
+                        </span>
+                      </div>
+                      <div className="px-2 py-0.5 bg-red-600/10 border border-red-600/20 rounded">
+                        <span className="text-[8px] text-red-500 font-black uppercase italic">
+                          Il giro in diretta
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <Button 
+                      onClick={() => window.open('https://discord.gg/att6gRMc', '_blank')}
+                      className="w-full bg-zinc-950 hover:bg-black text-amber-500 h-16 flex flex-col items-center justify-center gap-0 rounded-xl border border-zinc-800 hover:border-amber-500/50 transition-all active:scale-[0.98] group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Radio className="h-5 w-5 animate-pulse text-red-600 group-hover:text-red-500" />
+                        <span className="text-lg font-black italic uppercase tracking-tighter">Entra in Radio</span>
+                      </div>
+                      <span className="text-[9px] font-bold opacity-60 uppercase tracking-widest text-zinc-400">
+                        Pulsante PTT Digitale
+                      </span>
+                    </Button>
+                    
+                    <div className="mt-4 flex gap-3 items-start bg-black/20 p-3 rounded-lg border border-zinc-800/50">
+                      <Info size={12} className="text-amber-600 shrink-0 mt-0.5" />
+                      <p className="text-[9px] text-zinc-500 leading-tight italic">
+                        <span className="text-zinc-300 not-italic font-bold mr-1 uppercase">Tip:</span> 
+                        Attiva la "Sospensione rumore Krisp" per filtrare il vento sotto il casco.
+                      </p>
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
             
