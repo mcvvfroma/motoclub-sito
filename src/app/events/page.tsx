@@ -72,6 +72,29 @@ export default function EventsPage() {
     }
   }, [eventDetails?.id, auth.currentUser?.uid]);
 
+  // FIX BLINDATO PER CHIUSURA FOTO SU MOBILE
+  useEffect(() => {
+    if (!selectedPhoto) return;
+
+    // Chiude all'istante al tocco sullo sfondo
+    const handleTouch = (e: TouchEvent) => {
+      e.stopPropagation();
+      setSelectedPhoto(null);
+    };
+
+    const blocker = document.getElementById('photo-blocker');
+    blocker?.addEventListener('touchstart', handleTouch, { passive: false });
+
+    // Blocca lo scroll della pagina sotto
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      blocker?.removeEventListener('touchstart', handleTouch);
+      document.body.style.overflow = '';
+    };
+  }, [selectedPhoto]);
+
+
   const getSocioName = async () => {
     if (!auth.currentUser?.email) return "SOCIO";
     const userDoc = await getDoc(doc(db, "users", auth.currentUser.email));
@@ -111,7 +134,6 @@ export default function EventsPage() {
     } catch (err) { setIsUploading(false); }
   };
 
-  // FIX: AGGIUNTO SALVATAGGIO EMAIL PER LA CLASSIFICA
   const handleJoinEvent = async () => {
     if (!auth.currentUser || !eventDetails?.id) return;
     const nomeSocio = await getSocioName();
@@ -119,7 +141,7 @@ export default function EventsPage() {
     
     await setDoc(doc(db, `events/${eventDetails.id}/participants`, auth.currentUser.uid), {
       name: nomeSocio,
-      email: auth.currentUser.email, // <--- FONDAMENTALE PER IL RANKING
+      email: auth.currentUser.email,
       photoURL: userDoc.data()?.photoURL || "",
       people: Number(numPeople),
       bikes: Number(numBikes),
@@ -140,7 +162,7 @@ export default function EventsPage() {
   if (loading || adminLoading) return <div className="p-10 text-white text-center font-black uppercase italic text-xs animate-pulse tracking-widest">In sella...</div>;
 
   return (
-    <div className="w-full py-8 px-4 bg-black min-h-screen">
+    <div className="w-full py-8 px-4 bg-black min-h-screen pb-24">
       <div className="flex justify-between items-center mb-10">
         <div className="flex items-center gap-3">
           <Calendar className="h-8 w-8 text-red-600" />
@@ -219,8 +241,18 @@ export default function EventsPage() {
               </div>
               <div className="grid grid-cols-3 gap-2">
                 {eventPhotos.map((ph) => (
-                  <div key={ph.id} className="relative aspect-square rounded overflow-hidden bg-zinc-900 border border-zinc-800 cursor-zoom-in">
-                    <img src={ph.photoData} className="w-full h-full object-cover" alt="" onClick={() => setSelectedPhoto(ph.photoData)} />
+                  <div key={ph.id} className="relative aspect-square rounded overflow-hidden bg-zinc-900 border border-zinc-800">
+                    <img 
+                      src={ph.photoData} 
+                      className="w-full h-full object-cover select-none" 
+                      alt="" 
+                      // FIX: Stop propagation robusto all'apertura
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setSelectedPhoto(ph.photoData);
+                      }} 
+                    />
                     {(ph.userId === auth.currentUser?.uid || isAdmin) && (
                       <button onClick={async () => await deleteDoc(doc(db, `events/${eventDetails.id}/photos`, ph.id))} className="absolute top-1 right-1 p-1 bg-black/80 rounded-full text-red-500 z-10"><Trash2 className="h-3.5 w-3.5" /></button>
                     )}
@@ -277,10 +309,32 @@ export default function EventsPage() {
         </DialogContent>
       </Dialog>
 
+      {/* MODALE INGRANDIMENTO FOTO - VERSIONE FIX TOTALE MOBILE */}
       {selectedPhoto && (
-        <div className="fixed inset-0 z-[999] bg-black/98 flex items-center justify-center p-4" onClick={() => setSelectedPhoto(null)}>
-          <button className="fixed top-6 right-6 p-3 bg-zinc-900/80 rounded-full text-white z-[1000] hover:bg-red-600" onClick={() => setSelectedPhoto(null)}><X className="h-6 w-6" /></button>
-          <img src={selectedPhoto} className="max-w-full max-h-full object-contain shadow-2xl" alt="" onClick={(e) => e.stopPropagation()} />
+        <div 
+          id="photo-blocker"
+          className="fixed inset-0 z-[100000] bg-black/98 flex items-center justify-center p-2 touch-none select-none"
+        >
+          {/* Pulsante X - Usa onPointerDown per scattare prima di Dialog */}
+          <button 
+            onPointerDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setSelectedPhoto(null);
+            }}
+            className="fixed top-6 right-6 p-4 bg-red-600 rounded-full text-white z-[100001] shadow-2xl active:scale-90 transition-transform"
+            aria-label="Chiudi"
+          >
+            <X className="h-8 w-8" />
+          </button>
+          
+          {/* Immagine - onClick stop propagation per non chiudere se tocchi la foto */}
+          <img 
+            src={selectedPhoto} 
+            className="max-w-full max-h-full object-contain shadow-2xl" 
+            alt="Ingrandimento"
+            onClick={(e) => e.stopPropagation()} 
+          />
         </div>
       )}
 
