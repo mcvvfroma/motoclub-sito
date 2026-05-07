@@ -1,110 +1,133 @@
 'use client';
 
-import { HardHat, Truck } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { db } from '@/lib/firebase';
+import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { Camera, Calendar, ImageIcon, X } from 'lucide-react';
+import Link from 'next/link';
 
-export default function GalleryPage() {
-  // Animazione sequenziale per i caschi (6s totali)
-  const helmetStyle = (delay: string) => ({
-    animation: `ultraSoftFade 6s infinite ease-in-out`,
-    animationDelay: delay,
-    opacity: 0,
-  });
+export default function GalleriaPage() {
+  const [galleryData, setGalleryData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
 
-  // Stile per i due mezzi in transito (12s per completare il giro)
-  const truckStyle = (delay: string) => ({
-    animation: `transitoContinuo 12s linear infinite`,
-    animationDelay: delay,
-    position: 'absolute' as const,
-    left: '-150px',
-  });
+  useEffect(() => {
+    // 1. Ascolta i cambiamenti negli eventi
+    const unsubscribeEvents = onSnapshot(collection(db, "events"), (eventSnapshot) => {
+      if (eventSnapshot.empty) {
+        setGalleryData([]);
+        setLoading(false);
+        return;
+      }
+
+      // Per ogni evento, creiamo un listener per le sue foto
+      eventSnapshot.docs.forEach((eventDoc) => {
+        const eventId = eventDoc.id;
+        const eventTitle = eventDoc.data().title || "Evento senza titolo";
+
+        const qPhotos = query(collection(db, `events/${eventId}/photos`), orderBy("createdAt", "desc"));
+        
+        onSnapshot(qPhotos, (photoSnapshot) => {
+          const photos = photoSnapshot.docs.map(p => ({ id: p.id, ...p.data() }));
+          
+          setGalleryData(prev => {
+            // Rimuoviamo la vecchia versione dell'evento e aggiungiamo quella aggiornata (se ha foto)
+            const otherEvents = prev.filter(item => item.id !== eventId);
+            if (photos.length > 0) {
+              const updated = [...otherEvents, { id: eventId, title: eventTitle, photos }];
+              // Ordiniamo per ID (o potresti ordinare per data evento se ce l'hai)
+              return updated.sort((a, b) => b.id.localeCompare(a.id));
+            }
+            return otherEvents;
+          });
+        });
+      });
+      setLoading(false);
+    });
+
+    return () => unsubscribeEvents();
+  }, []);
+
+  if (loading) return <div className="p-10 text-white text-center font-black uppercase italic text-xs animate-pulse tracking-widest">Caricamento Ricordi...</div>;
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-4 overflow-hidden relative">
-      <style jsx global>{`
-        @keyframes ultraSoftFade {
-          0% { opacity: 0; transform: translateY(10px); }
-          15% { opacity: 1; transform: translateY(0); }
-          35% { opacity: 1; transform: translateY(0); }
-          50% { opacity: 0; transform: translateY(-10px); }
-          100% { opacity: 0; }
-        }
-
-        @keyframes sirenaLampeggiante {
-          0%, 100% { border-color: #1d4ed8; box-shadow: 0 0 2px #1d4ed8; }
-          50% { border-color: #60a5fa; box-shadow: 0 0 10px #60a5fa, 0 0 20px #1d4ed8; }
-        }
-
-        @keyframes transitoContinuo {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(calc(100vw + 300px)); }
-        }
-      `}</style>
-
-      {/* SEZIONE SUPERIORE: Caschi e Titolo */}
-      <div className="text-center space-y-16 z-10 relative">
-        
-        {/* Caschi con gap responsive: gap-4 su mobile, gap-12 su desktop */}
-        <div className="flex justify-center items-center gap-4 md:gap-12 pt-6">
-          <div style={helmetStyle('0s')}>
-            <HardHat className="h-20 w-20 md:h-24 md:w-24 text-zinc-300 stroke-[1.2] drop-shadow-[0_0_30px_rgba(212,212,216,0.15)]" />
-          </div>
-          <div style={helmetStyle('2s')}>
-            <HardHat className="h-20 w-20 md:h-24 md:w-24 text-red-600 stroke-[1.2] drop-shadow-[0_0_30px_rgba(220,38,38,0.2)]" />
-          </div>
-          <div style={helmetStyle('4s')}>
-            <HardHat className="h-20 w-20 md:h-24 md:w-24 text-zinc-800 stroke-[1.2]" />
-          </div>
+    <main className="min-h-screen bg-black text-white p-4 pb-24">
+      {/* Header */}
+      <div className="max-w-6xl mx-auto mb-10 mt-6 text-center md:text-left">
+        <div className="flex items-center justify-center md:justify-start gap-3 mb-2">
+          <Camera className="h-8 w-8 text-red-600" />
+          <h1 className="text-3xl font-black uppercase italic tracking-tighter">Galleria Foto</h1>
         </div>
-        
-        <div className="space-y-4">
-          <h1 className="text-4xl md:text-5xl font-black uppercase italic tracking-tighter text-white px-2">
-            Galleria Immagini
-          </h1>
-          <div className="inline-block border border-zinc-800 bg-zinc-950 px-6 py-2 rounded-sm">
-            <span className="text-zinc-500 text-[10px] md:text-xs font-black uppercase tracking-[0.3em]">
-              Intervento Tecnico in Corso
-            </span>
-          </div>
-        </div>
+        <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-[0.2em]">Archivio storico dei nostri giri</p>
       </div>
 
-      {/* CORRIDOIO DI TRANSITO: Due mezzi in rotazione continua */}
-      <div className="w-full h-24 flex items-center relative z-0">
-        
-        {/* MEZZO 1 */}
-        <div style={truckStyle('0s')}>
-          <div className="relative flex items-center">
-            <Truck className="h-14 w-14 text-red-700 stroke-[1] drop-shadow-[0_0_15px_rgba(185,28,28,0.3)]" />
-            <div className="absolute top-2 left-8 w-3 h-2 bg-transparent rounded-t-full border-2 border-blue-700 animate-[sirenaLampeggiante_0.4s_infinite_alternate]"></div>
+      <div className="max-w-6xl mx-auto space-y-12">
+        {galleryData.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 border border-dashed border-zinc-800 rounded-lg">
+            <ImageIcon className="h-12 w-12 text-zinc-800 mb-4" />
+            <p className="text-zinc-500 font-black uppercase italic text-xs">Nessuna foto disponibile al momento</p>
           </div>
-        </div>
+        ) : (
+          galleryData.map((group) => (
+            <section key={group.id} className="space-y-4">
+              <div className="flex items-center justify-between border-b border-zinc-900 pb-2">
+                <h2 className="text-sm font-black uppercase italic text-red-600 flex items-center gap-2">
+                  <Calendar className="h-4 w-4" /> {group.title}
+                </h2>
+                <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">{group.photos.length} Foto</span>
+              </div>
 
-        {/* MEZZO 2 */}
-        <div style={truckStyle('6s')}>
-          <div className="relative flex items-center">
-            <Truck className="h-14 w-14 text-red-700 stroke-[1] drop-shadow-[0_0_15px_rgba(185,28,28,0.3)]" />
-            <div className="absolute top-2 left-8 w-3 h-2 bg-transparent rounded-t-full border-2 border-blue-700 animate-[sirenaLampeggiante_0.4s_infinite_alternate]"></div>
-          </div>
-        </div>
-
+              <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                {group.photos.map((ph: any) => (
+                  <div 
+                    key={ph.id} 
+                    className="relative aspect-square rounded bg-zinc-900 border border-zinc-800 overflow-hidden cursor-pointer"
+                    onClick={() => setSelectedPhoto(ph.photoData)}
+                  >
+                    <img 
+                      src={ph.photoData} 
+                      className="w-full h-full object-cover" 
+                      alt="" 
+                    />
+                    <div className="absolute bottom-0 w-full p-1 bg-black/70 text-[7px] text-white font-black uppercase truncate text-center">
+                      {ph.userName || "SOCIO"}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          ))
+        )}
       </div>
 
-      {/* SEZIONE INFERIORE */}
-      <div className="text-center space-y-12 z-10 relative">
-        <div className="max-w-xl mx-auto border-t border-zinc-900 pt-8 px-6">
-          <p className="text-zinc-500 italic text-sm tracking-wide leading-relaxed">
-            "Le squadre stanno mettendo in sicurezza i ricordi più belli.<br className="hidden md:block"/>
-            La galleria sarà operativa non appena terminata la manutenzione."
-          </p>
-        </div>
-
-        <div className="pt-4">
-            <div className="w-16 h-1 bg-red-600 mx-auto mb-4"></div>
-            <p className="text-zinc-800 font-black uppercase text-[9px] tracking-[0.5em]">
-                Moto Club Vigili del Fuoco
-            </p>
-        </div>
+      {/* Pulsante Home */}
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
+        <Link href="/" className="px-8 py-3 bg-red-600 text-white rounded-full font-black uppercase italic text-xs shadow-2xl hover:bg-red-700 transition flex items-center gap-2">
+          Torna alla Home
+        </Link>
       </div>
-    </div>
+
+      {/* Visualizzatore Foto (Nativo per Zoom) */}
+      {selectedPhoto && (
+        <div 
+          className="fixed inset-0 z-[100] bg-black/98 flex items-center justify-center overflow-auto p-0"
+          onClick={() => setSelectedPhoto(null)}
+        >
+          {/* Tasto chiusura puramente visivo */}
+          <div className="fixed top-6 right-6 p-2 bg-red-600 rounded-full text-white z-[110]">
+            <X className="h-6 w-6" />
+          </div>
+          
+          <div className="min-w-full min-h-full flex items-center justify-center">
+            <img 
+              src={selectedPhoto} 
+              className="max-w-full h-auto object-contain shadow-2xl" 
+              alt="Zoom"
+              onClick={(e) => e.stopPropagation()} 
+            />
+          </div>
+        </div>
+      )}
+    </main>
   );
 }
