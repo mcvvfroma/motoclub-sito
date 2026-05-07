@@ -3,16 +3,18 @@
 import { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
-import { Camera, Calendar, ImageIcon, X } from 'lucide-react';
+import { Camera, Calendar, ImageIcon, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 
 export default function GalleriaPage() {
   const [galleryData, setGalleryData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
+  
+  // Stati per la gestione dello slider
+  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
+  const [currentGroupPhotos, setCurrentGroupPhotos] = useState<any[]>([]);
 
   useEffect(() => {
-    // 1. Ascolta i cambiamenti negli eventi
     const unsubscribeEvents = onSnapshot(collection(db, "events"), (eventSnapshot) => {
       if (eventSnapshot.empty) {
         setGalleryData([]);
@@ -20,23 +22,17 @@ export default function GalleriaPage() {
         return;
       }
 
-      // Per ogni evento, creiamo un listener per le sue foto
       eventSnapshot.docs.forEach((eventDoc) => {
         const eventId = eventDoc.id;
         const eventTitle = eventDoc.data().title || "Evento senza titolo";
-
         const qPhotos = query(collection(db, `events/${eventId}/photos`), orderBy("createdAt", "desc"));
         
         onSnapshot(qPhotos, (photoSnapshot) => {
           const photos = photoSnapshot.docs.map(p => ({ id: p.id, ...p.data() }));
-          
           setGalleryData(prev => {
-            // Rimuoviamo la vecchia versione dell'evento e aggiungiamo quella aggiornata (se ha foto)
             const otherEvents = prev.filter(item => item.id !== eventId);
             if (photos.length > 0) {
-              const updated = [...otherEvents, { id: eventId, title: eventTitle, photos }];
-              // Ordiniamo per ID (o potresti ordinare per data evento se ce l'hai)
-              return updated.sort((a, b) => b.id.localeCompare(a.id));
+              return [...otherEvents, { id: eventId, title: eventTitle, photos }].sort((a, b) => b.id.localeCompare(a.id));
             }
             return otherEvents;
           });
@@ -44,9 +40,28 @@ export default function GalleriaPage() {
       });
       setLoading(false);
     });
-
     return () => unsubscribeEvents();
   }, []);
+
+  // Funzioni di navigazione
+  const openPhoto = (photos: any[], index: number) => {
+    setCurrentGroupPhotos(photos);
+    setSelectedPhotoIndex(index);
+  };
+
+  const nextPhoto = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (selectedPhotoIndex !== null && selectedPhotoIndex < currentGroupPhotos.length - 1) {
+      setSelectedPhotoIndex(selectedPhotoIndex + 1);
+    }
+  };
+
+  const prevPhoto = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (selectedPhotoIndex !== null && selectedPhotoIndex > 0) {
+      setSelectedPhotoIndex(selectedPhotoIndex - 1);
+    }
+  };
 
   if (loading) return <div className="p-10 text-white text-center font-black uppercase italic text-xs animate-pulse tracking-widest">Caricamento Ricordi...</div>;
 
@@ -62,69 +77,82 @@ export default function GalleriaPage() {
       </div>
 
       <div className="max-w-6xl mx-auto space-y-12">
-        {galleryData.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 border border-dashed border-zinc-800 rounded-lg">
-            <ImageIcon className="h-12 w-12 text-zinc-800 mb-4" />
-            <p className="text-zinc-500 font-black uppercase italic text-xs">Nessuna foto disponibile al momento</p>
-          </div>
-        ) : (
-          galleryData.map((group) => (
-            <section key={group.id} className="space-y-4">
-              <div className="flex items-center justify-between border-b border-zinc-900 pb-2">
-                <h2 className="text-sm font-black uppercase italic text-red-600 flex items-center gap-2">
-                  <Calendar className="h-4 w-4" /> {group.title}
-                </h2>
-                <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">{group.photos.length} Foto</span>
-              </div>
+        {galleryData.map((group) => (
+          <section key={group.id} className="space-y-4">
+            <div className="flex items-center justify-between border-b border-zinc-900 pb-2">
+              <h2 className="text-sm font-black uppercase italic text-red-600 flex items-center gap-2">
+                <Calendar className="h-4 w-4" /> {group.title}
+              </h2>
+              <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">{group.photos.length} Foto</span>
+            </div>
 
-              <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
-                {group.photos.map((ph: any) => (
-                  <div 
-                    key={ph.id} 
-                    className="relative aspect-square rounded bg-zinc-900 border border-zinc-800 overflow-hidden cursor-pointer"
-                    onClick={() => setSelectedPhoto(ph.photoData)}
-                  >
-                    <img 
-                      src={ph.photoData} 
-                      className="w-full h-full object-cover" 
-                      alt="" 
-                    />
-                    <div className="absolute bottom-0 w-full p-1 bg-black/70 text-[7px] text-white font-black uppercase truncate text-center">
-                      {ph.userName || "SOCIO"}
-                    </div>
+            <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+              {group.photos.map((ph: any, index: number) => (
+                <div 
+                  key={ph.id} 
+                  className="relative aspect-square rounded bg-zinc-900 border border-zinc-800 overflow-hidden cursor-pointer"
+                  onClick={() => openPhoto(group.photos, index)}
+                >
+                  <img src={ph.photoData} className="w-full h-full object-cover" alt="" />
+                  <div className="absolute bottom-0 w-full p-1 bg-black/70 text-[7px] text-white font-black uppercase truncate text-center font-bold">
+                    {ph.userName || "SOCIO"}
                   </div>
-                ))}
-              </div>
-            </section>
-          ))
-        )}
+                </div>
+              ))}
+            </div>
+          </section>
+        ))}
       </div>
 
       {/* Pulsante Home */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
-        <Link href="/" className="px-8 py-3 bg-red-600 text-white rounded-full font-black uppercase italic text-xs shadow-2xl hover:bg-red-700 transition flex items-center gap-2">
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40">
+        <Link href="/" className="px-8 py-3 bg-red-600 text-white rounded-full font-black uppercase italic text-xs shadow-2xl hover:bg-red-700 transition">
           Torna alla Home
         </Link>
       </div>
 
-      {/* Visualizzatore Foto (Nativo per Zoom) */}
-      {selectedPhoto && (
+      {/* SLIDER FOTO FULLSCREEN */}
+      {selectedPhotoIndex !== null && (
         <div 
-          className="fixed inset-0 z-[100] bg-black/98 flex items-center justify-center overflow-auto p-0"
-          onClick={() => setSelectedPhoto(null)}
+          className="fixed inset-0 z-[100] bg-black/98 flex items-center justify-center p-0"
+          onClick={() => setSelectedPhotoIndex(null)}
         >
-          {/* Tasto chiusura puramente visivo */}
-          <div className="fixed top-6 right-6 p-2 bg-red-600 rounded-full text-white z-[110]">
+          {/* Tasto Chiusura */}
+          <button className="fixed top-6 right-6 p-2 bg-red-600 rounded-full text-white z-[110]">
             <X className="h-6 w-6" />
-          </div>
+          </button>
+
+          {/* Freccia Sinistra */}
+          {selectedPhotoIndex > 0 && (
+            <button 
+              onClick={prevPhoto}
+              className="fixed left-4 top-1/2 -translate-y-1/2 p-3 bg-zinc-900/50 rounded-full text-white hover:bg-red-600 z-[110] transition-colors"
+            >
+              <ChevronLeft className="h-8 w-8" />
+            </button>
+          )}
+
+          {/* Freccia Destra */}
+          {selectedPhotoIndex < currentGroupPhotos.length - 1 && (
+            <button 
+              onClick={nextPhoto}
+              className="fixed right-4 top-1/2 -translate-y-1/2 p-3 bg-zinc-900/50 rounded-full text-white hover:bg-red-600 z-[110] transition-colors"
+            >
+              <ChevronRight className="h-8 w-8" />
+            </button>
+          )}
           
-          <div className="min-w-full min-h-full flex items-center justify-center">
+          <div className="w-full h-full flex flex-col items-center justify-center">
             <img 
-              src={selectedPhoto} 
-              className="max-w-full h-auto object-contain shadow-2xl" 
+              src={currentGroupPhotos[selectedPhotoIndex].photoData} 
+              className="max-w-full max-h-[85vh] object-contain shadow-2xl" 
               alt="Zoom"
               onClick={(e) => e.stopPropagation()} 
             />
+            {/* Nome Socio in basso nello slider */}
+            <p className="mt-4 text-white font-black uppercase italic tracking-widest text-xs bg-red-600 px-4 py-1 rounded">
+              {currentGroupPhotos[selectedPhotoIndex].userName}
+            </p>
           </div>
         </div>
       )}
