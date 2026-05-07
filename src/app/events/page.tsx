@@ -29,6 +29,7 @@ export default function EventsPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [myPhotosCount, setMyPhotosCount] = useState(0); 
   
+  // STATO PER LA FOTO SELEZIONATA
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
 
   const [numPeople, setNumPeople] = useState(1);
@@ -38,7 +39,6 @@ export default function EventsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { isAdmin, loading: adminLoading } = useAdmin();
 
-  // 1. MONITORAGGIO EVENTI - ORDINATI CRONOLOGICAMENTE (DAL PIÙ RECENTE)
   useEffect(() => {
     const q = query(collection(db, "events"), orderBy("date", "desc"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -60,40 +60,15 @@ export default function EventsPage() {
       const unsubPhotos = onSnapshot(qPhotos, (snapshot) => {
         const phList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setEventPhotos(phList);
-        
         const currentUid = auth.currentUser?.uid;
         if (currentUid) {
           const count = phList.filter(ph => (ph as any).userId === currentUid).length;
           setMyPhotosCount(count);
         }
       });
-
       return () => { unsubP(); unsubPhotos(); };
     }
   }, [eventDetails?.id, auth.currentUser?.uid]);
-
-  // FIX BLINDATO PER CHIUSURA FOTO SU MOBILE
-  useEffect(() => {
-    if (!selectedPhoto) return;
-
-    // Chiude all'istante al tocco sullo sfondo
-    const handleTouch = (e: TouchEvent) => {
-      e.stopPropagation();
-      setSelectedPhoto(null);
-    };
-
-    const blocker = document.getElementById('photo-blocker');
-    blocker?.addEventListener('touchstart', handleTouch, { passive: false });
-
-    // Blocca lo scroll della pagina sotto
-    document.body.style.overflow = 'hidden';
-
-    return () => {
-      blocker?.removeEventListener('touchstart', handleTouch);
-      document.body.style.overflow = '';
-    };
-  }, [selectedPhoto]);
-
 
   const getSocioName = async () => {
     if (!auth.currentUser?.email) return "SOCIO";
@@ -138,7 +113,6 @@ export default function EventsPage() {
     if (!auth.currentUser || !eventDetails?.id) return;
     const nomeSocio = await getSocioName();
     const userDoc = await getDoc(doc(db, "users", auth.currentUser.email!));
-    
     await setDoc(doc(db, `events/${eventDetails.id}/participants`, auth.currentUser.uid), {
       name: nomeSocio,
       email: auth.currentUser.email,
@@ -197,11 +171,7 @@ export default function EventsPage() {
                     </a>
                   )}
                   {event.metaMeteo && (
-                    <a 
-                      href={`https://www.ilmeteo.it/meteo/${event.metaMeteo.replace(/\s+/g, '+')}`} 
-                      target="_blank" rel="noopener noreferrer"
-                      className="flex-1 flex items-center justify-center py-3 bg-yellow-600 text-black rounded font-black text-[10px] uppercase"
-                    >
+                    <a href={`https://www.ilmeteo.it/meteo/${event.metaMeteo.replace(/\s+/g, '+')}`} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center justify-center py-3 bg-yellow-600 text-black rounded font-black text-[10px] uppercase">
                       <CloudSun className="h-3.5 w-3.5 mr-1" /> Meteo
                     </a>
                   )}
@@ -221,6 +191,7 @@ export default function EventsPage() {
         ))}
       </div>
 
+      {/* DIALOG DETTAGLI */}
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
         <DialogContent className="bg-zinc-950 border-zinc-800 text-white max-w-2xl max-h-[90vh] overflow-y-auto p-0">
           <div className="p-6 space-y-6">
@@ -244,17 +215,12 @@ export default function EventsPage() {
                   <div key={ph.id} className="relative aspect-square rounded overflow-hidden bg-zinc-900 border border-zinc-800">
                     <img 
                       src={ph.photoData} 
-                      className="w-full h-full object-cover select-none" 
+                      className="w-full h-full object-cover cursor-pointer" 
                       alt="" 
-                      // FIX: Stop propagation robusto all'apertura
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setSelectedPhoto(ph.photoData);
-                      }} 
+                      onClick={() => setSelectedPhoto(ph.photoData)} 
                     />
                     {(ph.userId === auth.currentUser?.uid || isAdmin) && (
-                      <button onClick={async () => await deleteDoc(doc(db, `events/${eventDetails.id}/photos`, ph.id))} className="absolute top-1 right-1 p-1 bg-black/80 rounded-full text-red-500 z-10"><Trash2 className="h-3.5 w-3.5" /></button>
+                      <button onClick={async (e) => { e.stopPropagation(); await deleteDoc(doc(db, `events/${eventDetails.id}/photos`, ph.id)); }} className="absolute top-1 right-1 p-1 bg-black/80 rounded-full text-red-500 z-10"><Trash2 className="h-3.5 w-3.5" /></button>
                     )}
                     <div className="absolute bottom-0 w-full p-1 bg-black/60 text-[8px] text-white font-black uppercase truncate text-center pointer-events-none">{ph.userName || "SOCIO"}</div>
                   </div>
@@ -262,6 +228,7 @@ export default function EventsPage() {
               </div>
             </div>
 
+            {/* Iscrizione */}
             <div className="bg-zinc-900 p-6 rounded-lg border border-zinc-800 space-y-4">
               <h3 className="text-sm font-black uppercase flex items-center gap-2 italic">
                 {isParticipating ? <CheckCircle2 className="text-green-500 h-5 w-5" /> : <PlusCircle className="text-red-600 h-5 w-5" />}
@@ -272,35 +239,35 @@ export default function EventsPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <Label className="text-[10px] uppercase text-zinc-500 font-bold tracking-widest">N° Persone</Label>
-                      <Input type="number" min="1" value={numPeople} onChange={(e) => setNumPeople(Number(e.target.value))} className="bg-black border-zinc-700 text-white" />
+                      <Input type="number" min="1" value={numPeople} onChange={(e) => setNumPeople(Number(e.target.value))} className="bg-black border-zinc-700 text-white font-bold" />
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-[10px] uppercase text-zinc-500 font-bold tracking-widest">N° Moto</Label>
-                      <Input type="number" min="0" value={numBikes} onChange={(e) => setNumBikes(Number(e.target.value))} className="bg-black border-zinc-700 text-white" />
+                      <Input type="number" min="0" value={numBikes} onChange={(e) => setNumBikes(Number(e.target.value))} className="bg-black border-zinc-700 text-white font-bold" />
                     </div>
                   </div>
-                  <Button onClick={handleJoinEvent} className="w-full bg-red-600 font-black uppercase italic h-12">Conferma Partecipazione</Button>
+                  <Button onClick={handleJoinEvent} className="w-full bg-red-600 font-black uppercase italic h-12 text-sm">Conferma Partecipazione</Button>
                 </div>
               ) : (
                 <Button onClick={handleCancelParticipation} variant="outline" className="w-full border-zinc-800 text-zinc-500 font-black uppercase italic h-12 hover:bg-red-600 hover:text-white transition-colors">Annulla Partecipazione</Button>
               )}
             </div>
 
+            {/* Lista Partecipanti */}
             <div className="space-y-4 border-t border-zinc-900 pt-6">
-              <div className="flex justify-between items-center">
-                <h3 className="text-[10px] font-black uppercase text-zinc-500 italic flex items-center gap-2"><Users className="h-4 w-4" /> Soci Iscritti ({participants.length})</h3>
-                <div className="text-[11px] font-black text-red-600 uppercase italic">Totale: {totalPeople} P / {totalBikes} M</div>
-              </div>
-              <div className="grid gap-2 pb-6">
+              <h3 className="text-[10px] font-black uppercase text-zinc-500 italic flex items-center gap-2">
+                <Users className="h-4 w-4" /> Soci Iscritti ({participants.length})
+              </h3>
+              <div className="grid gap-2 pb-4">
                 {participants.map((p) => (
                   <div key={p.id} className="bg-zinc-900/40 p-3 rounded border border-zinc-900/50 flex justify-between items-center">
                     <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full overflow-hidden bg-zinc-800 border border-zinc-700 flex items-center justify-center">
-                        {p.photoURL ? <img src={p.photoURL} className="w-full h-full object-cover" alt="" /> : <User className="h-5 w-5 text-zinc-600" />}
+                      <div className="h-8 w-8 rounded-full overflow-hidden bg-zinc-800">
+                        {p.photoURL ? <img src={p.photoURL} className="w-full h-full object-cover" alt="" /> : <User className="h-4 w-4 text-zinc-600 m-auto" />}
                       </div>
                       <span className="font-bold text-xs uppercase text-white">{p.name}</span>
                     </div>
-                    <span className="text-[10px] font-black text-zinc-400 bg-black/50 px-2 py-1 rounded">{p.people} P / {p.bikes} M</span>
+                    <span className="text-[10px] font-black text-zinc-400">{p.people} P / {p.bikes} M</span>
                   </div>
                 ))}
               </div>
@@ -309,34 +276,25 @@ export default function EventsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* MODALE INGRANDIMENTO FOTO - VERSIONE FIX TOTALE MOBILE */}
-      {selectedPhoto && (
-        <div 
-          id="photo-blocker"
-          className="fixed inset-0 z-[100000] bg-black/98 flex items-center justify-center p-2 touch-none select-none"
-        >
-          {/* Pulsante X - Usa onPointerDown per scattare prima di Dialog */}
-          <button 
-            onPointerDown={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setSelectedPhoto(null);
-            }}
-            className="fixed top-6 right-6 p-4 bg-red-600 rounded-full text-white z-[100001] shadow-2xl active:scale-90 transition-transform"
-            aria-label="Chiudi"
-          >
-            <X className="h-8 w-8" />
-          </button>
-          
-          {/* Immagine - onClick stop propagation per non chiudere se tocchi la foto */}
-          <img 
-            src={selectedPhoto} 
-            className="max-w-full max-h-full object-contain shadow-2xl" 
-            alt="Ingrandimento"
-            onClick={(e) => e.stopPropagation()} 
-          />
-        </div>
-      )}
+      {/* DIALOG INGRANDIMENTO FOTO - SOLUZIONE DEFINITIVA */}
+      {/* Usando un Dialog dedicato, Radix gestisce correttamente il focus e il tocco immediato */}
+      <Dialog open={!!selectedPhoto} onOpenChange={() => setSelectedPhoto(null)}>
+        <DialogContent className="max-w-[95vw] w-fit p-0 border-none bg-transparent shadow-none flex items-center justify-center">
+          <div className="relative group">
+            <button 
+              onClick={() => setSelectedPhoto(null)}
+              className="absolute -top-12 -right-2 p-3 bg-red-600 rounded-full text-white shadow-2xl z-50 hover:bg-red-700 active:scale-90"
+            >
+              <X className="h-6 w-6" />
+            </button>
+            <img 
+              src={selectedPhoto || ""} 
+              className="max-w-full max-h-[80vh] object-contain rounded-md" 
+              alt="Preview" 
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <EventDialog isOpen={isDialogOpen} setIsOpen={setIsDialogOpen} event={selectedEvent} onSave={(d) => selectedEvent ? updateDoc(doc(db, "events", selectedEvent.id), d) : addDoc(collection(db, "events"), d)} />
       <ConfirmDeleteDialog isOpen={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen} onConfirm={() => deleteDoc(doc(db, "events", eventToDelete!))} title="Elimina" description="Sicuro?" />
