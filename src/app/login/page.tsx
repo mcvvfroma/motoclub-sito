@@ -53,7 +53,6 @@ export default function LoginPage() {
     setMessage('Verifica in corso...');
 
     try {
-      // 1. Controlla se il socio esiste nel Database Firestore
       const userDoc = await getDoc(doc(db, 'users', cleanEmail));
       
       if (!userDoc.exists()) {
@@ -63,14 +62,12 @@ export default function LoginPage() {
         return;
       }
 
-      // 2. Prova a mandare la mail di reset
       try {
         await sendPasswordResetEmail(auth, cleanEmail);
         setMessage("Email di configurazione inviata! Controlla la tua posta.");
       } catch (resetErr: any) {
-        // 3. Se l'utente non esiste ancora in Authentication, lo creiamo al volo
         if (resetErr.code === 'auth/user-not-found') {
-          const tempPassword = Math.random().toString(36).slice(-12); // Password casuale sicura
+          const tempPassword = Math.random().toString(36).slice(-12);
           await createUserWithEmailAndPassword(auth, cleanEmail, tempPassword);
           await sendPasswordResetEmail(auth, cleanEmail);
           setMessage("Primo accesso rilevato! Ti abbiamo inviato una mail per impostare la tua password.");
@@ -91,36 +88,38 @@ export default function LoginPage() {
       <div className="w-full max-w-sm border rounded-xl shadow-lg bg-card p-6">
         <div className="flex flex-col items-center mb-6">
           <Image src="/logo_motoclub.gif" alt="Logo" width={70} height={70} className="mb-2" />
-          <h1 className="text-xl font-bold italic">Moto Club VVF Roma</h1>
-          <p className="text-xs text-muted-foreground">Area Riservata Soci</p>
+          <h1 className="text-xl font-bold italic text-white uppercase">Moto Club VVF Roma</h1>
+          <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Area Riservata Soci</p>
         </div>
         
         <form onSubmit={handleLogin} className="grid gap-4">
-          {error && <div className="p-2 bg-red-100 text-red-700 text-[10px] rounded border border-red-200 text-center">{error}</div>}
-          {message && <div className="p-2 bg-blue-50 text-blue-700 text-[10px] rounded border border-blue-200 text-center">{message}</div>}
+          {error && <div className="p-3 bg-red-900/30 text-red-500 text-[10px] rounded border border-red-900/50 text-center font-bold uppercase italic">{error}</div>}
+          {message && <div className="p-3 bg-blue-900/30 text-blue-400 text-[10px] rounded border border-blue-900/50 text-center font-bold uppercase italic">{message}</div>}
           
           <div className="grid gap-2">
-            <Label htmlFor="email">Email Socio</Label>
-            <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="tua@email.it" required />
+            <Label htmlFor="email" className="uppercase text-[10px] tracking-widest text-zinc-500">Email Socio</Label>
+            <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="tua@email.it" required className="bg-zinc-950 border-zinc-800" />
           </div>
           
           <div className="grid gap-2">
-            <div className="flex justify-between items-center">
-              <Label htmlFor="password">Password</Label>
-              <button 
-                type="button" 
-                onClick={handleResetPassword}
-                className="text-[10px] text-blue-600 hover:underline font-medium"
-              >
-                Primo accesso / Password dimenticata?
-              </button>
-            </div>
-            <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <Label htmlFor="password" dclassName="uppercase text-[10px] tracking-widest text-zinc-500">Password</Label>
+            <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="bg-zinc-950 border-zinc-800" />
           </div>
           
-          <Button type="submit" className="w-full bg-red-600 hover:bg-red-700 text-white" disabled={loading}>
+          <Button type="submit" className="w-full bg-red-600 hover:bg-red-700 text-white font-black uppercase italic h-12 shadow-lg" disabled={loading}>
             {loading ? "Attendi..." : "ACCEDI ALL'AREA SOCI"}
           </Button>
+
+          {/* PULSANTE MODIFICATO: PIÙ GRANDE, CENTRATO E EVIDENTE */}
+          <div className="flex justify-center pt-4 border-t border-zinc-900 mt-2">
+            <button 
+              type="button" 
+              onClick={handleResetPassword}
+              className="text-xs text-zinc-400 hover:text-white font-black uppercase italic tracking-tight py-2 px-4 border border-zinc-800 rounded-lg bg-zinc-900/50 active:scale-95 transition-all"
+            >
+              Primo accesso / Password dimenticata?
+            </button>
+          </div>
         </form>
       </div>
     </div>
