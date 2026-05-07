@@ -2,157 +2,151 @@
 
 import { useState, useEffect } from 'react';
 import { db, auth } from '@/lib/firebase';
-import { collection, onSnapshot, query, orderBy, doc, updateDoc } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, getDocs } from 'firebase/firestore';
 import { Card, CardContent } from '@/components/ui/card';
-import { Bike, Users, Camera, Loader2, User } from 'lucide-react';
+import { Bike, Users, User, Trophy, Medal, Loader2 } from 'lucide-react';
 
 export default function BikersPage() {
   const [bikers, setBikers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
   const [currentUserData, setCurrentUserData] = useState<any>(null);
 
-  // 1. Recupero dati soci e dati utente corrente
   useEffect(() => {
-    const q = query(collection(db, "users"), orderBy("cognome", "asc"));
+    // 1. Carichiamo i soci dall'anagrafica
+    const qUsers = query(collection(db, "users"), orderBy("cognome", "asc"));
     
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const bikersList = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setBikers(bikersList);
-      
-      // Trova l'utente corrente nella lista
-      const me = bikersList.find(b => b.id === auth.currentUser?.email);
-      if (me) setCurrentUserData(me);
-      
-      setLoading(false);
+    const unsubscribe = onSnapshot(qUsers, async (userSnapshot) => {
+      // Mappiamo i dati assicurandoci che ogni campo abbia un valore di fallback
+      const bikersList = userSnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id.toLowerCase().trim(), // Email del socio
+          nome: data.nome || "",
+          cognome: data.cognome || "",
+          uid: data.uid || "",
+          photoURL: data.photoURL || "",
+          participationCount: 0 
+        };
+      });
+
+      try {
+        const eventsSnapshot = await getDocs(collection(db, "events"));
+        const counts: { [key: string]: number } = {};
+        const todayStr = new Date().toISOString().split('T')[0];
+
+        for (const eventDoc of eventsSnapshot.docs) {
+          const eventData = eventDoc.data();
+          const eventDateStr = eventData.date;
+
+          if (eventDateStr && eventDateStr <= todayStr) {
+            const pSnap = await getDocs(collection(db, `events/${eventDoc.id}/participants`));
+            
+            pSnap.docs.forEach(pDoc => {
+              const pData = pDoc.data();
+              const pId = pDoc.id.toLowerCase().trim();
+              const pEmail = (pData.email || "").toLowerCase().trim();
+              
+              // Nome completo del partecipante unificato per il confronto
+              const pFullName = (pData.name || `${pData.nome || ""} ${pData.cognome || ""}`).toLowerCase().trim();
+
+              bikersList.forEach(biker => {
+                const bEmail = biker.id;
+                const bFullName = `${biker.nome} ${biker.cognome}`.toLowerCase().trim();
+                const bUid = biker.uid.toLowerCase().trim();
+
+                // MATCH: Email, UID o Nome Completo (risolve il caso Giorgio Grippo)
+                if (
+                  (pEmail !== "" && pEmail === bEmail) || 
+                  (pId === bUid && bUid !== "") ||
+                  (pFullName !== "" && pFullName === bFullName)
+                ) {
+                  counts[bEmail] = (counts[bEmail] || 0) + 1;
+                }
+              });
+            });
+          }
+        }
+
+        const finalRank = bikersList.map(b => ({
+          ...b,
+          participationCount: counts[b.id] || 0
+        })).sort((a, b) => b.participationCount - a.participationCount);
+
+        setBikers(finalRank);
+
+        const currentEmail = auth.currentUser?.email?.toLowerCase().trim();
+        const me = finalRank.find(b => b.id === currentEmail);
+        if (me) setCurrentUserData(me);
+        
+      } catch (err) {
+        console.error("Errore nel calcolo presenze:", err);
+      } finally {
+        setLoading(false);
+      }
     });
 
     return () => unsubscribe();
   }, []);
 
-  // 2. Logica di compressione immagine (Base64)
-  const resizeImage = (file: File): Promise<string> => {
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = (event) => {
-        const img = new Image();
-        img.src = event.target?.result as string;
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 150; // Dimensione piccola per non appesantire il DB
-          const scaleSize = MAX_WIDTH / img.width;
-          canvas.width = MAX_WIDTH;
-          canvas.height = img.height * scaleSize;
-          const ctx = canvas.getContext('2d');
-          ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
-          resolve(canvas.toDataURL('image/jpeg', 0.7)); // Qualità 70%
-        };
-      };
-    });
-  };
-
-  // 3. Funzione di caricamento
-  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !auth.currentUser?.email) return;
-
-    setUploading(true);
-    try {
-      const optimizedImage = await resizeImage(file);
-      const userRef = doc(db, "users", auth.currentUser.email);
-      await updateDoc(userRef, { photoURL: optimizedImage });
-    } catch (error) {
-      console.error("Errore caricamento:", error);
-    } finally {
-      setUploading(false);
-    }
-  };
-
   if (loading) return (
-    <div className="p-8 text-center text-zinc-400 font-black uppercase tracking-widest animate-pulse italic">
-      In sella...
+    <div className="flex flex-col items-center justify-center min-h-screen bg-black">
+      <Loader2 className="h-8 w-8 text-red-600 animate-spin mb-4" />
+      <p className="text-[10px] font-black uppercase text-zinc-500 tracking-widest animate-pulse">Analisi presenze...</p>
     </div>
   );
 
   return (
-    <div className="w-full py-8 px-4 sm:px-6 lg:px-8 bg-black min-h-screen">
-      
-      {/* SEZIONE PROFILO PERSONALE (Solo per l'utente loggato) */}
+    <div className="w-full py-8 px-4 bg-black min-h-screen pb-24 text-white">
       {currentUserData && (
-        <div className="mb-12 flex flex-col items-center justify-center border-b border-zinc-900 pb-10">
-          <div className="relative group">
-            <div className="h-32 w-32 rounded-full border-4 border-red-600 overflow-hidden bg-zinc-900 shadow-[0_0_20px_rgba(220,38,38,0.3)]">
-              {currentUserData.photoURL ? (
-                <img src={currentUserData.photoURL} alt="Tu" className="w-full h-full object-cover" />
-              ) : (
-                <div className="flex items-center justify-center h-full bg-zinc-950">
-                   <User className="h-12 w-12 text-zinc-800" />
-                </div>
-              )}
-            </div>
-            <label className="absolute bottom-0 right-0 bg-red-600 p-2.5 rounded-full cursor-pointer hover:bg-red-700 transition-all border-4 border-black group-hover:scale-110">
-              {uploading ? <Loader2 className="h-5 w-5 text-white animate-spin" /> : <Camera className="h-5 w-5 text-white" />}
-              <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} disabled={uploading} />
-            </label>
+        <div className="mb-12 flex flex-col items-center border-b border-zinc-900 pb-10">
+          <div className="h-24 w-24 rounded-full border-2 border-red-600 overflow-hidden mb-4 bg-zinc-900">
+            {currentUserData.photoURL ? (
+              <img src={currentUserData.photoURL} alt="Profilo" className="w-full h-full object-cover" />
+            ) : (
+              <div className="flex items-center justify-center h-full"><User className="h-10 w-10 text-zinc-800" /></div>
+            )}
           </div>
-          <h2 className="mt-4 text-2xl font-black text-white uppercase italic tracking-tighter">
-            {currentUserData.nome} {currentUserData.cognome}
-          </h2>
-          <span className="text-[10px] font-black text-red-600 uppercase tracking-[0.3em] italic">Il Tuo Profilo Biker</span>
+          <h2 className="text-xl font-black uppercase italic">{currentUserData.nome} {currentUserData.cognome}</h2>
+          <div className="mt-2 bg-red-600 px-3 py-0.5 rounded-full text-[9px] font-black uppercase">
+            Le mie uscite: {currentUserData.participationCount}
+          </div>
         </div>
       )}
 
-      {/* TESTATA LISTA SOCI */}
-      <div className="flex items-center gap-3 mb-10">
-        <Bike className="h-8 w-8 text-red-600 shrink-0" />
-        <div>
-          <h1 className="text-3xl font-black tracking-tighter text-white uppercase italic">
-            The Bikers
-          </h1>
-          <p className="text-[10px] text-zinc-500 uppercase tracking-[0.2em] font-bold mt-1">
-            Motoclub VVF Roma
-          </p>
-        </div>
+      <div className="flex items-center gap-3 mb-8">
+        <Bike className="h-7 w-7 text-red-600" />
+        <h1 className="text-2xl font-black uppercase italic tracking-tighter">The Bikers</h1>
       </div>
 
-      {/* GRIGLIA SOCI */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {bikers.map((biker) => (
-          <Card 
-            key={biker.id} 
-            className="border border-zinc-900 bg-zinc-950/40 hover:border-red-600/50 transition-all duration-300 group overflow-hidden"
-          >
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="h-12 w-12 rounded-full bg-zinc-900 border border-zinc-800 overflow-hidden shrink-0 flex items-center justify-center group-hover:border-red-600/50 transition-colors">
-                {biker.photoURL ? (
-                  <img src={biker.photoURL} alt="" className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all" />
-                ) : (
-                  <Users className="h-5 w-5 text-zinc-700 group-hover:text-red-600" />
-                )}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {bikers.map((biker, index) => (
+          <Card key={biker.id} className="bg-zinc-950 border-zinc-900">
+            <CardContent className="p-4 flex items-center justify-between">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="h-11 w-11 rounded-full overflow-hidden bg-zinc-900 border border-zinc-800 shrink-0">
+                  {biker.photoURL ? (
+                    <img src={biker.photoURL} className="w-full h-full object-cover" alt="" />
+                  ) : (
+                    <div className="flex items-center justify-center h-full"><User className="h-5 w-5 text-zinc-800" /></div>
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    {index === 0 && biker.participationCount > 0 && <Trophy className="h-3 w-3 text-yellow-500" />}
+                    <p className="text-sm font-black uppercase italic truncate tracking-tight">
+                      {biker.nome} {biker.cognome}
+                    </p>
+                  </div>
+                  <p className="text-[7px] text-zinc-600 font-bold uppercase tracking-widest leading-none">Team Member</p>
+                </div>
               </div>
-              
-              <div className="flex flex-col min-w-0">
-                <span className="text-[9px] text-zinc-600 font-black uppercase tracking-tighter">Socio</span>
-                <p className="text-sm font-black uppercase italic tracking-tight text-white group-hover:text-red-500 transition-colors truncate">
-                  {biker.nome} {biker.cognome}
-                </p>
+              <div className="flex flex-col items-end border-l border-zinc-900 pl-4 shrink-0">
+                <span className="text-xl font-black italic text-red-600 leading-none">{biker.participationCount}</span>
+                <span className="text-[8px] text-zinc-500 font-bold uppercase mt-1">Uscite</span>
               </div>
             </CardContent>
           </Card>
         ))}
-      </div>
-
-      {/* CONTATORE IN BASSO */}
-      <div className="mt-12 flex justify-center">
-        <div className="bg-zinc-900/50 border border-zinc-800 px-6 py-2 rounded-full">
-          <p className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em]">
-            Squadra: <span className="text-red-600">{bikers.length}</span> Membri
-          </p>
-        </div>
       </div>
     </div>
   );

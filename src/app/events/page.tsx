@@ -29,7 +29,6 @@ export default function EventsPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [myPhotosCount, setMyPhotosCount] = useState(0); 
   
-  // Stato per l'ingrandimento della foto
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
 
   const [numPeople, setNumPeople] = useState(1);
@@ -39,16 +38,16 @@ export default function EventsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { isAdmin, loading: adminLoading } = useAdmin();
 
-  // 1. Monitoraggio Eventi
+  // 1. MONITORAGGIO EVENTI - ORDINATI CRONOLOGICAMENTE (DAL PIÙ RECENTE)
   useEffect(() => {
-    const unsubscribe = onSnapshot(collection(db, "events"), (snapshot) => {
+    const q = query(collection(db, "events"), orderBy("date", "desc"));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
       setEvents(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       setLoading(false);
     });
     return () => unsubscribe();
   }, []);
 
-  // 2. Monitoraggio Foto e Partecipanti con Fix Riga 64
   useEffect(() => {
     if (eventDetails?.id) {
       const unsubP = onSnapshot(collection(db, `events/${eventDetails.id}/participants`), (snapshot) => {
@@ -57,17 +56,15 @@ export default function EventsPage() {
         setIsParticipating(pList.some(p => p.id === auth.currentUser?.uid));
       });
 
-      const q = query(collection(db, `events/${eventDetails.id}/photos`), orderBy("createdAt", "desc"));
-      const unsubPhotos = onSnapshot(q, (snapshot) => {
+      const qPhotos = query(collection(db, `events/${eventDetails.id}/photos`), orderBy("createdAt", "desc"));
+      const unsubPhotos = onSnapshot(qPhotos, (snapshot) => {
         const phList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setEventPhotos(phList);
         
         const currentUid = auth.currentUser?.uid;
         if (currentUid) {
-          const count = phList.filter(ph => ph && (ph as any).userId === currentUid).length;
+          const count = phList.filter(ph => (ph as any).userId === currentUid).length;
           setMyPhotosCount(count);
-        } else {
-          setMyPhotosCount(0);
         }
       });
 
@@ -75,15 +72,12 @@ export default function EventsPage() {
     }
   }, [eventDetails?.id, auth.currentUser?.uid]);
 
-  // 3. Recupero Nome e Cognome (NOME COGNOME)
   const getSocioName = async () => {
     if (!auth.currentUser?.email) return "SOCIO";
     const userDoc = await getDoc(doc(db, "users", auth.currentUser.email));
     if (userDoc.exists()) {
       const d = userDoc.data();
-      const nome = d.nome || "";
-      const cognome = d.cognome || "";
-      return `${nome} ${cognome}`.trim().toUpperCase() || "SOCIO";
+      return `${d.nome || ""} ${d.cognome || ""}`.trim().toUpperCase() || "SOCIO";
     }
     return "SOCIO";
   };
@@ -96,7 +90,7 @@ export default function EventsPage() {
       const nomeSocio = await getSocioName();
       const reader = new FileReader();
       reader.readAsDataURL(file);
-      reader.onload = async () => {
+      reader.onload = () => {
         const img = new Image();
         img.src = reader.result as string;
         img.onload = async () => {
@@ -117,12 +111,15 @@ export default function EventsPage() {
     } catch (err) { setIsUploading(false); }
   };
 
+  // FIX: AGGIUNTO SALVATAGGIO EMAIL PER LA CLASSIFICA
   const handleJoinEvent = async () => {
     if (!auth.currentUser || !eventDetails?.id) return;
     const nomeSocio = await getSocioName();
     const userDoc = await getDoc(doc(db, "users", auth.currentUser.email!));
+    
     await setDoc(doc(db, `events/${eventDetails.id}/participants`, auth.currentUser.uid), {
       name: nomeSocio,
+      email: auth.currentUser.email, // <--- FONDAMENTALE PER IL RANKING
       photoURL: userDoc.data()?.photoURL || "",
       people: Number(numPeople),
       bikes: Number(numBikes),
@@ -158,14 +155,14 @@ export default function EventsPage() {
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {events.map((event) => (
-          <Card key={event.id} className="border border-zinc-800 bg-zinc-950 overflow-hidden flex flex-col">
+          <Card key={event.id} className="border border-zinc-800 bg-zinc-950 overflow-hidden flex flex-col group hover:border-red-600 transition-colors">
             <CardHeader className="p-0">
               <div className="h-52 bg-black flex items-center justify-center overflow-hidden">
-                <img src={event.image || '/cascovigili.jpg'} alt="" className="w-full h-full object-contain" />
+                <img src={event.image || '/cascovigili.jpg'} alt="" className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500" />
               </div>
               <div className="p-4">
                 <CardTitle className="text-xl font-black text-white uppercase italic tracking-tighter">{event.title}</CardTitle>
-                <CardDescription className="text-zinc-500 text-[10px] font-bold uppercase">{event.date}</CardDescription>
+                <CardDescription className="text-red-600 text-[10px] font-black uppercase italic">{event.date}</CardDescription>
               </div>
             </CardHeader>
             <CardContent className="p-4 pt-0 flex-grow flex flex-col gap-4">
@@ -180,8 +177,7 @@ export default function EventsPage() {
                   {event.metaMeteo && (
                     <a 
                       href={`https://www.ilmeteo.it/meteo/${event.metaMeteo.replace(/\s+/g, '+')}`} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
+                      target="_blank" rel="noopener noreferrer"
                       className="flex-1 flex items-center justify-center py-3 bg-yellow-600 text-black rounded font-black text-[10px] uppercase"
                     >
                       <CloudSun className="h-3.5 w-3.5 mr-1" /> Meteo
@@ -193,8 +189,8 @@ export default function EventsPage() {
                 </Button>
                 {isAdmin && (
                   <div className="flex justify-end gap-4 pt-2 border-t border-zinc-900">
-                    <button onClick={() => { setSelectedEvent(event); setIsDialogOpen(true); }} className="text-zinc-500 hover:text-white transition-colors"><Edit className="h-4 w-4" /></button>
-                    <button onClick={() => { setEventToDelete(event.id); setIsDeleteConfirmOpen(true); }} className="text-zinc-500 hover:text-red-600 transition-colors"><Trash2 className="h-4 w-4" /></button>
+                    <button onClick={() => { setSelectedEvent(event); setIsDialogOpen(true); }} className="text-zinc-500 hover:text-white"><Edit className="h-4 w-4" /></button>
+                    <button onClick={() => { setEventToDelete(event.id); setIsDeleteConfirmOpen(true); }} className="text-zinc-500 hover:text-red-600"><Trash2 className="h-4 w-4" /></button>
                   </div>
                 )}
               </div>
@@ -204,7 +200,7 @@ export default function EventsPage() {
       </div>
 
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
-        <DialogContent className="bg-zinc-950 border-zinc-800 text-white max-w-2xl max-h-[90vh] overflow-y-auto p-0 scrollbar-hide">
+        <DialogContent className="bg-zinc-950 border-zinc-800 text-white max-w-2xl max-h-[90vh] overflow-y-auto p-0">
           <div className="p-6 space-y-6">
             <DialogTitle className="text-3xl font-black uppercase italic text-red-600 tracking-tighter">{eventDetails?.title}</DialogTitle>
 
@@ -224,18 +220,11 @@ export default function EventsPage() {
               <div className="grid grid-cols-3 gap-2">
                 {eventPhotos.map((ph) => (
                   <div key={ph.id} className="relative aspect-square rounded overflow-hidden bg-zinc-900 border border-zinc-800 cursor-zoom-in">
-                    <img 
-                      src={ph.photoData} 
-                      className="w-full h-full object-cover" 
-                      alt="" 
-                      onClick={() => setSelectedPhoto(ph.photoData)}
-                    />
+                    <img src={ph.photoData} className="w-full h-full object-cover" alt="" onClick={() => setSelectedPhoto(ph.photoData)} />
                     {(ph.userId === auth.currentUser?.uid || isAdmin) && (
                       <button onClick={async () => await deleteDoc(doc(db, `events/${eventDetails.id}/photos`, ph.id))} className="absolute top-1 right-1 p-1 bg-black/80 rounded-full text-red-500 z-10"><Trash2 className="h-3.5 w-3.5" /></button>
                     )}
-                    <div className="absolute bottom-0 w-full p-1 bg-black/60 text-[8px] text-white font-black uppercase truncate text-center pointer-events-none">
-                      {ph.userName || "SOCIO"}
-                    </div>
+                    <div className="absolute bottom-0 w-full p-1 bg-black/60 text-[8px] text-white font-black uppercase truncate text-center pointer-events-none">{ph.userName || "SOCIO"}</div>
                   </div>
                 ))}
               </div>
@@ -251,11 +240,11 @@ export default function EventsPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <Label className="text-[10px] uppercase text-zinc-500 font-bold tracking-widest">N° Persone</Label>
-                      <Input type="number" min="1" value={numPeople} onChange={(e) => setNumPeople(Number(e.target.value))} className="bg-black border-zinc-700 h-11 text-white" />
+                      <Input type="number" min="1" value={numPeople} onChange={(e) => setNumPeople(Number(e.target.value))} className="bg-black border-zinc-700 text-white" />
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-[10px] uppercase text-zinc-500 font-bold tracking-widest">N° Moto</Label>
-                      <Input type="number" min="0" value={numBikes} onChange={(e) => setNumBikes(Number(e.target.value))} className="bg-black border-zinc-700 h-11 text-white" />
+                      <Input type="number" min="0" value={numBikes} onChange={(e) => setNumBikes(Number(e.target.value))} className="bg-black border-zinc-700 text-white" />
                     </div>
                   </div>
                   <Button onClick={handleJoinEvent} className="w-full bg-red-600 font-black uppercase italic h-12">Conferma Partecipazione</Button>
@@ -270,7 +259,7 @@ export default function EventsPage() {
                 <h3 className="text-[10px] font-black uppercase text-zinc-500 italic flex items-center gap-2"><Users className="h-4 w-4" /> Soci Iscritti ({participants.length})</h3>
                 <div className="text-[11px] font-black text-red-600 uppercase italic">Totale: {totalPeople} P / {totalBikes} M</div>
               </div>
-              <div className="grid gap-2">
+              <div className="grid gap-2 pb-6">
                 {participants.map((p) => (
                   <div key={p.id} className="bg-zinc-900/40 p-3 rounded border border-zinc-900/50 flex justify-between items-center">
                     <div className="flex items-center gap-3">
@@ -288,27 +277,10 @@ export default function EventsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* MODALE INGRANDIMENTO FOTO - VERSIONE FIX FINALE PER ZOOM E PAN */}
       {selectedPhoto && (
-        <div 
-          className="fixed inset-0 z-[999] bg-black/98 flex items-center justify-center overflow-auto"
-          onClick={() => setSelectedPhoto(null)}
-        >
-          <button 
-            className="fixed top-6 right-6 p-3 bg-zinc-900/80 rounded-full text-white z-[1000] hover:bg-red-600"
-            onClick={(e) => { e.stopPropagation(); setSelectedPhoto(null); }}
-          >
-            <X className="h-6 w-6" />
-          </button>
-          
-          <div className="min-w-full min-h-full flex items-center justify-center p-4">
-            <img 
-              src={selectedPhoto} 
-              className="max-w-full h-auto object-contain shadow-2xl" 
-              alt="Ingrandimento"
-              onClick={(e) => e.stopPropagation()} 
-            />
-          </div>
+        <div className="fixed inset-0 z-[999] bg-black/98 flex items-center justify-center p-4" onClick={() => setSelectedPhoto(null)}>
+          <button className="fixed top-6 right-6 p-3 bg-zinc-900/80 rounded-full text-white z-[1000] hover:bg-red-600" onClick={() => setSelectedPhoto(null)}><X className="h-6 w-6" /></button>
+          <img src={selectedPhoto} className="max-w-full max-h-full object-contain shadow-2xl" alt="" onClick={(e) => e.stopPropagation()} />
         </div>
       )}
 

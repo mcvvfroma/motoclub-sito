@@ -102,7 +102,7 @@ export default function LoginPage() {
           </div>
           
           <div className="grid gap-2">
-            <Label htmlFor="password" dclassName="uppercase text-[10px] tracking-widest text-zinc-500">Password</Label>
+            <Label htmlFor="password" className="uppercase text-[10px] tracking-widest text-zinc-500">Password</Label>
             <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="bg-zinc-950 border-zinc-800" />
           </div>
           
