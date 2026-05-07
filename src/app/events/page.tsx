@@ -62,7 +62,6 @@ export default function EventsPage() {
         const phList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setEventPhotos(phList);
         
-        // FIX SICURO PER TYPESCRIPT
         const currentUid = auth.currentUser?.uid;
         if (currentUid) {
           const count = phList.filter(ph => ph && (ph as any).userId === currentUid).length;
@@ -289,24 +288,29 @@ export default function EventsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* MODALE INGRANDIMENTO FOTO */}
-      <Dialog open={!!selectedPhoto} onOpenChange={() => setSelectedPhoto(null)}>
-        <DialogContent className="bg-black/95 border-none text-white max-w-[95vw] p-0 flex items-center justify-center overflow-hidden">
-          <div className="relative w-full h-full flex items-center justify-center">
-            <button 
-              onClick={() => setSelectedPhoto(null)} 
-              className="absolute top-4 right-4 p-2 bg-zinc-900/50 rounded-full text-white hover:bg-red-600 transition-colors z-50"
-            >
-              <X className="h-6 w-6" />
-            </button>
+      {/* MODALE INGRANDIMENTO FOTO - VERSIONE FIX FINALE PER ZOOM E PAN */}
+      {selectedPhoto && (
+        <div 
+          className="fixed inset-0 z-[999] bg-black/98 flex items-center justify-center overflow-auto"
+          onClick={() => setSelectedPhoto(null)}
+        >
+          <button 
+            className="fixed top-6 right-6 p-3 bg-zinc-900/80 rounded-full text-white z-[1000] hover:bg-red-600"
+            onClick={(e) => { e.stopPropagation(); setSelectedPhoto(null); }}
+          >
+            <X className="h-6 w-6" />
+          </button>
+          
+          <div className="min-w-full min-h-full flex items-center justify-center p-4">
             <img 
-              src={selectedPhoto || ''} 
-              className="max-w-full max-h-[90vh] object-contain shadow-2xl" 
-              alt="Ingrandimento" 
+              src={selectedPhoto} 
+              className="max-w-full h-auto object-contain shadow-2xl" 
+              alt="Ingrandimento"
+              onClick={(e) => e.stopPropagation()} 
             />
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      )}
 
       <EventDialog isOpen={isDialogOpen} setIsOpen={setIsDialogOpen} event={selectedEvent} onSave={(d) => selectedEvent ? updateDoc(doc(db, "events", selectedEvent.id), d) : addDoc(collection(db, "events"), d)} />
       <ConfirmDeleteDialog isOpen={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen} onConfirm={() => deleteDoc(doc(db, "events", eventToDelete!))} title="Elimina" description="Sicuro?" />
