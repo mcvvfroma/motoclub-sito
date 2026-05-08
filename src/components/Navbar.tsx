@@ -57,9 +57,6 @@ export default function Navbar({ setIsOpen }: NavbarProps) {
         updated[path] = false;
       } else {
         const lastRead = localStorage.getItem(storageKey);
-        
-        // MODIFICA QUI: Se è un nuovo login (lastRead vuoto), segnamo come letto l'ID attuale
-        // così i pallini non appaiono per i vecchi contenuti.
         if (!lastRead && latestIds[path]) {
           localStorage.setItem(storageKey, latestIds[path]);
           updated[path] = false;
@@ -76,7 +73,6 @@ export default function Navbar({ setIsOpen }: NavbarProps) {
   const handleLogoff = async () => {
     try {
       await signOut(auth);
-      // RIMOSSO localStorage.clear() per non perdere la memoria dei pallini letti
       window.sessionStorage.clear();
       window.location.href = '/login';
     } catch (error) {
@@ -85,13 +81,32 @@ export default function Navbar({ setIsOpen }: NavbarProps) {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-40 bg-background/80 backdrop-blur-sm border-b">
-      <div className="container mx-auto flex h-16 max-w-screen-xl items-center justify-between px-4">
+    <header className="fixed top-0 left-0 right-0 z-40 bg-background/80 backdrop-blur-sm border-b h-20 flex items-center">
+      <div className="container mx-auto flex max-w-screen-xl items-center justify-between px-4">
+        
+        {/* HAMBURGER MENU A SINISTRA - PIÙ GRANDE */}
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="md:hidden relative h-14 w-14" 
+          onClick={() => setIsOpen(true)}
+        >
+          <Menu className="h-8 w-8 text-red-600" strokeWidth={2.5} />
+          {mounted && hasAnyNotif && (
+            <span className="absolute top-3 right-3 flex h-3 w-3">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-red-600"></span>
+            </span>
+          )}
+        </Button>
+
+        {/* LOGO CENTRALE - SEMPRE VISIBILE */}
         <Link href="/" className="flex items-center space-x-3">
           <Image src="/logo_motoclub.gif" alt="Logo" width={40} height={40} className="h-10 w-10 rounded-sm" />
-          <span className="hidden sm:inline-block text-lg font-bold text-foreground">Motoclub VVF - Roma</span>
+          <span className="hidden sm:inline-block text-lg font-bold text-foreground">Motoclub VVF</span>
         </Link>
 
+        {/* MENU DESKTOP (Invariato) */}
         <nav className="hidden md:flex items-center space-x-4">
           {!loading && menuItems.filter(i => i.href !== '/members' || isAdmin).map((item) => (
             <Link key={item.href} href={item.href} className="relative text-sm font-medium text-muted-foreground transition-colors hover:text-foreground px-2">
@@ -106,20 +121,18 @@ export default function Navbar({ setIsOpen }: NavbarProps) {
           ))}
         </nav>
 
-        <div className="flex items-center space-x-2">
-            <Button variant="ghost" size="icon" onClick={handleLogoff} className="text-red-500 hover:text-red-600">
-                <LogOut className="h-5 w-5" />
-            </Button>
-            <Button variant="ghost" size="icon" className="md:hidden relative" onClick={() => setIsOpen(true)}>
-                <Menu className="h-6 w-6" />
-                {mounted && hasAnyNotif && (
-                  <span className="absolute top-2 right-2 flex h-3 w-3">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-red-600"></span>
-                  </span>
-                )}
-            </Button>
+        {/* LOGOFF A DESTRA - PIÙ GRANDE */}
+        <div className="flex items-center">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={handleLogoff} 
+            className="text-red-500 hover:text-red-600 h-14 w-14"
+          >
+            <LogOut className="h-7 w-7" strokeWidth={2.5} />
+          </Button>
         </div>
+
       </div>
     </header>
   );
