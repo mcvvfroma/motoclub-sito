@@ -53,7 +53,7 @@ export default function HomePage() {
         
         {/* Terza Riga: Oro - Black Ops One (Formato più piccolo) */}
         <h2 className={`${blackOps.className} text-2xl md:text-3xl text-yellow-500 leading-tight`}>
-          Sezione di Roma
+          Sezione Roma
         </h2>
       </div>
     </div>
