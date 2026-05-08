@@ -81,43 +81,60 @@ export default function Navbar({ setIsOpen }: NavbarProps) {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-40 bg-background/80 backdrop-blur-sm border-b h-24 flex items-center">
+    /* h-16 su desktop (IDX), h-24 su mobile */
+    <header className="fixed top-0 left-0 right-0 z-40 bg-background/80 backdrop-blur-sm border-b h-16 md:h-16 lg:h-16 max-md:h-24 flex items-center">
       <div className="container mx-auto flex max-w-screen-xl items-center justify-between px-4">
         
-        {/* HAMBURGER MENU A SINISTRA - FORZATO A 40PX */}
+        {/* HAMBURGER - Gigante solo su mobile, normale altrove */}
         <Button 
           variant="ghost" 
-          className="md:hidden relative h-20 w-20 p-0" 
+          className="md:hidden relative h-12 w-12 max-md:h-20 max-md:w-20 p-0" 
           onClick={() => setIsOpen(true)}
         >
           <Menu 
-            style={{ width: '40px', height: '40px' }} 
-            className="text-white" 
-            strokeWidth={2.5} 
+            className="text-white"
+            strokeWidth={2.5}
+            /* Stile inline condizionale: 40px solo su schermi piccoli */
+            style={typeof window !== 'undefined' && window.innerWidth < 768 ? { width: '40px', height: '40px' } : { width: '24px', height: '24px' }}
           />
           {mounted && hasAnyNotif && (
-            <span className="absolute top-4 right-4 flex h-4 w-4">
+            <span className="absolute top-2 right-2 max-md:top-4 max-md:right-4 flex h-3 w-3 max-md:h-4 max-md:w-4">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-4 w-4 bg-red-600"></span>
+              <span className="relative inline-flex rounded-full h-full w-full bg-red-600"></span>
             </span>
           )}
         </Button>
 
-        {/* LOGO CENTRALE */}
+        {/* LOGO - Dimensione adattiva */}
         <Link href="/" className="flex items-center space-x-3">
-          <Image src="/logo_motoclub.gif" alt="Logo" width={50} height={50} className="h-12 w-12 rounded-sm" />
-          <span className="hidden sm:inline-block text-xl font-bold text-foreground italic uppercase">Motoclub VVF</span>
+          <Image src="/logo_motoclub.gif" alt="Logo" width={40} height={40} className="h-10 w-10 max-md:h-12 max-md:w-12 rounded-sm" />
+          <span className="hidden sm:inline-block text-lg font-bold text-foreground italic uppercase">Motoclub VVF</span>
         </Link>
 
-        {/* LOGOFF A DESTRA - FORZATO A 40PX */}
+        {/* MENU DESKTOP (Quello che serve a te su IDX) */}
+        <nav className="hidden md:flex items-center space-x-4">
+          {!loading && menuItems.filter(i => i.href !== '/members' || isAdmin).map((item) => (
+            <Link key={item.href} href={item.href} className="relative text-sm font-medium text-muted-foreground transition-colors hover:text-foreground px-2">
+              {item.label}
+              {mounted && notifs[item.href] && (
+                <span className="absolute -top-1 -right-1 flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span>
+                </span>
+              )}
+            </Link>
+          ))}
+        </nav>
+
+        {/* LOGOFF - Gigante solo su mobile */}
         <div className="flex items-center">
           <Button 
             variant="ghost" 
             onClick={handleLogoff} 
-            className="text-red-600 hover:text-red-500 h-20 w-20 p-0"
+            className="text-red-600 hover:text-red-500 h-12 w-12 max-md:h-20 max-md:w-20 p-0"
           >
             <LogOut 
-              style={{ width: '40px', height: '40px' }} 
+              style={typeof window !== 'undefined' && window.innerWidth < 768 ? { width: '40px', height: '40px' } : { width: '24px', height: '24px' }}
               strokeWidth={2.5} 
             />
           </Button>
