@@ -81,19 +81,22 @@ export default function Navbar({ setIsOpen }: NavbarProps) {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-40 bg-background/80 backdrop-blur-sm border-b h-20 flex items-center">
+    <header className="fixed top-0 left-0 right-0 z-40 bg-background/80 backdrop-blur-sm border-b h-24 flex items-center">
       <div className="container mx-auto flex max-w-screen-xl items-center justify-between px-4">
         
-        {/* HAMBURGER MENU A SINISTRA - BIANCO E PIÙ GRANDE */}
+        {/* HAMBURGER MENU A SINISTRA - FORZATO A 40PX */}
         <Button 
           variant="ghost" 
-          size="icon" 
-          className="md:hidden relative h-16 w-16" 
+          className="md:hidden relative h-20 w-20 p-0" 
           onClick={() => setIsOpen(true)}
         >
-          <Menu className="h-10 w-10 text-white" strokeWidth={2.5} />
+          <Menu 
+            style={{ width: '40px', height: '40px' }} 
+            className="text-white" 
+            strokeWidth={2.5} 
+          />
           {mounted && hasAnyNotif && (
-            <span className="absolute top-3 right-3 flex h-4 w-4">
+            <span className="absolute top-4 right-4 flex h-4 w-4">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-4 w-4 bg-red-600"></span>
             </span>
@@ -102,34 +105,21 @@ export default function Navbar({ setIsOpen }: NavbarProps) {
 
         {/* LOGO CENTRALE */}
         <Link href="/" className="flex items-center space-x-3">
-          <Image src="/logo_motoclub.gif" alt="Logo" width={40} height={40} className="h-10 w-10 rounded-sm" />
-          <span className="hidden sm:inline-block text-lg font-bold text-foreground">Motoclub VVF</span>
+          <Image src="/logo_motoclub.gif" alt="Logo" width={50} height={50} className="h-12 w-12 rounded-sm" />
+          <span className="hidden sm:inline-block text-xl font-bold text-foreground italic uppercase">Motoclub VVF</span>
         </Link>
 
-        {/* MENU DESKTOP (Invariato) */}
-        <nav className="hidden md:flex items-center space-x-4">
-          {!loading && menuItems.filter(i => i.href !== '/members' || isAdmin).map((item) => (
-            <Link key={item.href} href={item.href} className="relative text-sm font-medium text-muted-foreground transition-colors hover:text-foreground px-2">
-              {item.label}
-              {mounted && notifs[item.href] && (
-                <span className="absolute -top-1 -right-1 flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span>
-                </span>
-              )}
-            </Link>
-          ))}
-        </nav>
-
-        {/* LOGOFF A DESTRA - ROSSO E PIÙ GRANDE */}
+        {/* LOGOFF A DESTRA - FORZATO A 40PX */}
         <div className="flex items-center">
           <Button 
             variant="ghost" 
-            size="icon" 
             onClick={handleLogoff} 
-            className="text-red-600 hover:text-red-500 h-16 w-16"
+            className="text-red-600 hover:text-red-500 h-20 w-20 p-0"
           >
-            <LogOut className="h-10 w-10" strokeWidth={2.5} />
+            <LogOut 
+              style={{ width: '40px', height: '40px' }} 
+              strokeWidth={2.5} 
+            />
           </Button>
         </div>
 
