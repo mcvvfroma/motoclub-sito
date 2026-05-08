@@ -84,23 +84,23 @@ export default function Navbar({ setIsOpen }: NavbarProps) {
     <header className="fixed top-0 left-0 right-0 z-40 bg-background/80 backdrop-blur-sm border-b h-20 flex items-center">
       <div className="container mx-auto flex max-w-screen-xl items-center justify-between px-4">
         
-        {/* HAMBURGER MENU A SINISTRA - PIÙ GRANDE */}
+        {/* HAMBURGER MENU A SINISTRA - BIANCO E PIÙ GRANDE */}
         <Button 
           variant="ghost" 
           size="icon" 
-          className="md:hidden relative h-14 w-14" 
+          className="md:hidden relative h-16 w-16" 
           onClick={() => setIsOpen(true)}
         >
-          <Menu className="h-8 w-8 text-red-600" strokeWidth={2.5} />
+          <Menu className="h-10 w-10 text-white" strokeWidth={2.5} />
           {mounted && hasAnyNotif && (
-            <span className="absolute top-3 right-3 flex h-3 w-3">
+            <span className="absolute top-3 right-3 flex h-4 w-4">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-red-600"></span>
+              <span className="relative inline-flex rounded-full h-4 w-4 bg-red-600"></span>
             </span>
           )}
         </Button>
 
-        {/* LOGO CENTRALE - SEMPRE VISIBILE */}
+        {/* LOGO CENTRALE */}
         <Link href="/" className="flex items-center space-x-3">
           <Image src="/logo_motoclub.gif" alt="Logo" width={40} height={40} className="h-10 w-10 rounded-sm" />
           <span className="hidden sm:inline-block text-lg font-bold text-foreground">Motoclub VVF</span>
@@ -121,15 +121,15 @@ export default function Navbar({ setIsOpen }: NavbarProps) {
           ))}
         </nav>
 
-        {/* LOGOFF A DESTRA - PIÙ GRANDE */}
+        {/* LOGOFF A DESTRA - ROSSO E PIÙ GRANDE */}
         <div className="flex items-center">
           <Button 
             variant="ghost" 
             size="icon" 
             onClick={handleLogoff} 
-            className="text-red-500 hover:text-red-600 h-14 w-14"
+            className="text-red-600 hover:text-red-500 h-16 w-16"
           >
-            <LogOut className="h-7 w-7" strokeWidth={2.5} />
+            <LogOut className="h-10 w-10" strokeWidth={2.5} />
           </Button>
         </div>
 
