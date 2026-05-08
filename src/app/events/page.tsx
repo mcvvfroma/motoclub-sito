@@ -134,14 +134,10 @@ export default function EventsPage() {
     }
   };
 
-  // FUNZIONE PER CANCELLARE LA FOTO
   const handleDeletePhoto = async (photoId: string, photoUserId: string, e: React.MouseEvent) => {
-    e.stopPropagation(); // Impedisce l'apertura dell'ingrandimento
+    e.stopPropagation();
     if (!eventDetails?.id || !auth.currentUser) return;
-    
-    // Verifichiamo la proprietà o se è admin
     if (photoUserId === auth.currentUser.uid || isAdmin) {
-      // Non usiamo un Dialog di conferma separato per le foto per non appesantire, cancelliamo direttamente
       await deleteDoc(doc(db, `events/${eventDetails.id}/photos`, photoId));
     }
   };
@@ -153,7 +149,7 @@ export default function EventsPage() {
 
   return (
     <div className="w-full py-8 px-4 bg-black min-h-screen pb-24 text-white">
-      {/* ... (Header e Grid rimangono identici, non tocchiamo nulla) ... */}
+      {/* Header e Grid Eventi rimangono invariati */}
       <div className="flex justify-between items-center mb-10">
         <div className="flex items-center gap-3">
           <Calendar className="h-8 w-8 text-red-600" />
@@ -204,18 +200,20 @@ export default function EventsPage() {
       </div>
 
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
-        <DialogContent className="bg-zinc-950 border-zinc-800 text-white max-w-2xl max-h-[90vh] overflow-y-auto p-0 z-50 shadow-2xl">
-          <div className="p-6 space-y-6">
-            <DialogTitle className="text-3xl font-black uppercase italic text-red-600 leading-none">{eventDetails?.title}</DialogTitle>
+        {/* FIX RESPONSIVE: max-w-[95vw] e w-full per evitare lo scroll orizzontale su mobile */}
+        <DialogContent className="bg-zinc-950 border-zinc-800 text-white w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto p-0 z-50 shadow-2xl rounded-lg">
+          <div className="p-4 sm:p-6 space-y-6">
+            <DialogTitle className="text-2xl sm:text-3xl font-black uppercase italic text-red-600 leading-none pr-8">
+              {eventDetails?.title}
+            </DialogTitle>
             
-            {/* Gallery - CON CANCELLAZIONE FOTO RIPRISTINATA */}
             <div className="space-y-4 pt-4 border-t border-zinc-900">
               <div className="flex justify-between items-center">
                 <h3 className="text-sm font-black uppercase italic flex items-center gap-2"><Camera className="h-4 w-4 text-red-600" /> Gallery ({eventPhotos.length})</h3>
                 {isParticipating && (
                    <Button disabled={myPhotosCount >= 3 || isUploading} onClick={() => fileInputRef.current?.click()} className="text-[10px] h-8 font-black uppercase italic bg-red-600">
                      {isUploading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <ImageIcon className="h-3 w-3 mr-1" />}
-                     Carica ({myPhotosCount}/3)
+                     Carica
                    </Button>
                 )}
               </div>
@@ -223,58 +221,51 @@ export default function EventsPage() {
                 {eventPhotos.map((ph) => (
                   <div key={ph.id} className="relative aspect-square rounded overflow-hidden border border-zinc-800 bg-zinc-900 cursor-pointer" onClick={() => setSelectedPhoto(ph.photoData)}>
                     <img src={ph.photoData} className="w-full h-full object-cover select-none" alt="" />
-                    
-                    {/* PULSANTE CANCELLAZIONE FOTO (Cestino Rosso) */}
                     {(ph.userId === auth.currentUser?.uid || isAdmin) && (
-                      <button 
-                        onClick={(e) => handleDeletePhoto(ph.id, ph.userId, e)} 
-                        className="absolute top-1 right-1 p-1.5 bg-black/70 rounded-full text-red-500 hover:bg-red-600 hover:text-white transition-colors z-20 active:scale-90"
-                      >
+                      <button onClick={(e) => handleDeletePhoto(ph.id, ph.userId, e)} className="absolute top-1 right-1 p-1.5 bg-black/70 rounded-full text-red-500 z-20">
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     )}
-                    
                     <div className="absolute bottom-0 w-full p-1 bg-black/60 text-[8px] font-black uppercase truncate text-center">{ph.userName}</div>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Iscrizione, Note, Partecipanti (Non tocchiamo nulla) ... */}
-            <div className="bg-zinc-900 p-6 rounded-lg border border-zinc-800 space-y-4 shadow-inner">
+            <div className="bg-zinc-900 p-4 sm:p-6 rounded-lg border border-zinc-800 space-y-4 shadow-inner">
               <h3 className="text-sm font-black uppercase flex items-center gap-2 italic">
                 {isParticipating ? <CheckCircle2 className="text-green-500 h-5 w-5" /> : <PlusCircle className="text-red-600 h-5 w-5" />}
-                {isParticipating ? "Iscrizione Confermata" : "Partecipa al Giro"}
+                Iscrizione
               </h3>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3 sm:gap-4">
                 <div className="space-y-1.5">
-                  <Label className="text-[10px] uppercase text-zinc-500 font-bold tracking-widest">Persone</Label>
-                  <Input type="number" min="1" value={numPeople} onChange={(e) => setNumPeople(Number(e.target.value))} className="bg-black border-zinc-700 text-white font-bold h-12" />
+                  <Label className="text-[10px] uppercase text-zinc-500 font-bold">Persone</Label>
+                  <Input type="number" min="1" value={numPeople} onChange={(e) => setNumPeople(Number(e.target.value))} className="bg-black border-zinc-700 h-12" />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-[10px] uppercase text-zinc-500 font-bold tracking-widest">Moto</Label>
-                  <Input type="number" min="0" value={numBikes} onChange={(e) => setNumBikes(Number(e.target.value))} className="bg-black border-zinc-700 text-white font-bold h-12" />
+                  <Label className="text-[10px] uppercase text-zinc-500 font-bold">Moto</Label>
+                  <Input type="number" min="0" value={numBikes} onChange={(e) => setNumBikes(Number(e.target.value))} className="bg-black border-zinc-700 h-12" />
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-[10px] uppercase text-zinc-500 font-bold tracking-widest">Note (es: ristorante, ritardo...)</Label>
-                <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} className="bg-black border-zinc-700 text-white min-h-[80px]" placeholder="Scrivi qui..." />
+                <Label className="text-[10px] uppercase text-zinc-500 font-bold">Note</Label>
+                <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} className="bg-black border-zinc-700 min-h-[80px]" placeholder="Note..." />
               </div>
               <div className="flex gap-2">
-                <Button onClick={handleJoinEvent} className="flex-1 bg-red-600 font-black uppercase italic h-12 shadow-lg active:scale-95 transition-transform">
-                  {isParticipating ? "Aggiorna Iscrizione" : "Conferma Partecipazione"}
+                <Button onClick={handleJoinEvent} className="flex-1 bg-red-600 font-black uppercase italic h-12">
+                  {isParticipating ? "Aggiorna" : "Conferma"}
                 </Button>
                 {isParticipating && (
-                  <Button onClick={handleCancelParticipation} variant="outline" className="border-zinc-800 text-zinc-500 font-black uppercase italic h-12 px-4 hover:bg-red-600 hover:text-white transition-colors">Annulla</Button>
+                  <Button onClick={handleCancelParticipation} variant="outline" className="border-zinc-800 h-12 px-4">Annulla</Button>
                 )}
               </div>
             </div>
 
             <div className="space-y-4 border-t border-zinc-900 pt-6">
               <div className="flex justify-between items-center">
-                <h3 className="text-[10px] font-black uppercase text-zinc-500 italic flex items-center gap-2"><Users className="h-4 w-4" /> Iscritti ({participants.length})</h3>
-                <div className="text-[11px] font-black text-red-600 uppercase italic bg-black/50 px-3 py-1 rounded-full border border-zinc-800">
-                  TOT: {totalPeople} P / {totalBikes} M
+                <h3 className="text-[10px] font-black uppercase text-zinc-500 italic">Iscritti ({participants.length})</h3>
+                <div className="text-[11px] font-black text-red-600 uppercase bg-black/50 px-3 py-1 rounded-full border border-zinc-800">
+                  {totalPeople} P / {totalBikes} M
                 </div>
               </div>
               <div className="grid gap-2 pb-4">
@@ -282,12 +273,12 @@ export default function EventsPage() {
                   <div key={p.id} className="bg-zinc-900/40 p-3 rounded border border-zinc-900/50 flex flex-col gap-2">
                     <div className="flex justify-between items-center">
                       <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-full overflow-hidden bg-zinc-800 border border-zinc-700 flex items-center justify-center shrink-0">
+                        <div className="h-8 w-8 rounded-full overflow-hidden bg-zinc-800 border border-zinc-700 shrink-0 flex items-center justify-center">
                           {p.photoURL ? <img src={p.photoURL} className="w-full h-full object-cover" alt="" /> : <User className="h-4 w-4 text-zinc-600" />}
                         </div>
-                        <span className="font-bold text-[11px] uppercase text-white tracking-tight">{p.name || "SOCIO"}</span>
+                        <span className="font-bold text-[11px] uppercase tracking-tight">{p.name || "SOCIO"}</span>
                       </div>
-                      <span className="text-[10px] font-black text-zinc-400 bg-black/50 px-2 py-1 rounded border border-zinc-800/50">{(p as any).people || 0} P / {(p as any).bikes || 0} M</span>
+                      <span className="text-[10px] font-black text-zinc-400 bg-black/50 px-2 py-1 rounded">{(p as any).people || 0}P / {(p as any).bikes || 0}M</span>
                     </div>
                     {(p as any).notes && (
                       <div className="flex gap-2 items-start pl-11">
@@ -303,13 +294,8 @@ export default function EventsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Ingrandimento Foto (Portal, NO LAG) */}
       {selectedPhoto && <PhotoPortal photoUrl={selectedPhoto} onClose={() => setSelectedPhoto(null)} />}
-      
-      {/* Input File Nascosto */}
       <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handlePhotoUpload} />
-
-      {/* Dialog per Admin */}
       <EventDialog isOpen={isDialogOpen} setIsOpen={setIsDialogOpen} event={selectedEvent} onSave={(d) => selectedEvent ? updateDoc(doc(db, "events", selectedEvent.id), d) : addDoc(collection(db, "events"), d)} />
       <ConfirmDeleteDialog isOpen={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen} onConfirm={() => deleteDoc(doc(db, "events", eventToDelete!))} title="Elimina" description="Sicuro?" />
     </div>
