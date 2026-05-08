@@ -3,8 +3,7 @@
 import { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
-import { Camera, Calendar, ImageIcon, X, ChevronLeft, ChevronRight } from 'lucide-react';
-import Link from 'next/link';
+import { Camera, Calendar, X, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function GalleriaPage() {
   const [galleryData, setGalleryData] = useState<any[]>([]);
@@ -102,13 +101,6 @@ export default function GalleriaPage() {
             </div>
           </section>
         ))}
-      </div>
-
-      {/* Pulsante Home */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40">
-        <Link href="/" className="px-8 py-3 bg-red-600 text-white rounded-full font-black uppercase italic text-xs shadow-2xl hover:bg-red-700 transition">
-          Torna alla Home
-        </Link>
       </div>
 
       {/* SLIDER FOTO FULLSCREEN */}
