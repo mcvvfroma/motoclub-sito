@@ -114,11 +114,11 @@ export default function AdminMembersPage() {
 
   return (
     <div className="min-h-screen pb-24 bg-background text-foreground">
-      <main className="max-w-4xl mx-auto px-4 py-8">
-        <header className="flex items-center justify-between gap-4 mb-8">
+      <main className="max-w-4xl mx-auto px-2 sm:px-4 py-6">
+        <header className="flex items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-3">
             <ShieldAlert className="w-6 h-6 text-primary shrink-0" />
-            <h1 className="text-xl md:text-2xl font-headline font-bold truncate">Gestione Soci</h1>
+            <h1 className="text-lg md:text-xl font-headline font-bold truncate">Gestione Soci</h1>
           </div>
           <Dialog open={isAdding} onOpenChange={setIsAdding}>
             <DialogTrigger asChild>
