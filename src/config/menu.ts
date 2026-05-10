@@ -1,9 +1,10 @@
 export const menuItems = [
   { href: '/', label: 'Home' },
   { href: '/events', label: 'Eventi' },
-  { href: '/bikers', label: 'The Bikers' }, // Nuova sezione pubblica
+  { href: '/bikers', label: 'The Bikers' },
   { href: '/comunicazioni', label: 'Comunicazioni' },
-  { href: '/members', label: 'Soci' }, // Questa rimane protetta dal tuo hook useAdmin
-  { href: '/gallery', label: 'Galleria' },
+  { href: '/mercatino', label: 'Mercatino' },
+  { href: '/members', label: 'Soci' },
+  { href: '/galleria', label: 'Galleria' },
   { href: '/convenzioni', label: 'Convenzioni' },
 ];
