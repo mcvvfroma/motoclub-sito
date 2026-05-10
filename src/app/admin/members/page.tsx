@@ -113,16 +113,16 @@ export default function AdminMembersPage() {
 
   return (
     <div className="min-h-screen pb-24 bg-background text-foreground">
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <header className="flex items-center justify-between gap-4 mb-6">
+      <main className="max-w-4xl mx-auto px-2 sm:px-6 lg:px-8 py-6">
+        <header className="space-y-4 sm:space-y-0 sm:flex sm:items-center sm:justify-between mb-6">
           <div className="flex items-center gap-3">
             <ShieldAlert className="w-6 h-6 text-primary shrink-0" />
             <h1 className="text-lg md:text-xl font-headline font-bold truncate">Gestione Soci</h1>
           </div>
           <Dialog open={isAdding} onOpenChange={setIsAdding}>
             <DialogTrigger asChild>
-              <Button size="sm" className="gap-2 shrink-0">
-                 <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Aggiungi</span>
+              <Button className="w-full sm:w-auto gap-2">
+                 <Plus className="w-4 h-4" /> <span>Aggiungi Socio</span>
               </Button>
             </DialogTrigger>
             <DialogContent className="bg-card border-border">
@@ -145,7 +145,7 @@ export default function AdminMembersPage() {
               ) : (
                   members.map((socio) => (
                   <li key={socio.id} className="py-3">
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between gap-3">
                           <div className="flex items-center gap-4 min-w-0">
                               <Avatar>
                                   <AvatarImage src={socio.photoURL} alt={socio.nome} />
@@ -165,7 +165,7 @@ export default function AdminMembersPage() {
                                   <DropdownMenuContent align="end">
                                       <DropdownMenuItem onClick={() => openEditDialog(socio)}><Edit className="mr-2 h-4 w-4"/>Modifica</DropdownMenuItem>
                                       <DropdownMenuSeparator />
-                                      <DropdownMenuItem onClick={() => setDeletingMember(socio)} className="text-destructive focus:text-destructive focus:bg-destructive/10"><Trash2 className="mr-2 h-t-4"/>Elimina</DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => setDeletingMember(socio)} className="text-destructive focus:text-destructive focus:bg-destructive/10"><Trash2 className="mr-2 h-4 w-4"/>Elimina</DropdownMenuItem>
                                   </DropdownMenuContent>
                               </DropdownMenu>
                           </div>
