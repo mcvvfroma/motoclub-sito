@@ -4,13 +4,13 @@ import { useEffect, useState } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, onSnapshot, query, setDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 
-import { PlusCircle, MoreHorizontal, Users, Camera } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, Users, Camera, User } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import MemberDialog from '@/components/MemberDialog';
 import ConfirmationDialog from '@/components/ConfirmationDialog';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function MembersPage() {
   const [soci, setSoci] = useState<any[]>([]);
@@ -31,7 +31,6 @@ export default function MembersPage() {
     setIsMemberDialogOpen(false);
     try {
       if (selectedMember) {
-        // AGGIORNAMENTO: data contiene già photoURL dal Dialog
         await updateDoc(doc(db, 'users', selectedMember.id), data);
       } else {
         const userEmail = data.email.trim().toLowerCase();
@@ -39,7 +38,7 @@ export default function MembersPage() {
           nome: data.nome || '',
           cognome: data.cognome || '',
           email: userEmail,
-          photoURL: data.photoURL || '', // Uniformato a photoURL
+          photoURL: data.photoURL || '',
           status: data.status || 'socio',
           createdAt: new Date().toISOString()
         });
@@ -60,60 +59,102 @@ export default function MembersPage() {
   };
 
   return (
-    <div className="p-4 sm:p-6 space-y-6 bg-black min-h-screen text-white font-sans">
-      <Card className="bg-zinc-950 border-zinc-800 font-sans">
-        <CardHeader className="flex flex-row items-center justify-between border-b border-zinc-900 pb-6">
-          <div className="flex items-center gap-2">
-            <Users className="h-6 w-6 text-red-600" />
-            <CardTitle className="text-white uppercase font-black tracking-tighter">Gestione Soci</CardTitle>
-          </div>
-          <Button className="bg-red-600 hover:bg-red-700 text-white font-bold" onClick={() => { setSelectedMember(null); setIsMemberDialogOpen(true); }}>
-            <PlusCircle className="mr-2 h-4 w-4" /> Aggiungi Socio
-          </Button>
-        </CardHeader>
-        <CardContent className="pt-6 font-sans">
-          <Table>
-            <TableHeader className="border-zinc-800">
-              <TableRow className="hover:bg-transparent border-zinc-800">
-                <TableHead className="text-zinc-500 uppercase text-[10px] font-black w-[80px]">Foto</TableHead>
-                <TableHead className="text-zinc-500 uppercase text-[10px] font-black">Nominativo</TableHead>
-                <TableHead className="w-[80px]"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {soci.map((s) => (
-                <TableRow key={s.id} className="border-zinc-800 hover:bg-zinc-900/50">
-                  <TableCell>
-                    <div className="h-12 w-12 rounded-full border border-zinc-800 overflow-hidden bg-zinc-900 flex items-center justify-center">
-                      {s.photoURL ? (
-                        <img src={s.photoURL} className="h-full w-full object-cover" alt="" />
-                      ) : (
-                        <Camera className="h-5 w-5 text-zinc-800" />
-                      )}
+    <div className="min-h-screen bg-black text-white font-sans pb-20">
+      {/* Container principale con padding ridotto su mobile */}
+      <main className="max-w-4xl mx-auto p-2 sm:p-6 space-y-6">
+        
+        <Card className="bg-zinc-950 border-zinc-800 shadow-2xl overflow-hidden">
+          <CardHeader className="flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-zinc-900 pb-6">
+            <div className="flex items-center gap-3 self-start sm:self-auto">
+              <Users className="h-6 w-6 text-red-600 shrink-0" />
+              <CardTitle className="text-white uppercase font-black tracking-tighter text-xl">
+                Gestione Soci
+              </CardTitle>
+            </div>
+            
+            <Button 
+              className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white font-bold rounded-full h-11" 
+              onClick={() => { setSelectedMember(null); setIsMemberDialogOpen(true); }}
+            >
+              <PlusCircle className="mr-2 h-5 w-5" /> Aggiungi Socio
+            </Button>
+          </CardHeader>
+
+          <CardContent className="p-0 sm:p-6">
+            {/* Lista Soci ottimizzata per Mobile */}
+            <ul className="divide-y divide-zinc-900">
+              {soci.length === 0 ? (
+                <li className="py-10 text-center text-zinc-500 italic">Nessun socio trovato.</li>
+              ) : (
+                soci.map((s) => (
+                  <li key={s.id} className="flex items-center justify-between gap-3 p-4 sm:px-0 hover:bg-zinc-900/30 transition-colors">
+                    
+                    {/* Parte Sinistra: Avatar + Nome */}
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <Avatar className="h-12 w-12 border border-zinc-800 shrink-0">
+                        <AvatarImage src={s.photoURL} className="object-cover" />
+                        <AvatarFallback className="bg-zinc-900 text-zinc-600">
+                          <User className="h-6 w-6" />
+                        </AvatarFallback>
+                      </Avatar>
+                      
+                      <div className="min-w-0 flex-1">
+                        <p className="font-bold text-zinc-100 uppercase italic leading-tight truncate">
+                          {s.nome} {s.cognome}
+                        </p>
+                        <p className="text-[10px] text-zinc-500 truncate font-mono mt-1 opacity-70">
+                          {s.id}
+                        </p>
+                      </div>
                     </div>
-                  </TableCell>
-                  <TableCell className="font-bold text-zinc-200 uppercase">{s.nome} {s.cognome}</TableCell>
-                  <TableCell>
-                    <DropdownMenu modal={false}>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="hover:bg-zinc-800 text-white">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-800 text-white font-sans">
-                        <DropdownMenuItem onClick={() => { setSelectedMember(s); setIsMemberDialogOpen(true); }}>Modifica</DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-600" onClick={() => { setIdSocioDaEliminare(s.id); setIsConfirmDialogOpen(true); }}>Elimina</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-      <MemberDialog isOpen={isMemberDialogOpen} setIsOpen={setIsMemberDialogOpen} member={selectedMember} onSave={handleSaveMember} />
-      <ConfirmationDialog isOpen={isConfirmDialogOpen} setIsOpen={setIsConfirmDialogOpen} onConfirm={executeDelete} title="Sei sicuro?" description="Rimuoverai il socio permanentemente." />
+
+                    {/* Parte Destra: Menu Azioni */}
+                    <div className="shrink-0">
+                      <DropdownMenu modal={false}>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="text-zinc-400 hover:text-white hover:bg-zinc-800 h-10 w-10">
+                            <MoreHorizontal className="h-6 w-6" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="bg-zinc-950 border-zinc-800 text-white font-sans w-40">
+                          <DropdownMenuItem 
+                            className="cursor-pointer focus:bg-zinc-900"
+                            onClick={() => { setSelectedMember(s); setIsMemberDialogOpen(true); }}
+                          >
+                            Modifica
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            className="text-red-600 cursor-pointer focus:bg-red-950/30"
+                            onClick={() => { setIdSocioDaEliminare(s.id); setIsConfirmDialogOpen(true); }}
+                          >
+                            Elimina
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+
+                  </li>
+                ))
+              )}
+            </ul>
+          </CardContent>
+        </Card>
+      </main>
+
+      <MemberDialog 
+        isOpen={isMemberDialogOpen} 
+        setIsOpen={setIsMemberDialogOpen} 
+        member={selectedMember} 
+        onSave={handleSaveMember} 
+      />
+      
+      <ConfirmationDialog 
+        isOpen={isConfirmDialogOpen} 
+        setIsOpen={setIsConfirmDialogOpen} 
+        onConfirm={executeDelete} 
+        title="Sei sicuro?" 
+        description="Rimuoverai il socio permanentemente." 
+      />
     </div>
   );
 }
