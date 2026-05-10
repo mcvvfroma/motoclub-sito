@@ -4,7 +4,6 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { db } from "@/lib/firebase"
 import { collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc, query, orderBy } from "firebase/firestore"
-import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -114,7 +113,7 @@ export default function AdminMembersPage() {
 
   return (
     <div className="min-h-screen pb-24 bg-background text-foreground">
-      <main className="max-w-4xl mx-auto px-2 sm:px-4 py-6">
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <header className="flex items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-3">
             <ShieldAlert className="w-6 h-6 text-primary shrink-0" />
@@ -122,57 +121,59 @@ export default function AdminMembersPage() {
           </div>
           <Dialog open={isAdding} onOpenChange={setIsAdding}>
             <DialogTrigger asChild>
-              <Button className="gap-2 shrink-0">
-                 <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Aggiungi Socio</span>
+              <Button size="sm" className="gap-2 shrink-0">
+                 <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Aggiungi</span>
               </Button>
             </DialogTrigger>
             <DialogContent className="bg-card border-border">
                <DialogHeader><DialogTitle>Nuovo Socio</DialogTitle><DialogDescription>Inserisci i dati per registrare un nuovo membro.</DialogDescription></DialogHeader>
                 <div className="grid gap-4 py-4">
-                  <div className="grid gap-2"><Label htmlFor="nome">Nome</Label><Input id="nome" value={formData.nome} onChange={e => setFormData({...formData, nome: e.target.value})} /></div>
-                  <div className="grid gap-2"><Label htmlFor="cognome">Cognome</Label><Input id="cognome" value={formData.cognome} onChange={e => setFormData({...formData, cognome: e.target.value})} /></div>
-                  <div className="grid gap-2"><Label htmlFor="email">Email</Label><Input id="email" type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} /></div>
-                  <div className="grid gap-2"><Label htmlFor="status">Status</Label><Select value={formData.status} onValueChange={v => setFormData({...formData, status: v})}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="socio">Socio</SelectItem><SelectItem value="admin">Admin</SelectItem></SelectContent></Select></div>
+                  <div className="grid gap-2"><Label>Nome</Label><Input value={formData.nome} onChange={e => setFormData({...formData, nome: e.target.value})} /></div>
+                  <div className="grid gap-2"><Label>Cognome</Label><Input value={formData.cognome} onChange={e => setFormData({...formData, cognome: e.target.value})} /></div>
+                  <div className="grid gap-2"><Label>Email</Label><Input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} /></div>
+                  <div className="grid gap-2"><Label>Status</Label><Select value={formData.status} onValueChange={v => setFormData({...formData, status: v})}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="socio">Socio</SelectItem><SelectItem value="admin">Admin</SelectItem></SelectContent></Select></div>
                 </div>
                 <DialogFooter><Button variant="ghost" onClick={() => setIsAdding(false)}>Annulla</Button><Button onClick={handleAddMember}>Salva Socio</Button></DialogFooter>
             </DialogContent>
           </Dialog>
         </header>
 
-        <div className="space-y-2">
-            {members.length === 0 ? (
-                <p className="text-center py-8 text-muted-foreground italic">Nessun socio nel database.</p>
-            ) : (
-                members.map((socio) => (
-                <Card key={socio.id} className="bg-card border-border">
-                    <CardContent className="p-3 flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                            <Avatar>
-                                <AvatarImage src={socio.photoURL} alt={socio.nome} />
-                                <AvatarFallback><User/></AvatarFallback>
-                            </Avatar>
-                            <div>
-                                <p className="font-bold leading-tight">{socio.nome} {socio.cognome}</p>
-                                <p className="text-sm text-muted-foreground">{socio.id}</p>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <Badge variant={socio.status === 'admin' ? 'default' : 'secondary'}>{socio.status}</Badge>
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0"><MoreHorizontal className="h-4 w-4" /></Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onClick={() => openEditDialog(socio)}><Edit className="mr-2 h-4 w-4"/>Modifica</DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={() => setDeletingMember(socio)} className="text-destructive focus:text-destructive focus:bg-destructive/10"><Trash2 className="mr-2 h-4 w-4"/>Elimina</DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </div>
-                    </CardContent>
-                </Card>
-                ))
-            )}
+        <div className="flow-root">
+          <ul className="-my-3 divide-y divide-border">
+              {members.length === 0 ? (
+                  <li className="py-8 text-center text-muted-foreground italic">Nessun socio nel database.</li>
+              ) : (
+                  members.map((socio) => (
+                  <li key={socio.id} className="py-3">
+                      <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4 min-w-0">
+                              <Avatar>
+                                  <AvatarImage src={socio.photoURL} alt={socio.nome} />
+                                  <AvatarFallback><User/></AvatarFallback>
+                              </Avatar>
+                              <div className="min-w-0">
+                                  <p className="font-bold leading-tight truncate">{socio.nome} {socio.cognome}</p>
+                                  <p className="text-sm text-muted-foreground truncate">{socio.id}</p>
+                              </div>
+                          </div>
+                          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+                              <Badge variant={socio.status === 'admin' ? 'default' : 'secondary'} className="hidden sm:inline-flex">{socio.status}</Badge>
+                              <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0"><span className="sr-only">Apri menu</span><MoreHorizontal className="h-4 w-4" /></Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                      <DropdownMenuItem onClick={() => openEditDialog(socio)}><Edit className="mr-2 h-4 w-4"/>Modifica</DropdownMenuItem>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem onClick={() => setDeletingMember(socio)} className="text-destructive focus:text-destructive focus:bg-destructive/10"><Trash2 className="mr-2 h-t-4"/>Elimina</DropdownMenuItem>
+                                  </DropdownMenuContent>
+                              </DropdownMenu>
+                          </div>
+                      </div>
+                  </li>
+                  ))
+              )}
+          </ul>
         </div>
 
         {/* Edit Modal */}
