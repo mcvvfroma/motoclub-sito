@@ -113,16 +113,19 @@ export default function AdminMembersPage() {
 
   return (
     <div className="min-h-screen pb-24 bg-background text-foreground">
+      {/* 1. RIDOTTO IL PADDING LATERALE SU MOBILE (px-2) */}
       <main className="max-w-4xl mx-auto px-2 sm:px-6 lg:px-8 py-6">
-        <header className="space-y-4 sm:space-y-0 sm:flex sm:items-center sm:justify-between mb-6">
+        
+        {/* 2. HEADER CENTRATO E RESPONSIVE */}
+        <header className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-8">
           <div className="flex items-center gap-3">
             <ShieldAlert className="w-6 h-6 text-primary shrink-0" />
-            <h1 className="text-lg md:text-xl font-headline font-bold truncate">Gestione Soci</h1>
+            <h1 className="text-xl md:text-2xl font-bold uppercase italic tracking-tighter">Gestione Soci</h1>
           </div>
           <Dialog open={isAdding} onOpenChange={setIsAdding}>
             <DialogTrigger asChild>
-              <Button className="w-full sm:w-auto gap-2">
-                 <Plus className="w-4 h-4" /> <span>Aggiungi Socio</span>
+              <Button className="w-full sm:w-auto gap-2 rounded-full font-bold h-11 px-6">
+                 <Plus className="w-5 h-5" /> Aggiungi Socio
               </Button>
             </DialogTrigger>
             <DialogContent className="bg-card border-border">
@@ -138,34 +141,51 @@ export default function AdminMembersPage() {
           </Dialog>
         </header>
 
-        <div className="flow-root">
-          <ul className="-my-3 divide-y divide-border">
+        {/* 3. LISTA OTTIMIZZATA SENZA MARGINI NEGATIVI */}
+        <div className="bg-card border sm:rounded-xl border-border overflow-hidden">
+          <ul className="divide-y divide-border">
               {members.length === 0 ? (
-                  <li className="py-8 text-center text-muted-foreground italic">Nessun socio nel database.</li>
+                  <li className="py-12 text-center text-muted-foreground italic">Nessun socio nel database.</li>
               ) : (
                   members.map((socio) => (
-                  <li key={socio.id} className="py-3">
+                  <li key={socio.id} className="py-4 px-3 sm:px-6 hover:bg-muted/50 transition-colors">
                       <div className="flex items-center justify-between gap-3">
-                          <div className="flex items-center gap-4 min-w-0">
-                              <Avatar>
-                                  <AvatarImage src={socio.photoURL} alt={socio.nome} />
-                                  <AvatarFallback><User/></AvatarFallback>
+                          {/* Info Socio: flex-1 e min-w-0 forzano il truncate */}
+                          <div className="flex items-center gap-3 min-w-0 flex-1">
+                              <Avatar className="h-12 w-12 shrink-0 border border-border">
+                                  <AvatarImage src={socio.photoURL} alt={socio.nome} className="object-cover" />
+                                  <AvatarFallback><User className="text-muted-foreground" /></AvatarFallback>
                               </Avatar>
-                              <div className="min-w-0">
-                                  <p className="font-bold leading-tight truncate">{socio.nome} {socio.cognome}</p>
-                                  <p className="text-sm text-muted-foreground truncate">{socio.id}</p>
+                              <div className="min-w-0 flex-1">
+                                  <p className="font-bold uppercase italic leading-none truncate mb-1">
+                                    {socio.nome} {socio.cognome}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground truncate opacity-70">
+                                    {socio.id}
+                                  </p>
                               </div>
                           </div>
-                          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-                              <Badge variant={socio.status === 'admin' ? 'default' : 'secondary'} className="hidden sm:inline-flex">{socio.status}</Badge>
+
+                          <div className="flex items-center gap-2 shrink-0">
+                              {socio.status === 'admin' && (
+                                <Badge variant="default" className="hidden xs:flex text-[10px] h-5 px-1.5 font-bold uppercase">
+                                  ADMIN
+                                </Badge>
+                              )}
                               <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
-                                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0"><span className="sr-only">Apri menu</span><MoreHorizontal className="h-4 w-4" /></Button>
+                                      <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground">
+                                        <MoreHorizontal className="h-5 w-5" />
+                                      </Button>
                                   </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end">
-                                      <DropdownMenuItem onClick={() => openEditDialog(socio)}><Edit className="mr-2 h-4 w-4"/>Modifica</DropdownMenuItem>
+                                  <DropdownMenuContent align="end" className="w-48">
+                                      <DropdownMenuItem onClick={() => openEditDialog(socio)} className="cursor-pointer">
+                                        <Edit className="mr-2 h-4 w-4"/>Modifica
+                                      </DropdownMenuItem>
                                       <DropdownMenuSeparator />
-                                      <DropdownMenuItem onClick={() => setDeletingMember(socio)} className="text-destructive focus:text-destructive focus:bg-destructive/10"><Trash2 className="mr-2 h-4 w-4"/>Elimina</DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => setDeletingMember(socio)} className="text-destructive focus:text-destructive cursor-pointer">
+                                        <Trash2 className="mr-2 h-4 w-4"/>Elimina
+                                      </DropdownMenuItem>
                                   </DropdownMenuContent>
                               </DropdownMenu>
                           </div>
