@@ -18,8 +18,12 @@ export default function MembersPage() {
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<any>(null);
   const [idSocioDaEliminare, setIdSocioDaEliminare] = useState<string | null>(null);
+  
+  // Protezione Hydration: impedisce errori tra server e client
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+    setIsMounted(true);
     const q = query(collection(db, 'users'));
     const unsubscribe = onSnapshot(q, (snap) => {
       setSoci(snap.docs.map(d => ({ id: d.id, ...d.data() })));
@@ -58,9 +62,11 @@ export default function MembersPage() {
     } catch (e) { console.error(e); }
   };
 
+  // Se il componente non è ancora montato nel browser, non renderizzare nulla
+  if (!isMounted) return null;
+
   return (
     <div className="min-h-screen bg-black text-white font-sans pb-20">
-      {/* Container principale con padding ridotto su mobile */}
       <main className="max-w-4xl mx-auto p-2 sm:p-6 space-y-6">
         
         <Card className="bg-zinc-950 border-zinc-800 shadow-2xl overflow-hidden">
@@ -81,7 +87,6 @@ export default function MembersPage() {
           </CardHeader>
 
           <CardContent className="p-0 sm:p-6">
-            {/* Lista Soci ottimizzata per Mobile */}
             <ul className="divide-y divide-zinc-900">
               {soci.length === 0 ? (
                 <li className="py-10 text-center text-zinc-500 italic">Nessun socio trovato.</li>
@@ -89,10 +94,13 @@ export default function MembersPage() {
                 soci.map((s) => (
                   <li key={s.id} className="flex items-center justify-between gap-3 p-4 sm:px-0 hover:bg-zinc-900/30 transition-colors">
                     
-                    {/* Parte Sinistra: Avatar + Nome */}
                     <div className="flex items-center gap-3 min-w-0 flex-1">
                       <Avatar className="h-12 w-12 border border-zinc-800 shrink-0">
-                        <AvatarImage src={s.photoURL} className="object-cover" />
+                        <AvatarImage 
+                          src={s.photoURL} 
+                          className="object-cover" 
+                          referrerPolicy="no-referrer"
+                        />
                         <AvatarFallback className="bg-zinc-900 text-zinc-600">
                           <User className="h-6 w-6" />
                         </AvatarFallback>
@@ -108,7 +116,6 @@ export default function MembersPage() {
                       </div>
                     </div>
 
-                    {/* Parte Destra: Menu Azioni */}
                     <div className="shrink-0">
                       <DropdownMenu modal={false}>
                         <DropdownMenuTrigger asChild>
@@ -141,12 +148,15 @@ export default function MembersPage() {
         </Card>
       </main>
 
-      <MemberDialog 
-        isOpen={isMemberDialogOpen} 
-        setIsOpen={setIsMemberDialogOpen} 
-        member={selectedMember} 
-        onSave={handleSaveMember} 
-      />
+      {/* Dialogs renderizzati solo quando necessario per evitare errori di props null */}
+      {isMemberDialogOpen && (
+        <MemberDialog 
+          isOpen={isMemberDialogOpen} 
+          setIsOpen={setIsMemberDialogOpen} 
+          member={selectedMember} 
+          onSave={handleSaveMember} 
+        />
+      )}
       
       <ConfirmationDialog 
         isOpen={isConfirmDialogOpen} 
