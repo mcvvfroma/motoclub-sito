@@ -43,7 +43,6 @@ export default function AdminMembersPage() {
         router.push("/")
         return
       }
-      // Inizializziamo la lista dei soci dai dati locali
       setMembers(sociData.soci)
       setIsLoading(false)
     } catch (e) {
@@ -87,7 +86,7 @@ export default function AdminMembersPage() {
 
   const openEditDialog = (member: any) => {
     setEditingMember(member)
-    setFormData({ ...member })
+    setFormData(member)
   }
 
   if (isLoading) {
@@ -115,7 +114,7 @@ export default function AdminMembersPage() {
             <p className="text-muted-foreground max-w-2xl">Amministrazione completa degli iscritti e dei permessi di accesso.</p>
           </div>
 
-          <Dialog open={isAdding} onOpenChange={setIsAdding}>
+          <Dialog open={isAdding} onOpenChange={(open) => { if (!open) setFormData({ nome: "", cognome: "", email: "", status: "socio" }); setIsAdding(open); }}>
             <DialogTrigger asChild>
               <Button className="bg-primary hover:bg-primary/90 gap-2 h-12 px-6 rounded-full shadow-lg shadow-primary/30 font-bold">
                  <Plus className="w-5 h-5" /> Aggiungi Socio
@@ -248,7 +247,7 @@ export default function AdminMembersPage() {
 
         {/* Edit Modal (Hidden unless triggered) */}
         {editingMember && (
-          <Dialog open={!!editingMember} onOpenChange={(open) => !open && setEditingMember(null)}>
+          <Dialog open={!!editingMember} onOpenChange={(open) => { if (!open) setEditingMember(null); }}>
             <DialogContent className="bg-card border-border sm:max-w-[425px]">
               <DialogHeader>
                 <DialogTitle className="text-2xl font-headline">Modifica Socio</DialogTitle>
@@ -282,7 +281,7 @@ export default function AdminMembersPage() {
               </div>
               <DialogFooter>
                 <Button variant="ghost" onClick={() => setEditingMember(null)}>Annulla</Button>
-                <Button onClick={handleEditMember} className="bg-accent text-accent-foreground font-bold">Salva Modifiche</Button>
+                <Button onClick={handleEditMember} className="bg-primary text-white">Salva Modifiche</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
