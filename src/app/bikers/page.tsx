@@ -5,23 +5,26 @@ import { db, auth } from '@/lib/firebase';
 import { collection, onSnapshot, query, orderBy, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import ImageUpload from '@/components/image-upload';
-import { Bike, User, Trophy, Loader2, Edit, Shield } from 'lucide-react';
+import { Bike, User, Loader2, Edit, Shield, Camera } from 'lucide-react';
 
 export default function BikersPage() {
   const [bikers, setBikers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUserData, setCurrentUserData] = useState<any>(null);
-  const [isMyImageModalOpen, setIsMyImageModalOpen] = useState(false);
-  const [editingBiker, setEditingBiker] = useState<any>(null); // Per la modifica da parte dell'admin
+  const [isMyProfileModalOpen, setIsMyProfileModalOpen] = useState(false);
+  const [isMyBikeModalOpen, setIsMyBikeModalOpen] = useState(false);
+  const [viewingBike, setViewingBike] = useState<any>(null);
+  const [editingBiker, setEditingBiker] = useState<any>(null);
+  const [adminEditMode, setAdminEditMode] = useState<'profile' | 'bike'>('profile');
   const { toast } = useToast();
 
   const isAdmin = currentUserData?.status === 'admin';
 
   useEffect(() => {
     const qUsers = query(collection(db, "users"), orderBy("cognome", "asc"));
-    
     const unsubscribe = onSnapshot(qUsers, async (userSnapshot) => {
       const bikersList = userSnapshot.docs.map(doc => ({
         id: doc.id.toLowerCase().trim(),
@@ -30,7 +33,6 @@ export default function BikersPage() {
       }));
 
       try {
-        // ... (logica calcolo presenze, rimane invariata)
         const eventsSnapshot = await getDocs(collection(db, "events"));
         const counts: { [key: string]: number } = {};
         const todayStr = new Date().toISOString().split('T')[0];
@@ -41,11 +43,7 @@ export default function BikersPage() {
             const pSnap = await getDocs(collection(db, `events/${eventDoc.id}/participants`));
             pSnap.docs.forEach(pDoc => {
               const pEmail = (pDoc.data().email || "").toLowerCase().trim();
-              if (pEmail && counts[pEmail] !== undefined) {
-                counts[pEmail]++;
-              } else if (pEmail) {
-                counts[pEmail] = 1;
-              }
+              if (pEmail) counts[pEmail] = (counts[pEmail] || 0) + 1;
             });
           }
         }
@@ -56,144 +54,197 @@ export default function BikersPage() {
         })).sort((a, b) => b.participationCount - a.participationCount);
 
         setBikers(finalRank);
-
         const currentEmail = auth.currentUser?.email?.toLowerCase().trim();
         const me = finalRank.find(b => b.id === currentEmail);
         if (me) setCurrentUserData(me);
-        
       } catch (err) {
-        console.error("Errore nel calcolo presenze:", err);
+        console.error("Errore presenze:", err);
       } finally {
         setLoading(false);
       }
     });
-
     return () => unsubscribe();
   }, []);
 
-  const handlePhotoUpdate = async (newPhotoBase64: string, bikerId: string) => {
+  const handlePhotoUpdate = async (newPhotoBase64: string | null, bikerId: string, field: 'photoURL' | 'motoPhotoURL') => {
     if (!bikerId) return;
-
-    const userDocRef = doc(db, "users", bikerId);
-
     try {
-      await updateDoc(userDocRef, { photoURL: newPhotoBase64 });
-      toast({ title: "Successo", description: "La foto del profilo è stata aggiornata." });
-      // Chiudiamo entrambi i possibili modal
-      setIsMyImageModalOpen(false);
+      await updateDoc(doc(db, "users", bikerId), { [field]: newPhotoBase64 });
+      toast({ title: "Aggiornato", description: "Documentazione fotografica salvata." });
+      setIsMyProfileModalOpen(false);
+      setIsMyBikeModalOpen(false);
       setEditingBiker(null);
     } catch (error) {
-      console.error("Errore aggiornamento foto:", error);
-      toast({ variant: "destructive", title: "Errore", description: "Impossibile aggiornare la foto del profilo." });
+      toast({ variant: "destructive", title: "Errore", description: "Impossibile salvare." });
     }
   };
 
   if (loading) return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-black">
       <Loader2 className="h-8 w-8 text-red-600 animate-spin mb-4" />
-      <p className="text-[10px] font-black uppercase text-zinc-500 tracking-widest animate-pulse">Analisi presenze...</p>
+      <p className="text-[10px] font-black uppercase text-zinc-500 tracking-widest">Sincronizzazione scuderia...</p>
     </div>
   );
 
-  const renderBikerCard = (biker: any) => {
-    const cardContent = (
-        <CardContent className="p-4 flex items-center justify-between">
-            <div className="flex items-center gap-3 min-w-0">
-            <div className="h-11 w-11 rounded-full overflow-hidden bg-zinc-900 border border-zinc-800 shrink-0">
-                {biker.photoURL ? (
-                <img src={biker.photoURL} className="w-full h-full object-cover" alt="" />
-                ) : (
-                <div className="flex items-center justify-center h-full"><User className="h-5 w-5 text-zinc-800" /></div>
-                )}
-            </div>
-            <div className="min-w-0">
-                <p className="text-sm font-black uppercase italic truncate tracking-tight">{biker.nome} {biker.cognome}</p>
-                <p className="text-[7px] text-zinc-600 font-bold uppercase tracking-widest leading-none">Team Member</p>
-            </div>
-            </div>
-            <div className="flex flex-col items-end border-l border-zinc-900 pl-4 shrink-0">
-            <span className="text-xl font-black italic text-red-600 leading-none">{biker.participationCount}</span>
-            <span className="text-[8px] text-zinc-500 font-bold uppercase mt-1">Uscite</span>
-            </div>
-        </CardContent>
-    );
-
-    if (isAdmin) {
-        return (
-            <div onClick={() => setEditingBiker(biker)} className="cursor-pointer group relative">
-                {cardContent}
-                 <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-lg">
-                  <Shield className="h-6 w-6 text-white" />
-                </div>
-            </div>
-        )
-    }
-    return cardContent;
-  }
-
   return (
-    <div className="w-full py-8 px-4 bg-black min-h-screen pb-24 text-white">
-      {/* Modal per modifica da parte dell'Admin */}
-      {editingBiker && (
-          <Dialog open={!!editingBiker} onOpenChange={() => setEditingBiker(null)}>
-              <DialogContent className="bg-card border-border">
-                <DialogHeader>
-                    <DialogTitle>Modera Foto Profilo</DialogTitle>
-                    <DialogDescription>Stai modificando la foto di {editingBiker.nome} {editingBiker.cognome}.</DialogDescription>
-                </DialogHeader>
-                <ImageUpload 
-                    currentImage={editingBiker.photoURL} 
-                    onImageUpload={(base64) => handlePhotoUpdate(base64, editingBiker.id)} 
-                />
-              </DialogContent>
-          </Dialog>
-      )}
-
+    <div className="w-full py-8 px-4 bg-black min-h-screen pb-24 text-white font-sans">
+      
+      {/* AREA PERSONALE */}
       {currentUserData && (
-        <Dialog open={isMyImageModalOpen} onOpenChange={setIsMyImageModalOpen}>
-          <DialogTrigger asChild>
-            <div className="mb-12 flex flex-col items-center border-b border-zinc-900 pb-10 cursor-pointer group">
-              <div className="relative h-24 w-24 rounded-full border-2 border-red-600 overflow-hidden mb-4 bg-zinc-900">
+        <div className="mb-12 border-b border-zinc-900 pb-10">
+          <div className="flex flex-col items-center">
+            <div className="relative h-28 w-28 rounded-full border-2 border-red-600 p-1 mb-4 group cursor-pointer shadow-[0_0_20px_rgba(220,38,38,0.2)]" 
+                 onClick={() => setIsMyProfileModalOpen(true)}>
+              <div className="h-full w-full rounded-full overflow-hidden bg-zinc-900 relative">
                 {currentUserData.photoURL ? (
-                  <img src={currentUserData.photoURL} alt="Profilo" className="w-full h-full object-cover" />
-                ) : (
-                  <div className="flex items-center justify-center h-full"><User className="h-10 w-10 text-zinc-800" /></div>
-                )}
-                 <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <img src={currentUserData.photoURL} className="w-full h-full object-cover" alt="" />
+                ) : <User className="m-auto h-12 w-12 text-zinc-800 mt-6" />}
+                <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                   <Edit className="h-6 w-6 text-white" />
                 </div>
               </div>
-              <h2 className="text-xl font-black uppercase italic">{currentUserData.nome} {currentUserData.cognome}</h2>
-              <div className="mt-2 bg-red-600 px-3 py-0.5 rounded-full text-[9px] font-black uppercase">
-                Le mie uscite: {currentUserData.participationCount}
+            </div>
+            <h2 className="text-2xl font-black uppercase italic tracking-tighter">{currentUserData.nome} {currentUserData.cognome}</h2>
+            <div className="flex gap-3 mt-5">
+              <Button onClick={() => setIsMyBikeModalOpen(true)} variant="outline" className="bg-zinc-950 border-zinc-800 hover:bg-zinc-900 text-white font-black uppercase italic text-[10px] px-6 rounded-xl h-10 transition-all">
+                <Bike className="mr-2 h-4 w-4 text-red-600" /> Il mio Mezzo
+              </Button>
+              <div className="bg-red-600 px-4 py-2 rounded-xl text-[10px] font-black uppercase italic flex items-center shadow-lg shadow-red-600/10">
+                Uscite: {currentUserData.participationCount}
               </div>
             </div>
-          </DialogTrigger>
-          <DialogContent className="bg-card border-border">
-            <DialogHeader>
-              <DialogTitle>Gestisci la tua foto profilo</DialogTitle>
-              <DialogDescription>Carica, sostituisci o rimuovi la tua immagine.</DialogDescription>
-            </DialogHeader>
-            <ImageUpload 
-              currentImage={currentUserData.photoURL} 
-              onImageUpload={(base64) => handlePhotoUpdate(base64, currentUserData.id)}
-            />
-          </DialogContent>
-        </Dialog>
+          </div>
+        </div>
       )}
 
-      <div className="flex items-center gap-3 mb-8">
-        <Bike className="h-7 w-7 text-red-600" />
-        <h1 className="text-2xl font-black uppercase italic tracking-tighter">The Bikers</h1>
+      {/* LISTA BIKERS */}
+      <div className="flex items-center gap-4 mb-8">
+        <div className="h-[2px] w-8 bg-red-600"></div>
+        <h1 className="text-2xl font-black uppercase italic tracking-tighter flex items-center gap-2">
+          <Bike className="text-red-600 h-6 w-6" /> The Bikers
+        </h1>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {bikers.map((biker) => (
-          <Card key={biker.id} className="bg-zinc-950 border-zinc-900">
-            {renderBikerCard(biker)}
+          <Card key={biker.id} className="bg-zinc-950 border-zinc-900 group relative overflow-hidden hover:border-red-600/40 transition-colors">
+            <CardContent className="p-0">
+              <div className="flex items-center justify-between p-4 cursor-pointer" onClick={() => setViewingBike(biker)}>
+                <div className="flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-full overflow-hidden border border-zinc-800 bg-zinc-900 shrink-0">
+                    {biker.photoURL ? <img src={biker.photoURL} className="w-full h-full object-cover" alt="" /> : <User className="m-auto h-6 w-6 text-zinc-800 mt-3" />}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-black uppercase italic truncate tracking-tight mb-1">{biker.nome} {biker.cognome}</p>
+                    <p className="text-[8px] text-zinc-500 font-bold uppercase tracking-widest group-hover:text-red-600 transition-colors italic leading-none">Visualizza Mezzo</p>
+                  </div>
+                </div>
+                <div className="text-right border-l border-zinc-900 pl-4 shrink-0">
+                  <p className="text-xl font-black italic leading-none text-red-600">{biker.participationCount}</p>
+                  <p className="text-[7px] text-zinc-600 font-bold uppercase mt-1">Uscite</p>
+                </div>
+              </div>
+              {isAdmin && (
+                <button 
+                  onClick={(e) => { 
+                    e.stopPropagation(); 
+                    setAdminEditMode('profile');
+                    setEditingBiker(biker); 
+                  }}
+                  className="absolute top-2 right-2 p-2 bg-zinc-900/80 border border-zinc-800 hover:bg-red-600 text-zinc-500 hover:text-white rounded-lg transition-all"
+                >
+                  <Shield size={12} />
+                </button>
+              )}
+            </CardContent>
           </Card>
         ))}
       </div>
+
+      {/* DIALOG: VISUALIZZA MEZZO */}
+      <Dialog open={!!viewingBike} onOpenChange={() => setViewingBike(null)}>
+        <DialogContent className="bg-zinc-950 border-zinc-900 text-white p-0 overflow-hidden rounded-[2.5rem] max-w-lg mx-auto border-0">
+          <div className="relative aspect-video bg-zinc-900 flex items-center justify-center">
+            {viewingBike?.motoPhotoURL ? (
+              <img src={viewingBike.motoPhotoURL} className="w-full h-full object-cover" alt="" />
+            ) : (
+              <div className="text-center p-8">
+                <Bike size={48} className="text-zinc-800 mx-auto mb-4" />
+                <p className="text-zinc-500 italic text-sm font-medium leading-relaxed">
+                  "Il socio sta ancora lucidando i collettori,<br/>nessuna foto disponibile!"
+                </p>
+              </div>
+            )}
+          </div>
+          <div className="p-6 bg-gradient-to-t from-zinc-950 to-zinc-900 border-t border-zinc-900">
+            <h3 className="text-2xl font-black uppercase italic text-white tracking-tighter">{viewingBike?.nome} {viewingBike?.cognome}</h3>
+            <p className="text-[9px] text-red-600 font-black uppercase tracking-[0.3em] mt-2 italic">Dettaglio Mezzo in Dotazione</p>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* DIALOG: ADMIN MODERA (PROFILO O MEZZO) */}
+      <Dialog open={!!editingBiker} onOpenChange={() => setEditingBiker(null)}>
+        <DialogContent className="bg-zinc-950 border-zinc-900 text-white rounded-[2rem]">
+          <DialogHeader>
+            <DialogTitle className="font-black uppercase italic text-red-600">Moderazione Socio</DialogTitle>
+            <DialogDescription className="text-zinc-500 uppercase text-[10px] font-bold">Gestione contenuti per {editingBiker?.nome}</DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex gap-2 mb-6 bg-zinc-900 p-1 rounded-xl border border-zinc-800">
+            <button 
+              onClick={() => setAdminEditMode('profile')}
+              className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase italic transition-all ${adminEditMode === 'profile' ? 'bg-red-600 text-white shadow-lg' : 'text-zinc-500'}`}
+            >
+              Foto Profilo
+            </button>
+            <button 
+              onClick={() => setAdminEditMode('bike')}
+              className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase italic transition-all ${adminEditMode === 'bike' ? 'bg-red-600 text-white shadow-lg' : 'text-zinc-500'}`}
+            >
+              Foto Mezzo
+            </button>
+          </div>
+
+          <ImageUpload 
+            currentImage={adminEditMode === 'profile' ? editingBiker?.photoURL : editingBiker?.motoPhotoURL} 
+            onImageUpload={(base) => handlePhotoUpdate(base, editingBiker.id, adminEditMode === 'profile' ? 'photoURL' : 'motoPhotoURL')} 
+          />
+
+          {((adminEditMode === 'profile' && editingBiker?.photoURL) || (adminEditMode === 'bike' && editingBiker?.motoPhotoURL)) && (
+            <Button 
+              onClick={() => handlePhotoUpdate(null, editingBiker.id, adminEditMode === 'profile' ? 'photoURL' : 'motoPhotoURL')} 
+              variant="destructive" 
+              className="w-full font-black italic uppercase rounded-xl mt-4 h-12"
+            >
+              Rimuovi {adminEditMode === 'profile' ? 'Profilo' : 'Mezzo'}
+            </Button>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* DIALOG: MIO PROFILO */}
+      <Dialog open={isMyProfileModalOpen} onOpenChange={setIsMyProfileModalOpen}>
+        <DialogContent className="bg-zinc-950 border-zinc-800 text-white rounded-[2rem]">
+          <DialogHeader><DialogTitle className="font-black uppercase italic">La mia Foto Profilo</DialogTitle></DialogHeader>
+          <ImageUpload currentImage={currentUserData?.photoURL} onImageUpload={(base) => handlePhotoUpdate(base, currentUserData.id, 'photoURL')} />
+        </DialogContent>
+      </Dialog>
+
+      {/* DIALOG: MIO MEZZO */}
+      <Dialog open={isMyBikeModalOpen} onOpenChange={setIsMyBikeModalOpen}>
+        <DialogContent className="bg-zinc-950 border-zinc-900 text-white rounded-[2rem]">
+          <DialogHeader>
+            <DialogTitle className="font-black uppercase italic text-red-600">Galleria Mezzo</DialogTitle>
+            <DialogDescription className="text-zinc-500 text-[10px] font-bold uppercase italic">Aggiorna la foto della tua cavalcatura</DialogDescription>
+          </DialogHeader>
+          <ImageUpload currentImage={currentUserData?.motoPhotoURL} onImageUpload={(base) => handlePhotoUpdate(base, currentUserData.id, 'motoPhotoURL')} />
+          {currentUserData?.motoPhotoURL && (
+            <Button onClick={() => handlePhotoUpdate(null, currentUserData.id, 'motoPhotoURL')} variant="destructive" className="w-full font-black italic uppercase rounded-xl mt-4 h-12">Rimuovi Foto Mezzo</Button>
+          )}
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 }
