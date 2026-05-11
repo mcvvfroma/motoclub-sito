@@ -85,7 +85,8 @@ export default function MercatinoPage() {
     try {
       if (editingId) { await updateDoc(doc(db, 'mercatino', editingId), formData);
       } else {
-        const scad = new Date(); scad.setDate(scad.getDate() + 10);
+        const scad = new Date(); 
+        scad.setDate(scad.getDate() + 20); // AGGIORNATO A 20 GIORNI
         await addDoc(collection(db, 'mercatino'), { ...formData, createdAt: Timestamp.now(), expireAt: Timestamp.fromDate(scad) });
       }
       setIsDialogOpen(false);
@@ -118,7 +119,6 @@ export default function MercatinoPage() {
 
       <div className="max-w-md mx-auto relative">
         
-        {/* MODALE REGOLE (Invariata) */}
         <Dialog open={isRegolamentoOpen} onOpenChange={setIsRegolamentoOpen}>
           <DialogContent className="bg-zinc-950 border-2 border-zinc-800 text-white max-w-[95vw] rounded-[2.5rem] p-8 overflow-hidden shadow-2xl">
             <div className="w-full h-20 flex items-center relative mb-4 overflow-hidden border-b border-zinc-900/50">
@@ -128,7 +128,7 @@ export default function MercatinoPage() {
             <DialogHeader><DialogTitle className="text-xl font-black italic uppercase tracking-tighter text-center text-white">Regole del Mercatino</DialogTitle></DialogHeader>
             <div className="space-y-4 my-6 text-center">
               <div className="bg-zinc-900/50 p-4 rounded-xl border border-zinc-800/50"><p className="text-red-600 font-black text-lg italic tracking-tight uppercase leading-none">Massimo 3 Foto</p><p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mt-2 italic">Non intasare la memoria</p></div>
-              <div className="bg-zinc-900/50 p-4 rounded-xl border border-zinc-800/50"><p className="text-red-600 font-black text-lg italic tracking-tight uppercase leading-none">Scadenza 10 Giorni</p><p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mt-2 italic">Pulizia automatica dei post</p></div>
+              <div className="bg-zinc-900/50 p-4 rounded-xl border border-zinc-800/50"><p className="text-red-600 font-black text-lg italic tracking-tight uppercase leading-none">Scadenza 20 Giorni</p><p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mt-2 italic">Pulizia automatica dei post</p></div>
             </div>
             <Button onClick={() => setIsRegolamentoOpen(false)} className="w-full bg-red-600 hover:bg-red-700 h-12 rounded-xl font-black italic uppercase text-base shadow-lg transition-all active:scale-95">HO CAPITO, PROCEDI</Button>
           </DialogContent>
@@ -142,11 +142,10 @@ export default function MercatinoPage() {
             <h1 className="text-2xl font-black italic uppercase text-white tracking-tighter">MERCATINO</h1>
           </div>
           <Button onClick={() => { setEditingId(null); setIsDialogOpen(true); }} className="bg-red-600 font-black italic rounded-xl px-5 h-11 flex gap-2 items-center active:scale-95 transition-all">
-            <Plus size={18} strokeWidth={4} /> VENDI / CERCA
+            <Plus size={18} strokeWidth={4} /> VENDI
           </Button>
         </header>
 
-        {/* LISTA ANNUNCI CON CONTO ALLA ROVESCIA */}
         <div className="space-y-8">
           {annunci.map((a) => (
             <Card key={a.id} className="bg-zinc-950 border-zinc-900 overflow-hidden rounded-[2.5rem] shadow-2xl border-b-4 border-b-red-600/10">
@@ -155,7 +154,6 @@ export default function MercatinoPage() {
                   <div key={idx} className="min-w-full h-full snap-center"><img src={img} className="w-full h-full object-cover" /></div>
                 ))}
                 
-                {/* BADGE CONTO ALLA ROVESCIA SULLA FOTO */}
                 <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-md border border-white/10 px-3 py-1.5 rounded-full flex items-center gap-2">
                   <Clock size={14} className="text-amber-500" />
                   <span className="text-[10px] font-black uppercase italic text-white tracking-tight">
@@ -183,7 +181,6 @@ export default function MercatinoPage() {
         </div>
       </div>
 
-      {/* DIALOG INSERIMENTO (Invariato) */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="bg-zinc-950 border-zinc-800 text-white max-w-[95vw] rounded-[3rem] p-6 overflow-y-auto max-h-[90vh]">
            <DialogHeader><DialogTitle className="text-center font-black italic uppercase text-xl text-red-600">Nuovo Annuncio</DialogTitle></DialogHeader>
