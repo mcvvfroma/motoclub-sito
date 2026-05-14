@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import { db, auth } from '@/lib/firebase';
 import { collection, onSnapshot, deleteDoc, doc, updateDoc, addDoc, setDoc, getDoc, query, orderBy } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { MapPin, CloudSun, Calendar, Trash2, Edit, PlusCircle, ChevronRight, Users, CheckCircle2, User, Camera, Image as ImageIcon, Loader2, X, MessageSquare } from 'lucide-react';
+import { MapPin, CloudSun, Calendar, Trash2, Edit, PlusCircle, ChevronRight, Users, CheckCircle2, User, Camera, Image as ImageIcon, Loader2, X, MessageSquare, Archive, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAdmin } from '@/hooks/use-admin';
 import EventDialog from '@/components/EventDialog';
@@ -15,7 +15,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
-// --- PORTALE FOTO (ZOOM) ---
 const PhotoPortal = ({ photoUrl, onClose }: { photoUrl: string; onClose: () => void }) => {
   if (typeof window === 'undefined') return null;
   return createPortal(
@@ -30,7 +29,9 @@ const PhotoPortal = ({ photoUrl, onClose }: { photoUrl: string; onClose: () => v
 };
 
 export default function EventsPage() {
-  const [events, setEvents] = useState<any[]>([]);
+  const [activeEvents, setActiveEvents] = useState<any[]>([]);
+  const [archivedEvents, setArchivedEvents] = useState<any[]>([]);
+  const [showArchive, setShowArchive] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
@@ -53,16 +54,17 @@ export default function EventsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { isAdmin, loading: adminLoading } = useAdmin();
 
-  // Caricamento eventi
   useEffect(() => {
     const q = query(collection(db, "events"), orderBy("date", "desc"));
     return onSnapshot(q, (snapshot) => {
-      setEvents(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      const allEvents = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const today = new Date().toISOString().split('T')[0];
+      setActiveEvents(allEvents.filter((e: any) => e.date >= today));
+      setArchivedEvents(allEvents.filter((e: any) => e.date < today));
       setLoading(false);
     });
   }, []);
 
-  // Caricamento dettagli (partecipanti e foto)
   useEffect(() => {
     if (eventDetails?.id) {
       const unsubP = onSnapshot(collection(db, `events/${eventDetails.id}/participants`), (snapshot) => {
@@ -76,7 +78,6 @@ export default function EventsPage() {
           setNotes((me as any).notes || "");
         }
       });
-
       const qPhotos = query(collection(db, `events/${eventDetails.id}/photos`), orderBy("createdAt", "desc"));
       const unsubPhotos = onSnapshot(qPhotos, (snapshot) => {
         const phList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -87,7 +88,7 @@ export default function EventsPage() {
       });
       return () => { unsubP(); unsubPhotos(); };
     }
-  }, [eventDetails?.id, auth.currentUser?.uid]);
+  }, [eventDetails?.id]);
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -153,15 +154,49 @@ export default function EventsPage() {
   const totalPeople = participants.reduce((acc, p) => acc + (Number((p as any).people) || 0), 0);
   const totalBikes = participants.reduce((acc, p) => acc + (Number((p as any).bikes) || 0), 0);
 
+  const EventCard = (event: any, isArchived: boolean = false) => (
+    <Card key={event.id} className={`border border-zinc-800 bg-zinc-950 overflow-hidden flex flex-col group hover:border-red-600 transition-all ${isArchived ? 'grayscale opacity-70 hover:grayscale-0 hover:opacity-100' : ''}`}>
+      <CardHeader className="p-0 h-52 bg-black overflow-hidden relative">
+        <img src={event.image || '/cascovigili.jpg'} alt="" className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500" />
+        {isAdmin && (
+          <div className="absolute top-2 right-2 flex gap-1 z-10">
+            <Button size="icon" variant="destructive" className="h-8 w-8 shadow-xl" onClick={() => { setEventToDelete(event.id); setIsDeleteConfirmOpen(true); }}><Trash2 className="h-4 w-4" /></Button>
+            <Button size="icon" className="h-8 w-8 bg-zinc-100 text-black shadow-xl" onClick={() => { setSelectedEvent(event); setIsDialogOpen(true); }}><Edit className="h-4 w-4" /></Button>
+          </div>
+        )}
+      </CardHeader>
+      <CardContent className="p-4 flex flex-col gap-4">
+        <div>
+          <CardTitle className="text-xl font-black uppercase italic tracking-tighter leading-none">{event.title}</CardTitle>
+          <CardDescription className="text-red-600 text-[10px] font-black uppercase italic mt-1">{event.date}</CardDescription>
+        </div>
+        <div className="flex gap-2">
+          {event.percorso && (
+            <a href={event.percorso} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center justify-center py-3 bg-red-600 text-white rounded font-black text-[10px] uppercase italic">
+              <MapPin className="h-3.5 w-3.5 mr-1" /> Percorso
+            </a>
+          )}
+          {event.metaMeteo && (
+            <a href={`https://www.ilmeteo.it/meteo/${event.metaMeteo.replace(/\s+/g, '+')}`} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center justify-center py-3 bg-yellow-600 text-black rounded font-black text-[10px] uppercase">
+              <CloudSun className="h-3.5 w-3.5 mr-1" /> Meteo
+            </a>
+          )}
+        </div>
+        <Button onClick={() => { setEventDetails(event); setIsDetailOpen(true); }} className="w-full bg-zinc-100 hover:bg-white text-black font-black uppercase italic py-6 transition-all">
+          Dettagli <ChevronRight className="ml-1 h-4 w-4" />
+        </Button>
+      </CardContent>
+    </Card>
+  );
+
   if (loading || adminLoading) return <div className="p-10 text-white text-center font-black uppercase italic text-xs animate-pulse tracking-widest">In sella...</div>;
 
   return (
     <div className="w-full py-8 px-4 bg-black min-h-screen pb-24 text-white">
-      {/* Header */}
       <div className="flex justify-between items-center mb-10">
         <div className="flex items-center gap-3">
           <Calendar className="h-8 w-8 text-red-600" />
-          <h1 className="text-2xl font-black text-white uppercase italic tracking-tighter">Eventi</h1>
+          <h1 className="text-2xl font-black text-white uppercase italic tracking-tighter">Prossimi Eventi</h1>
         </div>
         {isAdmin && (
           <Button onClick={() => { setSelectedEvent(null); setIsDialogOpen(true); }} className="bg-red-600 text-white font-black uppercase italic">
@@ -170,63 +205,59 @@ export default function EventsPage() {
         )}
       </div>
 
-      {/* Grid Eventi */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {events.map((event) => (
-          <Card key={event.id} className="border border-zinc-800 bg-zinc-950 overflow-hidden flex flex-col group hover:border-red-600 transition-colors">
-            <CardHeader className="p-0 h-52 bg-black overflow-hidden relative">
-              <img src={event.image || '/cascovigili.jpg'} alt="" className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500" />
-              {isAdmin && (
-                <div className="absolute top-2 right-2 flex gap-1 z-10">
-                  <Button size="icon" variant="destructive" className="h-8 w-8 shadow-xl" onClick={() => { setEventToDelete(event.id); setIsDeleteConfirmOpen(true); }}><Trash2 className="h-4 w-4" /></Button>
-                  <Button size="icon" className="h-8 w-8 bg-zinc-100 text-black shadow-xl" onClick={() => { setSelectedEvent(event); setIsDialogOpen(true); }}><Edit className="h-4 w-4" /></Button>
-                </div>
-              )}
-            </CardHeader>
-            <CardContent className="p-4 flex flex-col gap-4">
-              <div>
-                <CardTitle className="text-xl font-black uppercase italic tracking-tighter leading-none">{event.title}</CardTitle>
-                <CardDescription className="text-red-600 text-[10px] font-black uppercase italic mt-1">{event.date}</CardDescription>
-              </div>
-              
-              <div className="flex gap-2">
-                {event.percorso && (
-                  <a href={event.percorso} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center justify-center py-3 bg-red-600 text-white rounded font-black text-[10px] uppercase italic">
-                    <MapPin className="h-3.5 w-3.5 mr-1" /> Percorso
-                  </a>
-                )}
-                {event.metaMeteo && (
-                  <a href={`https://www.ilmeteo.it/meteo/${event.metaMeteo.replace(/\s+/g, '+')}`} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center justify-center py-3 bg-yellow-600 text-black rounded font-black text-[10px] uppercase">
-                    <CloudSun className="h-3.5 w-3.5 mr-1" /> Meteo
-                  </a>
-                )}
-              </div>
-
-              <Button onClick={() => { setEventDetails(event); setIsDetailOpen(true); }} className="w-full bg-zinc-100 hover:bg-white text-black font-black uppercase italic py-6 transition-all">
-                Dettagli <ChevronRight className="ml-1 h-4 w-4" />
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
+        {activeEvents.length > 0 ? (
+          activeEvents.map((event) => EventCard(event))
+        ) : (
+          <div className="col-span-full py-12 text-center border border-dashed border-zinc-900 rounded-2xl">
+            <p className="text-zinc-600 font-black uppercase italic text-sm">Nessuna uscita in programma</p>
+          </div>
+        )}
       </div>
 
+      {/* PULSANTE ARCHIVIO CORRETTO */}
+      {archivedEvents.length > 0 && (
+        <div className="mt-20 flex flex-col items-center">
+          <Button 
+            onClick={() => setShowArchive(!showArchive)} 
+            variant="ghost" 
+            className="group flex flex-col items-center gap-2 hover:bg-transparent text-white hover:text-red-600 transition-all"
+          >
+            <Archive className="h-7 w-7 mb-1" />
+            <span className="text-[14px] font-black uppercase italic tracking-widest">
+              {showArchive ? 'Nascondi Archivio' : 'Vedi Uscite Precedenti'}
+            </span>
+            <ChevronDown className={`h-5 w-5 transition-transform duration-500 ${showArchive ? 'rotate-180' : ''}`} />
+          </Button>
+
+          {showArchive && (
+            <div className="w-full mt-12 animate-in fade-in slide-in-from-bottom-10 duration-700">
+              <div className="flex items-center gap-4 mb-8">
+                <div className="h-[1px] flex-1 bg-zinc-900"></div>
+                <span className="text-xs font-black uppercase italic text-zinc-800">Memorie</span>
+                <div className="h-[1px] flex-1 bg-zinc-900"></div>
+              </div>
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {archivedEvents.map((event) => EventCard(event, true))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* MODAL DETTAGLI */}
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
-        <DialogContent className="bg-zinc-950 border-zinc-800 text-white w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto p-0 z-50 shadow-2xl rounded-lg">
+        <DialogContent className="bg-zinc-950 border-zinc-800 text-white w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto p-0 z-50 rounded-lg">
           <div className="p-4 sm:p-6 space-y-6">
-            <DialogTitle className="text-2xl sm:text-3xl font-black uppercase italic text-red-600 leading-none pr-8">
+            <DialogTitle className="text-2xl sm:text-3xl font-black uppercase italic text-red-600 leading-none">
               {eventDetails?.title}
             </DialogTitle>
             
-            {/* Gallery */}
             <div className="space-y-4 pt-4 border-t border-zinc-900">
               <div className="flex justify-between items-center">
                 <h3 className="text-sm font-black uppercase italic flex items-center gap-2"><Camera className="h-4 w-4 text-red-600" /> Gallery ({eventPhotos.length})</h3>
                 {isParticipating && (
-                   <Button 
-                    disabled={myPhotosCount >= 3 || isUploading} 
-                    onClick={() => fileInputRef.current?.click()} 
-                    className="text-[10px] h-8 font-black uppercase italic bg-red-600 shadow-lg active:scale-95 transition-transform"
-                   >
+                   <Button disabled={myPhotosCount >= 3 || isUploading} onClick={() => fileInputRef.current?.click()} className="text-[10px] h-8 font-black uppercase italic bg-red-600">
                      {isUploading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <ImageIcon className="h-3 w-3 mr-1" />}
                      Carica ({myPhotosCount}/3)
                    </Button>
@@ -234,78 +265,31 @@ export default function EventsPage() {
               </div>
               <div className="grid grid-cols-3 gap-2">
                 {eventPhotos.map((ph) => (
-                  <div key={ph.id} className="relative aspect-square rounded overflow-hidden border border-zinc-800 bg-zinc-900 cursor-pointer group/photo" onClick={() => setSelectedPhoto(ph.photoData)}>
-                    <img src={ph.photoData} className="w-full h-full object-cover select-none" alt="" />
+                  <div key={ph.id} className="relative aspect-square rounded overflow-hidden border border-zinc-800 bg-zinc-900 cursor-pointer" onClick={() => setSelectedPhoto(ph.photoData)}>
+                    <img src={ph.photoData} className="w-full h-full object-cover" alt="" />
                     {(ph.userId === auth.currentUser?.uid || isAdmin) && (
-                      <button 
-                        onClick={(e) => handleDeletePhoto(ph.id, ph.userId, e)} 
-                        className="absolute top-1 right-1 p-1.5 bg-black/70 rounded-full text-red-500 hover:bg-red-600 hover:text-white transition-colors z-20"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
+                      <button onClick={(e) => handleDeletePhoto(ph.id, ph.userId, e)} className="absolute top-1 right-1 p-1 bg-black/70 rounded-full text-red-500"><Trash2 className="h-3 w-3" /></button>
                     )}
-                    <div className="absolute bottom-0 w-full p-1 bg-black/60 text-[8px] font-black uppercase truncate text-center">{ph.userName}</div>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Form Iscrizione */}
-            <div className="bg-zinc-900 p-4 sm:p-6 rounded-lg border border-zinc-800 space-y-4 shadow-inner">
-              <h3 className="text-sm font-black uppercase flex items-center gap-2 italic">
-                {isParticipating ? <CheckCircle2 className="text-green-500 h-5 w-5" /> : <PlusCircle className="text-red-600 h-5 w-5" />}
-                {isParticipating ? "Iscrizione Confermata" : "Partecipa al Giro"}
-              </h3>
-              <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                <div className="space-y-1.5">
-                  <Label className="text-[10px] uppercase text-zinc-500 font-bold tracking-widest">Persone</Label>
-                  <Input type="number" min="1" value={numPeople} onChange={(e) => setNumPeople(Number(e.target.value))} className="bg-black border-zinc-700 text-white font-bold h-12" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-[10px] uppercase text-zinc-500 font-bold tracking-widest">Moto</Label>
-                  <Input type="number" min="0" value={numBikes} onChange={(e) => setNumBikes(Number(e.target.value))} className="bg-black border-zinc-700 text-white font-bold h-12" />
-                </div>
+            <div className="bg-zinc-900 p-4 rounded-lg border border-zinc-800 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5"><Label className="text-[10px] uppercase text-zinc-500">Persone</Label><Input type="number" value={numPeople} onChange={(e) => setNumPeople(Number(e.target.value))} className="bg-black border-zinc-700" /></div>
+                <div className="space-y-1.5"><Label className="text-[10px] uppercase text-zinc-500">Moto</Label><Input type="number" value={numBikes} onChange={(e) => setNumBikes(Number(e.target.value))} className="bg-black border-zinc-700" /></div>
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-[10px] uppercase text-zinc-500 font-bold tracking-widest">Note</Label>
-                <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} className="bg-black border-zinc-700 text-white min-h-[80px]" placeholder="Note particolari..." />
-              </div>
-              <div className="flex gap-2">
-                <Button onClick={handleJoinEvent} className="flex-1 bg-red-600 font-black uppercase italic h-12 shadow-lg active:scale-95 transition-transform">
-                  {isParticipating ? "Aggiorna Dati" : "Conferma Partecipazione"}
-                </Button>
-                {isParticipating && (
-                  <Button onClick={handleCancelParticipation} variant="outline" className="border-zinc-800 text-zinc-500 font-black uppercase italic h-12 px-4 hover:bg-red-600 hover:text-white transition-colors">Annulla</Button>
-                )}
-              </div>
+              <Button onClick={handleJoinEvent} className="w-full bg-red-600 font-black uppercase italic">{isParticipating ? "Aggiorna Dati" : "Partecipa"}</Button>
             </div>
 
-            {/* Lista Partecipanti */}
             <div className="space-y-4 border-t border-zinc-900 pt-6">
-              <div className="flex justify-between items-center">
-                <h3 className="text-[10px] font-black uppercase text-zinc-500 italic flex items-center gap-2"><Users className="h-4 w-4" /> Iscritti ({participants.length})</h3>
-                <div className="text-[11px] font-black text-red-600 uppercase italic bg-black/50 px-3 py-1 rounded-full border border-zinc-800">
-                  TOT: {totalPeople} P / {totalBikes} M
-                </div>
-              </div>
-              <div className="grid gap-2 pb-4">
+               <h3 className="text-[10px] font-black uppercase text-zinc-500 italic">Iscritti ({participants.length})</h3>
+               <div className="grid gap-2">
                 {participants.map((p) => (
-                  <div key={p.id} className="bg-zinc-900/40 p-3 rounded border border-zinc-900/50 flex flex-col gap-2">
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-full overflow-hidden bg-zinc-800 border border-zinc-700 flex items-center justify-center shrink-0">
-                          {p.photoURL ? <img src={p.photoURL} className="w-full h-full object-cover" alt="" /> : <User className="h-4 w-4 text-zinc-600" />}
-                        </div>
-                        <span className="font-bold text-[11px] uppercase text-white tracking-tight">{(p as any).name || (p as any).displayName || "SOCIO"}</span>
-                      </div>
-                      <span className="text-[10px] font-black text-zinc-400 bg-black/50 px-2 py-1 rounded border border-zinc-800/50">{(p as any).people || 0}P / {(p as any).bikes || 0}M</span>
-                    </div>
-                    {(p as any).notes && (
-                      <div className="flex gap-2 items-start pl-11">
-                        <MessageSquare className="h-3 w-3 text-red-600 shrink-0 mt-0.5" />
-                        <p className="text-[10px] text-zinc-400 italic leading-tight">"{(p as any).notes}"</p>
-                      </div>
-                    )}
+                  <div key={p.id} className="bg-zinc-900/40 p-3 rounded border border-zinc-900/50 flex justify-between items-center">
+                    <span className="font-bold text-[11px] uppercase">{(p as any).name}</span>
+                    <span className="text-[10px] font-black text-zinc-400">{(p as any).people}P / {(p as any).bikes}M</span>
                   </div>
                 ))}
               </div>
@@ -314,15 +298,10 @@ export default function EventsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Portale Ingrandimento Foto */}
       {selectedPhoto && <PhotoPortal photoUrl={selectedPhoto} onClose={() => setSelectedPhoto(null)} />}
-      
-      {/* Input Caricamento Nascosto */}
       <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handlePhotoUpload} />
-
-      {/* Dialogs Sistema */}
       <EventDialog isOpen={isDialogOpen} setIsOpen={setIsDialogOpen} event={selectedEvent} onSave={(d) => selectedEvent ? updateDoc(doc(db, "events", selectedEvent.id), d) : addDoc(collection(db, "events"), d)} />
-      <ConfirmDeleteDialog isOpen={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen} onConfirm={() => deleteDoc(doc(db, "events", eventToDelete!))} title="Elimina" description="Sicuro di voler eliminare questo evento?" />
+      <ConfirmDeleteDialog isOpen={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen} onConfirm={() => deleteDoc(doc(db, "events", eventToDelete!))} title="Elimina" description="Sicuro?" />
     </div>
   );
 }
