@@ -29,8 +29,6 @@ export default function ImageUpload({ onImageUpload, currentImage }: ImageUpload
           const canvas = document.createElement('canvas');
           let width = img.width;
           let height = img.height;
-
-          // Massima dimensione accettabile per mantenere il Base64 leggero
           const MAX_SIZE = 1024; 
 
           if (width > height) {
@@ -49,8 +47,6 @@ export default function ImageUpload({ onImageUpload, currentImage }: ImageUpload
           canvas.height = height;
           const ctx = canvas.getContext('2d');
           ctx?.drawImage(img, 0, 0, width, height);
-
-          // Esportiamo in JPEG con qualità 0.7 (ottimo compromesso peso/qualità)
           const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
           
           setPreview(compressedBase64);
@@ -75,7 +71,7 @@ export default function ImageUpload({ onImageUpload, currentImage }: ImageUpload
             alt="Anteprima foto" 
             fill 
             className="object-cover"
-            unoptimized // Importante per stringhe Base64 pesanti
+            unoptimized
           />
         ) : (
           <UploadCloud className="w-12 h-12 text-muted-foreground" />
@@ -105,4 +101,3 @@ export default function ImageUpload({ onImageUpload, currentImage }: ImageUpload
     </div>
   );
 }
-// test modifica
