@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Edit, Trash2, X, ExternalLink, Handshake, Phone, MapPin } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, X, ExternalLink, Handshake, Phone, MapPin, Search, LayoutGrid } from 'lucide-react';
 import Link from 'next/link';
 
 import {
@@ -37,6 +37,11 @@ export default function ConvenzioniPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isDataLoading, setIsDataLoading] = useState(true);
   
+  // --- NUOVI STATI PER RICERCA E VISUALIZZAZIONE ---
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showAll, setShowAll] = useState(false);
+  // ------------------------------------------------
+
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [convToDelete, setConvToDelete] = useState<string | null>(null);
   
@@ -64,6 +69,15 @@ export default function ConvenzioniPage() {
     });
     return () => unsubscribe();
   }, []);
+
+  // --- LOGICA FILTRO ---
+  const filteredConvenzioni = convenzioni.filter(c => 
+    c.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    c.category?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const shouldShowResults = showAll || searchTerm.length > 0;
+  // --------------------
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -116,7 +130,8 @@ export default function ConvenzioniPage() {
     <div className="min-h-screen bg-black text-white">
       <div className="container mx-auto px-4 py-8">
         
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
+        {/* HEADER */}
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-12">
           <div className="flex items-center gap-2">
             <Handshake className="h-8 w-8 text-red-600 shrink-0" />
             <h1 className="text-3xl font-bold tracking-tight uppercase leading-tight">
@@ -135,6 +150,38 @@ export default function ConvenzioniPage() {
           )}
         </div>
 
+        {/* --- SEZIONE RICERCA E BOTTONE "VEDI TUTTO" --- */}
+        <div className="max-w-2xl mx-auto space-y-6 mb-16">
+          <div className="relative group">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-500 group-focus-within:text-red-600 transition-colors" />
+            <Input 
+              placeholder="CERCA PER NOME O TIPOLOGIA (ES. MECCANICO...)" 
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                if (e.target.value.length > 0) setShowAll(false);
+              }}
+              className="bg-zinc-900/50 border-zinc-800 pl-12 py-8 rounded-2xl text-[12px] font-black uppercase italic tracking-widest focus-visible:ring-red-600 transition-all shadow-2xl"
+            />
+          </div>
+
+          <div className="flex justify-center">
+            <Button 
+              onClick={() => {
+                setShowAll(!showAll);
+                setSearchTerm("");
+              }}
+              variant="outline"
+              className={`border-zinc-800 font-black uppercase italic py-6 px-8 rounded-xl transition-all ${showAll ? 'bg-red-600 border-red-600 text-white' : 'bg-zinc-900 text-zinc-400 hover:text-white'}`}
+            >
+              <LayoutGrid className="h-4 w-4 mr-2" />
+              {showAll ? "Nascondi Convenzioni" : "Vedi tutte le convenzioni"}
+            </Button>
+          </div>
+        </div>
+        {/* ---------------------------------------------- */}
+
+        {/* DIALOG FORM (INALTERATO) */}
         <Dialog open={isDialogOpen} onOpenChange={(open) => !open && resetForm()}>
           <DialogContent className="bg-zinc-900 border-zinc-800 text-white sm:max-w-[500px]">
             <DialogHeader>
@@ -143,105 +190,100 @@ export default function ConvenzioniPage() {
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4 pt-4">
-              
               <Input value={name} onChange={e => setName(e.target.value)} placeholder="Nome Attività..." className="bg-black border-zinc-700 text-white" />
-
               <Input value={category} onChange={e => setCategory(e.target.value)} placeholder="Categoria..." className="bg-black border-zinc-700 text-white" />
-
-              <Textarea 
-                value={discount} 
-                onChange={e => setDiscount(e.target.value)} 
-                placeholder="Le condizioni sopra indicate saranno riservate..." 
-                className="h-[80px] overflow-y-auto bg-black border-zinc-700 text-white resize-none" 
-              />
-
-              <Textarea 
-                value={description} 
-                onChange={e => setDescription(e.target.value)} 
-                placeholder="La convenzione prevede le seguenti agevolazioni..." 
-                className="h-[80px] overflow-y-auto bg-black border-zinc-700 text-white resize-none" 
-              />
-
+              <Textarea value={discount} onChange={e => setDiscount(e.target.value)} placeholder="Le condizioni sopra indicate saranno riservate..." className="h-[80px] overflow-y-auto bg-black border-zinc-700 text-white resize-none" />
+              <Textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="La convenzione prevede le seguenti agevolazioni..." className="h-[80px] overflow-y-auto bg-black border-zinc-700 text-white resize-none" />
               <Input value={address} onChange={e => setAddress(e.target.value)} placeholder="Indirizzo..." className="bg-black border-zinc-700 text-white" />
-
               <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="Telefono..." className="bg-black border-zinc-700 text-white" />
-              
               <Input value={website} onChange={e => setWebsite(e.target.value)} placeholder="Sito Web..." className="bg-black border-zinc-700 text-white" />
-              
               <div className="flex gap-2 pt-2">
-                <Button type="submit" className="flex-1 bg-red-600 text-white hover:bg-red-700 font-bold uppercase">
-                  {editingId ? "Aggiorna" : "Pubblica"}
-                </Button>
+                <Button type="submit" className="flex-1 bg-red-600 text-white hover:bg-red-700 font-bold uppercase">{editingId ? "Aggiorna" : "Pubblica"}</Button>
                 <Button type="button" variant="outline" onClick={resetForm} className="flex-1 border-zinc-700 text-white uppercase font-bold">Annulla</Button>
               </div>
             </form>
           </DialogContent>
         </Dialog>
 
+        {/* GRIGLIA RISULTATI CONDIZIONALE */}
         {!isDataLoading && (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {convenzioni.map((c) => (
-              <Card key={c.id} className="bg-zinc-950/50 border-zinc-800 flex flex-col text-white">
-                <CardHeader>
-                  <CardTitle className="uppercase text-xl font-bold">{c.name}</CardTitle>
-                  <Badge variant="secondary" className="mt-2 bg-zinc-800 text-zinc-300 border-none uppercase text-[10px]">
-                    {c.category}
-                  </Badge>
-                </CardHeader>
-                <CardContent className="flex-grow space-y-3">
-                  <p className="text-red-500 font-bold">{c.discount}</p>
-                  <p className="text-zinc-400 text-sm italic">"{c.description}"</p>
-                  
-                  {c.address && (
-                    <a 
-                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.address)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-start gap-2 text-zinc-500 hover:text-zinc-200 transition-colors group mt-2"
-                    >
-                      <MapPin className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
-                      <span className="text-[11px] uppercase tracking-wider group-hover:underline italic">
-                        {c.address}
-                      </span>
-                    </a>
-                  )}
-                </CardContent>
-                <CardFooter className="flex flex-col gap-3 border-t border-zinc-900 pt-4">
-                  <div className="grid grid-cols-2 gap-2 w-full">
-                    {c.phone && (
-                      <a href={`tel:${c.phone.replace(/\s+/g, '')}`} className="w-full">
-                        <Button variant="outline" className="w-full border-zinc-700 hover:bg-green-900/30 hover:text-green-400 text-white text-[11px] uppercase font-bold">
-                          <Phone className="h-4 w-4 mr-2 text-green-500" /> Chiama
-                        </Button>
-                      </a>
-                    )}
-                    {c.website && (
-                      <Link href={c.website.startsWith('http') ? c.website : `https://${c.website}`} target="_blank" className="w-full">
-                        <Button variant="outline" className="w-full border-zinc-700 hover:bg-zinc-800 text-white text-[11px] uppercase font-bold">
-                          <ExternalLink className="h-4 w-4 mr-2 text-red-600" /> Sito Web
-                        </Button>
-                      </Link>
-                    )}
-                  </div>
+          <div className="transition-all duration-500">
+            {shouldShowResults ? (
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 animate-in fade-in slide-in-from-bottom-5">
+                {filteredConvenzioni.length > 0 ? (
+                  filteredConvenzioni.map((c) => (
+                    <Card key={c.id} className="bg-zinc-950/50 border-zinc-800 flex flex-col text-white group hover:border-red-600 transition-colors">
+                      <CardHeader>
+                        <CardTitle className="uppercase text-xl font-bold italic tracking-tighter">{c.name}</CardTitle>
+                        <Badge variant="secondary" className="mt-2 bg-zinc-800 text-zinc-300 border-none uppercase text-[10px]">
+                          {c.category}
+                        </Badge>
+                      </CardHeader>
+                      <CardContent className="flex-grow space-y-3">
+                        <p className="text-red-500 font-black italic">{c.discount}</p>
+                        <p className="text-zinc-400 text-sm italic leading-relaxed">"{c.description}"</p>
+                        {c.address && (
+                          <a 
+                            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.address)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-start gap-2 text-zinc-500 hover:text-zinc-200 transition-colors group mt-2"
+                          >
+                            <MapPin className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
+                            <span className="text-[11px] uppercase tracking-wider group-hover:underline italic">
+                              {c.address}
+                            </span>
+                          </a>
+                        )}
+                      </CardContent>
+                      <CardFooter className="flex flex-col gap-3 border-t border-zinc-900 pt-4">
+                        <div className="grid grid-cols-2 gap-2 w-full">
+                          {c.phone && (
+                            <a href={`tel:${c.phone.replace(/\s+/g, '')}`} className="w-full">
+                              <Button variant="outline" className="w-full border-zinc-700 hover:bg-green-900/30 hover:text-green-400 text-white text-[11px] uppercase font-bold">
+                                <Phone className="h-4 w-4 mr-2 text-green-500" /> Chiama
+                              </Button>
+                            </a>
+                          )}
+                          {c.website && (
+                            <Link href={c.website.startsWith('http') ? c.website : `https://${c.website}`} target="_blank" className="w-full">
+                              <Button variant="outline" className="w-full border-zinc-700 hover:bg-zinc-800 text-white text-[11px] uppercase font-bold">
+                                <ExternalLink className="h-4 w-4 mr-2 text-red-600" /> Sito Web
+                              </Button>
+                            </Link>
+                          )}
+                        </div>
 
-                  {isAdmin && (
-                    <div className="flex justify-end w-full gap-2 pt-2 border-t border-zinc-900/50">
-                      <Button variant="ghost" size="icon" onClick={() => handleEdit(c)} className="text-white h-8 w-8">
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={() => { setConvToDelete(c.id); setIsDeleteConfirmOpen(true); }} 
-                        className="text-red-500 h-8 w-8"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  )}
-                </CardFooter>
-              </Card>
-            ))}
+                        {isAdmin && (
+                          <div className="flex justify-end w-full gap-2 pt-2 border-t border-zinc-900/50">
+                            <Button variant="ghost" size="icon" onClick={() => handleEdit(c)} className="text-white h-8 w-8">
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              onClick={() => { setConvToDelete(c.id); setIsDeleteConfirmOpen(true); }} 
+                              className="text-red-500 h-8 w-8"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
+                      </CardFooter>
+                    </Card>
+                  ))
+                ) : (
+                  <div className="col-span-full text-center py-10">
+                    <p className="text-zinc-600 font-black uppercase italic tracking-widest text-sm">Nessun risultato trovato</p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-20 opacity-20 select-none">
+                <Handshake className="h-24 w-24 mx-auto mb-4 text-zinc-800" />
+                <p className="font-black uppercase italic text-sm tracking-[0.4em]">Cerca un partner o sfoglia tutto</p>
+              </div>
+            )}
           </div>
         )}
       </div>
