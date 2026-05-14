@@ -135,7 +135,7 @@ export default function ConvenzioniPage() {
           <div className="flex items-center gap-2">
             <Handshake className="h-8 w-8 text-red-600 shrink-0" />
             <h1 className="text-3xl font-bold tracking-tight uppercase leading-tight">
-              Convenzioni Soci
+              Convenzioni
             </h1>
           </div>
           
