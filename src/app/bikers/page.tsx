@@ -66,25 +66,51 @@ export default function BikersPage() {
     return () => unsubscribe();
   }, []);
 
-  // FUNZIONE DI SALVATAGGIO AGGIORNATA E ROBUSTA
+  // --- LOGICA DI COMPRESSIONE STILE MERCATINO ---
+  const compressImage = (base64Str: string): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = base64Str;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 800; 
+        let width = img.width;
+        let height = img.height;
+
+        if (width > MAX_WIDTH) {
+          height *= MAX_WIDTH / width;
+          width = MAX_WIDTH;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        
+        // Risolve il problema del limite di 1MB di Firestore
+        resolve(canvas.toDataURL('image/jpeg', 0.7));
+      };
+    });
+  };
+
+  // --- FUNZIONE DI SALVATAGGIO AGGIORNATA ---
   const handlePhotoUpdate = async (newPhotoBase64: string | null, bikerId: string, field: 'photoURL' | 'motoPhotoURL') => {
-    if (!bikerId) {
-      console.error("ID Biker mancante!");
-      return;
-    }
+    if (!bikerId) return;
     
     try {
-      // Usiamo l'id per puntare al documento corretto
-      const bikerRef = doc(db, "users", bikerId);
+      let finalPhoto = newPhotoBase64;
       
-      // Aggiorniamo ESATTAMENTE il campo che abbiamo visto nel DB
-      await updateDoc(bikerRef, { 
-        [field]: newPhotoBase64 
-      });
+      // Se c'è una nuova foto (Base64), comprimila
+      if (newPhotoBase64 && newPhotoBase64.startsWith('data:image')) {
+        finalPhoto = await compressImage(newPhotoBase64);
+      }
+
+      const bikerRef = doc(db, "users", bikerId);
+      await updateDoc(bikerRef, { [field]: finalPhoto });
 
       toast({ 
         title: "Database Aggiornato", 
-        description: field === 'motoPhotoURL' ? "La foto della moto è ora nel cloud." : "Profilo aggiornato." 
+        description: field === 'motoPhotoURL' ? "Foto moto salvata." : "Profilo aggiornato." 
       });
 
       setIsMyProfileModalOpen(false);
@@ -95,7 +121,7 @@ export default function BikersPage() {
       toast({ 
         variant: "destructive", 
         title: "Errore di Scrittura", 
-        description: "Controlla la connessione o i permessi." 
+        description: "La foto potrebbe essere ancora troppo grande o mancano i permessi." 
       });
     }
   };
@@ -115,7 +141,7 @@ export default function BikersPage() {
         <div className="mb-12 border-b border-zinc-900 pb-10">
           <div className="flex flex-col items-center">
             <div className="relative h-28 w-28 rounded-full border-2 border-red-600 p-1 mb-4 group cursor-pointer shadow-[0_0_20px_rgba(220,38,38,0.2)]" 
-                  onClick={() => setIsMyProfileModalOpen(true)}>
+                 onClick={() => setIsMyProfileModalOpen(true)}>
               <div className="h-full w-full rounded-full overflow-hidden bg-zinc-900 relative">
                 {currentUserData.photoURL ? (
                   <img src={currentUserData.photoURL} className="w-full h-full object-cover" alt="" />
@@ -189,7 +215,6 @@ export default function BikersPage() {
             <DialogTitle>Dettaglio Moto {viewingBike?.nome}</DialogTitle>
           </DialogHeader>
           <div className="relative aspect-video bg-zinc-900 flex items-center justify-center">
-            {/* Legge sia il campo nuovo motoPhotoURL che quello vecchio motoPhoto per sicurezza */}
             {(viewingBike?.motoPhotoURL || viewingBike?.motoPhoto) ? (
               <img src={viewingBike.motoPhotoURL || viewingBike.motoPhoto} className="w-full h-full object-cover" alt="" />
             ) : (

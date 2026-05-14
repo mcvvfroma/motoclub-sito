@@ -1,70 +1,43 @@
 'use client';
-
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
-import { Button } from '@/components/ui/button';
-import { Trash2, UploadCloud } from 'lucide-react';
+import { UploadCloud } from 'lucide-react';
 
-interface ImageUploadProps {
-  onImageUpload: (base64: string) => void;
-  currentImage?: string | null;
-}
-
-export default function ImageUpload({ onImageUpload, currentImage }: ImageUploadProps) {
+export default function ImageUpload({ onImageUpload, currentImage }: { onImageUpload: (base: string) => void, currentImage?: string | null }) {
   const [preview, setPreview] = useState<string | null>(null);
 
   useEffect(() => {
-    setPreview(currentImage || null);
+    if (currentImage) setPreview(currentImage);
   }, [currentImage]);
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
-        setPreview(base64String);
-        onImageUpload(base64String);
+      reader.onload = (event) => {
+        const result = event.target?.result as string;
+        // Se result è vuoto o nullo, la funzione si ferma qui
+        if (!result) return;
+        
+        setPreview(result);
+        onImageUpload(result); // Passa la stringa al padre
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleRemoveImage = () => {
-    setPreview(null);
-    onImageUpload('');
-  };
-
   return (
     <div className="flex flex-col items-center gap-4 w-full">
-      <div className="w-[150px] h-[150px] rounded-full relative bg-muted flex items-center justify-center border border-dashed">
+      <div className="w-32 h-32 rounded-full overflow-hidden bg-zinc-900 border border-zinc-800 flex items-center justify-center">
         {preview ? (
-          <Image src={preview} alt="Anteprima foto" layout="fill" className="rounded-full object-cover" />
+          <img src={preview} className="w-full h-full object-cover" alt="Preview" />
         ) : (
-          <UploadCloud className="w-12 h-12 text-muted-foreground" />
+          <UploadCloud className="text-zinc-700 w-10 h-10" />
         )}
       </div>
-
-      <div className="flex items-center gap-2">
-        <Button asChild variant="outline">
-          <label htmlFor="photo-upload" className="cursor-pointer">
-            {preview ? 'Sostituisci Foto' : 'Carica Foto'}
-          </label>
-        </Button>
-        <input
-          id="photo-upload"
-          type="file"
-          accept="image/*"
-          onChange={handleFileChange}
-          className="hidden"
-        />
-        {preview && (
-          <Button variant="destructive" size="icon" onClick={handleRemoveImage}>
-            <Trash2 className="w-4 h-4" />
-            <span className="sr-only">Rimuovi Foto</span>
-          </Button>
-        )}
-      </div>
+      <label className="cursor-pointer bg-zinc-800 text-white px-4 py-2 rounded-lg text-[10px] font-bold uppercase italic transition-all hover:bg-zinc-700">
+        Seleziona Foto
+        <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+      </label>
     </div>
   );
 }
