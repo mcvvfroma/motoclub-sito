@@ -66,16 +66,37 @@ export default function BikersPage() {
     return () => unsubscribe();
   }, []);
 
+  // FUNZIONE DI SALVATAGGIO AGGIORNATA E ROBUSTA
   const handlePhotoUpdate = async (newPhotoBase64: string | null, bikerId: string, field: 'photoURL' | 'motoPhotoURL') => {
-    if (!bikerId) return;
+    if (!bikerId) {
+      console.error("ID Biker mancante!");
+      return;
+    }
+    
     try {
-      await updateDoc(doc(db, "users", bikerId), { [field]: newPhotoBase64 });
-      toast({ title: "Aggiornato", description: "Documentazione salvata." });
+      // Usiamo l'id per puntare al documento corretto
+      const bikerRef = doc(db, "users", bikerId);
+      
+      // Aggiorniamo ESATTAMENTE il campo che abbiamo visto nel DB
+      await updateDoc(bikerRef, { 
+        [field]: newPhotoBase64 
+      });
+
+      toast({ 
+        title: "Database Aggiornato", 
+        description: field === 'motoPhotoURL' ? "La foto della moto è ora nel cloud." : "Profilo aggiornato." 
+      });
+
       setIsMyProfileModalOpen(false);
       setIsMyBikeModalOpen(false);
       setEditingBiker(null);
     } catch (error) {
-      toast({ variant: "destructive", title: "Errore", description: "Impossibile salvare." });
+      console.error("Errore Firebase:", error);
+      toast({ 
+        variant: "destructive", 
+        title: "Errore di Scrittura", 
+        description: "Controlla la connessione o i permessi." 
+      });
     }
   };
 
@@ -163,11 +184,12 @@ export default function BikersPage() {
 
       {/* DIALOG: VISUALIZZA MEZZO */}
       <Dialog open={!!viewingBike} onOpenChange={() => setViewingBike(null)}>
-        <DialogContent className="bg-zinc-950 border-zinc-900 text-white p-0 overflow-hidden rounded-[2.5rem] max-w-lg mx-auto border-0">
+        <DialogContent className="bg-zinc-950 border-zinc-900 text-white p-0 overflow-hidden rounded-[2.5rem] max-w-lg mx-auto border-0 focus:outline-none">
           <DialogHeader className="sr-only">
             <DialogTitle>Dettaglio Moto {viewingBike?.nome}</DialogTitle>
           </DialogHeader>
           <div className="relative aspect-video bg-zinc-900 flex items-center justify-center">
+            {/* Legge sia il campo nuovo motoPhotoURL che quello vecchio motoPhoto per sicurezza */}
             {(viewingBike?.motoPhotoURL || viewingBike?.motoPhoto) ? (
               <img src={viewingBike.motoPhotoURL || viewingBike.motoPhoto} className="w-full h-full object-cover" alt="" />
             ) : (
@@ -197,7 +219,10 @@ export default function BikersPage() {
             <button onClick={() => setAdminEditMode('profile')} className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase italic ${adminEditMode === 'profile' ? 'bg-red-600 text-white' : 'text-zinc-500'}`}>Profilo</button>
             <button onClick={() => setAdminEditMode('bike')} className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase italic ${adminEditMode === 'bike' ? 'bg-red-600 text-white' : 'text-zinc-500'}`}>Mezzo</button>
           </div>
-          <ImageUpload currentImage={adminEditMode === 'profile' ? editingBiker?.photoURL : (editingBiker?.motoPhotoURL || editingBiker?.motoPhoto)} onImageUpload={(base) => handlePhotoUpdate(base, editingBiker.id, adminEditMode === 'profile' ? 'photoURL' : 'motoPhotoURL')} />
+          <ImageUpload 
+            currentImage={adminEditMode === 'profile' ? editingBiker?.photoURL : (editingBiker?.motoPhotoURL || editingBiker?.motoPhoto)} 
+            onImageUpload={(base) => handlePhotoUpdate(base, editingBiker.id, adminEditMode === 'profile' ? 'photoURL' : 'motoPhotoURL')} 
+          />
         </DialogContent>
       </Dialog>
 
@@ -206,7 +231,7 @@ export default function BikersPage() {
         <DialogContent className="bg-zinc-950 border-zinc-800 text-white rounded-[2rem]">
           <DialogHeader>
             <DialogTitle className="font-black uppercase italic">La mia Foto Profilo</DialogTitle>
-            <DialogDescription className="sr-only">Carica o modifica la tua foto profilo</DialogDescription>
+            <DialogDescription className="sr-only">Aggiorna la tua immagine personale</DialogDescription>
           </DialogHeader>
           <ImageUpload currentImage={currentUserData?.photoURL} onImageUpload={(base) => handlePhotoUpdate(base, currentUserData.id, 'photoURL')} />
         </DialogContent>
@@ -217,9 +242,12 @@ export default function BikersPage() {
         <DialogContent className="bg-zinc-950 border-zinc-900 text-white rounded-[2rem]">
           <DialogHeader>
             <DialogTitle className="font-black uppercase italic text-red-600">La mia Moto</DialogTitle>
-            <DialogDescription className="text-zinc-500 text-[10px] font-bold uppercase italic">Aggiorna la foto della tua cavalcatura</DialogDescription>
+            <DialogDescription className="text-zinc-500 text-[10px] font-bold uppercase italic">Aggiorna la foto del tuo mezzo</DialogDescription>
           </DialogHeader>
-          <ImageUpload currentImage={currentUserData?.motoPhotoURL || currentUserData?.motoPhoto} onImageUpload={(base) => handlePhotoUpdate(base, currentUserData.id, 'motoPhotoURL')} />
+          <ImageUpload 
+            currentImage={currentUserData?.motoPhotoURL || currentUserData?.motoPhoto} 
+            onImageUpload={(base) => handlePhotoUpdate(base, currentUserData.id, 'motoPhotoURL')} 
+          />
           {(currentUserData?.motoPhotoURL || currentUserData?.motoPhoto) && (
             <Button onClick={() => handlePhotoUpdate(null, currentUserData.id, 'motoPhotoURL')} variant="destructive" className="w-full font-black italic uppercase rounded-xl mt-4 h-12">Rimuovi Foto Mezzo</Button>
           )}
