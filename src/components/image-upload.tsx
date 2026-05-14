@@ -1,16 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
-import { Button } from '@/components/ui/button';
-import { Trash2, UploadCloud } from 'lucide-react';
+import { UploadCloud } from 'lucide-react';
 
-interface ImageUploadProps {
-  onImageUpload: (base64: string) => void;
-  currentImage?: string | null;
-}
-
-export default function ImageUpload({ onImageUpload, currentImage }: ImageUploadProps) {
+export default function ImageUpload({ onImageUpload, currentImage }: { onImageUpload: (base64: string) => void, currentImage?: string | null }) {
   const [preview, setPreview] = useState<string | null>(null);
 
   useEffect(() => {
@@ -20,84 +13,30 @@ export default function ImageUpload({ onImageUpload, currentImage }: ImageUpload
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      // Usiamo FileReader puro come nella sezione eventi
       const reader = new FileReader();
       reader.onload = (e) => {
-        const img = new window.Image();
-        img.src = e.target?.result as string;
-        
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          let width = img.width;
-          let height = img.height;
-          const MAX_SIZE = 1024; 
-
-          if (width > height) {
-            if (width > MAX_SIZE) {
-              height *= MAX_SIZE / width;
-              width = MAX_SIZE;
-            }
-          } else {
-            if (height > MAX_SIZE) {
-              width *= MAX_SIZE / height;
-              height = MAX_SIZE;
-            }
-          }
-
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx?.drawImage(img, 0, 0, width, height);
-          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
-          
-          setPreview(compressedBase64);
-          onImageUpload(compressedBase64);
-        };
+        const base64String = e.target?.result as string;
+        setPreview(base64String);
+        onImageUpload(base64String);
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleRemoveImage = () => {
-    setPreview(null);
-    onImageUpload('');
-  };
-
   return (
     <div className="flex flex-col items-center gap-4 w-full">
-      <div className="w-[150px] h-[150px] rounded-full relative bg-muted flex items-center justify-center border border-dashed overflow-hidden">
+      <div className="w-32 h-32 rounded-full border-2 border-dashed border-zinc-800 flex items-center justify-center overflow-hidden bg-zinc-900">
         {preview ? (
-          <Image 
-            src={preview} 
-            alt="Anteprima foto" 
-            fill 
-            className="object-cover"
-            unoptimized
-          />
+          <img src={preview} alt="Anteprima" className="w-full h-full object-cover" />
         ) : (
-          <UploadCloud className="w-12 h-12 text-muted-foreground" />
+          <UploadCloud className="w-10 h-10 text-zinc-700" />
         )}
       </div>
-
-      <div className="flex items-center gap-2">
-        <Button asChild variant="outline">
-          <label htmlFor="photo-upload" className="cursor-pointer">
-            {preview ? 'Sostituisci Foto' : 'Carica Foto'}
-          </label>
-        </Button>
-        <input
-          id="photo-upload"
-          type="file"
-          accept="image/*"
-          onChange={handleFileChange}
-          className="hidden"
-        />
-        {preview && (
-          <Button variant="destructive" size="icon" onClick={handleRemoveImage}>
-            <Trash2 className="w-4 h-4" />
-            <span className="sr-only">Rimuovi Foto</span>
-          </Button>
-        )}
-      </div>
+      <label className="cursor-pointer bg-zinc-900 hover:bg-zinc-800 text-white px-6 py-2 rounded-xl text-[10px] font-black uppercase italic border border-zinc-800 transition-all">
+        Seleziona Foto
+        <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+      </label>
     </div>
   );
 }
