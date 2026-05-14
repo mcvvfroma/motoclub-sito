@@ -8,7 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import ImageUpload from '@/components/image-upload';
-import { Bike, User, Loader2, Edit, Shield, Camera } from 'lucide-react';
+import { Bike, User, Loader2, Edit, Shield } from 'lucide-react';
 
 export default function BikersPage() {
   const [bikers, setBikers] = useState<any[]>([]);
@@ -70,7 +70,7 @@ export default function BikersPage() {
     if (!bikerId) return;
     try {
       await updateDoc(doc(db, "users", bikerId), { [field]: newPhotoBase64 });
-      toast({ title: "Aggiornato", description: "Documentazione fotografica salvata." });
+      toast({ title: "Aggiornato", description: "Documentazione salvata." });
       setIsMyProfileModalOpen(false);
       setIsMyBikeModalOpen(false);
       setEditingBiker(null);
@@ -161,11 +161,13 @@ export default function BikersPage() {
         ))}
       </div>
 
-      {/* DIALOG: VISUALIZZA MEZZO - AGGIORNATO PER VEDERE TUTTE LE FOTO (VECCHIE E NUOVE) */}
+      {/* DIALOG: VISUALIZZA MEZZO */}
       <Dialog open={!!viewingBike} onOpenChange={() => setViewingBike(null)}>
         <DialogContent className="bg-zinc-950 border-zinc-900 text-white p-0 overflow-hidden rounded-[2.5rem] max-w-lg mx-auto border-0">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Dettaglio Moto {viewingBike?.nome}</DialogTitle>
+          </DialogHeader>
           <div className="relative aspect-video bg-zinc-900 flex items-center justify-center">
-            {/* LOGICA DOUBLE-CHECK: Cerca sia il nuovo campo (motoPhotoURL) che quello vecchio (motoPhoto) */}
             {(viewingBike?.motoPhotoURL || viewingBike?.motoPhoto) ? (
               <img src={viewingBike.motoPhotoURL || viewingBike.motoPhoto} className="w-full h-full object-cover" alt="" />
             ) : (
@@ -184,50 +186,28 @@ export default function BikersPage() {
         </DialogContent>
       </Dialog>
 
-      {/* DIALOG: ADMIN MODERA (PROFILO O MEZZO) */}
+      {/* DIALOG: ADMIN MODERA */}
       <Dialog open={!!editingBiker} onOpenChange={() => setEditingBiker(null)}>
         <DialogContent className="bg-zinc-950 border-zinc-900 text-white rounded-[2rem]">
           <DialogHeader>
             <DialogTitle className="font-black uppercase italic text-red-600">Moderazione Socio</DialogTitle>
             <DialogDescription className="text-zinc-500 uppercase text-[10px] font-bold">Gestione contenuti per {editingBiker?.nome}</DialogDescription>
           </DialogHeader>
-          
           <div className="flex gap-2 mb-6 bg-zinc-900 p-1 rounded-xl border border-zinc-800">
-            <button 
-              onClick={() => setAdminEditMode('profile')}
-              className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase italic transition-all ${adminEditMode === 'profile' ? 'bg-red-600 text-white shadow-lg' : 'text-zinc-500'}`}
-            >
-              Foto Profilo
-            </button>
-            <button 
-              onClick={() => setAdminEditMode('bike')}
-              className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase italic transition-all ${adminEditMode === 'bike' ? 'bg-red-600 text-white shadow-lg' : 'text-zinc-500'}`}
-            >
-              Foto Mezzo
-            </button>
+            <button onClick={() => setAdminEditMode('profile')} className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase italic ${adminEditMode === 'profile' ? 'bg-red-600 text-white' : 'text-zinc-500'}`}>Profilo</button>
+            <button onClick={() => setAdminEditMode('bike')} className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase italic ${adminEditMode === 'bike' ? 'bg-red-600 text-white' : 'text-zinc-500'}`}>Mezzo</button>
           </div>
-
-          <ImageUpload 
-            currentImage={adminEditMode === 'profile' ? editingBiker?.photoURL : (editingBiker?.motoPhotoURL || editingBiker?.motoPhoto)} 
-            onImageUpload={(base) => handlePhotoUpdate(base, editingBiker.id, adminEditMode === 'profile' ? 'photoURL' : 'motoPhotoURL')} 
-          />
-
-          {((adminEditMode === 'profile' && editingBiker?.photoURL) || (adminEditMode === 'bike' && (editingBiker?.motoPhotoURL || editingBiker?.motoPhoto))) && (
-            <Button 
-              onClick={() => handlePhotoUpdate(null, editingBiker.id, adminEditMode === 'profile' ? 'photoURL' : 'motoPhotoURL')} 
-              variant="destructive" 
-              className="w-full font-black italic uppercase rounded-xl mt-4 h-12"
-            >
-              Rimuovi {adminEditMode === 'profile' ? 'Profilo' : 'Mezzo'}
-            </Button>
-          )}
+          <ImageUpload currentImage={adminEditMode === 'profile' ? editingBiker?.photoURL : (editingBiker?.motoPhotoURL || editingBiker?.motoPhoto)} onImageUpload={(base) => handlePhotoUpdate(base, editingBiker.id, adminEditMode === 'profile' ? 'photoURL' : 'motoPhotoURL')} />
         </DialogContent>
       </Dialog>
 
       {/* DIALOG: MIO PROFILO */}
       <Dialog open={isMyProfileModalOpen} onOpenChange={setIsMyProfileModalOpen}>
         <DialogContent className="bg-zinc-950 border-zinc-800 text-white rounded-[2rem]">
-          <DialogHeader><DialogTitle className="font-black uppercase italic">La mia Foto Profilo</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle className="font-black uppercase italic">La mia Foto Profilo</DialogTitle>
+            <DialogDescription className="sr-only">Carica o modifica la tua foto profilo</DialogDescription>
+          </DialogHeader>
           <ImageUpload currentImage={currentUserData?.photoURL} onImageUpload={(base) => handlePhotoUpdate(base, currentUserData.id, 'photoURL')} />
         </DialogContent>
       </Dialog>
@@ -236,7 +216,7 @@ export default function BikersPage() {
       <Dialog open={isMyBikeModalOpen} onOpenChange={setIsMyBikeModalOpen}>
         <DialogContent className="bg-zinc-950 border-zinc-900 text-white rounded-[2rem]">
           <DialogHeader>
-            <DialogTitle className="font-black uppercase italic text-red-600">Galleria Mezzo</DialogTitle>
+            <DialogTitle className="font-black uppercase italic text-red-600">La mia Moto</DialogTitle>
             <DialogDescription className="text-zinc-500 text-[10px] font-bold uppercase italic">Aggiorna la foto della tua cavalcatura</DialogDescription>
           </DialogHeader>
           <ImageUpload currentImage={currentUserData?.motoPhotoURL || currentUserData?.motoPhoto} onImageUpload={(base) => handlePhotoUpdate(base, currentUserData.id, 'motoPhotoURL')} />
