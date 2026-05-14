@@ -94,7 +94,7 @@ export default function BikersPage() {
         <div className="mb-12 border-b border-zinc-900 pb-10">
           <div className="flex flex-col items-center">
             <div className="relative h-28 w-28 rounded-full border-2 border-red-600 p-1 mb-4 group cursor-pointer shadow-[0_0_20px_rgba(220,38,38,0.2)]" 
-                 onClick={() => setIsMyProfileModalOpen(true)}>
+                  onClick={() => setIsMyProfileModalOpen(true)}>
               <div className="h-full w-full rounded-full overflow-hidden bg-zinc-900 relative">
                 {currentUserData.photoURL ? (
                   <img src={currentUserData.photoURL} className="w-full h-full object-cover" alt="" />
@@ -161,12 +161,13 @@ export default function BikersPage() {
         ))}
       </div>
 
-      {/* DIALOG: VISUALIZZA MEZZO */}
+      {/* DIALOG: VISUALIZZA MEZZO - AGGIORNATO PER VEDERE TUTTE LE FOTO (VECCHIE E NUOVE) */}
       <Dialog open={!!viewingBike} onOpenChange={() => setViewingBike(null)}>
         <DialogContent className="bg-zinc-950 border-zinc-900 text-white p-0 overflow-hidden rounded-[2.5rem] max-w-lg mx-auto border-0">
           <div className="relative aspect-video bg-zinc-900 flex items-center justify-center">
-            {viewingBike?.motoPhotoURL ? (
-              <img src={viewingBike.motoPhotoURL} className="w-full h-full object-cover" alt="" />
+            {/* LOGICA DOUBLE-CHECK: Cerca sia il nuovo campo (motoPhotoURL) che quello vecchio (motoPhoto) */}
+            {(viewingBike?.motoPhotoURL || viewingBike?.motoPhoto) ? (
+              <img src={viewingBike.motoPhotoURL || viewingBike.motoPhoto} className="w-full h-full object-cover" alt="" />
             ) : (
               <div className="text-center p-8">
                 <Bike size={48} className="text-zinc-800 mx-auto mb-4" />
@@ -207,11 +208,11 @@ export default function BikersPage() {
           </div>
 
           <ImageUpload 
-            currentImage={adminEditMode === 'profile' ? editingBiker?.photoURL : editingBiker?.motoPhotoURL} 
+            currentImage={adminEditMode === 'profile' ? editingBiker?.photoURL : (editingBiker?.motoPhotoURL || editingBiker?.motoPhoto)} 
             onImageUpload={(base) => handlePhotoUpdate(base, editingBiker.id, adminEditMode === 'profile' ? 'photoURL' : 'motoPhotoURL')} 
           />
 
-          {((adminEditMode === 'profile' && editingBiker?.photoURL) || (adminEditMode === 'bike' && editingBiker?.motoPhotoURL)) && (
+          {((adminEditMode === 'profile' && editingBiker?.photoURL) || (adminEditMode === 'bike' && (editingBiker?.motoPhotoURL || editingBiker?.motoPhoto))) && (
             <Button 
               onClick={() => handlePhotoUpdate(null, editingBiker.id, adminEditMode === 'profile' ? 'photoURL' : 'motoPhotoURL')} 
               variant="destructive" 
@@ -238,8 +239,8 @@ export default function BikersPage() {
             <DialogTitle className="font-black uppercase italic text-red-600">Galleria Mezzo</DialogTitle>
             <DialogDescription className="text-zinc-500 text-[10px] font-bold uppercase italic">Aggiorna la foto della tua cavalcatura</DialogDescription>
           </DialogHeader>
-          <ImageUpload currentImage={currentUserData?.motoPhotoURL} onImageUpload={(base) => handlePhotoUpdate(base, currentUserData.id, 'motoPhotoURL')} />
-          {currentUserData?.motoPhotoURL && (
+          <ImageUpload currentImage={currentUserData?.motoPhotoURL || currentUserData?.motoPhoto} onImageUpload={(base) => handlePhotoUpdate(base, currentUserData.id, 'motoPhotoURL')} />
+          {(currentUserData?.motoPhotoURL || currentUserData?.motoPhoto) && (
             <Button onClick={() => handlePhotoUpdate(null, currentUserData.id, 'motoPhotoURL')} variant="destructive" className="w-full font-black italic uppercase rounded-xl mt-4 h-12">Rimuovi Foto Mezzo</Button>
           )}
         </DialogContent>
