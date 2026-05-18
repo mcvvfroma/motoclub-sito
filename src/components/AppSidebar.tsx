@@ -3,10 +3,11 @@
 import { useState, useEffect } from 'react';
 import { menuItems } from '@/config/menu';
 import { X, LogOut } from 'lucide-react';
-import { useRouter, usePathname } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAdmin } from '@/hooks/use-admin';
-import { db } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
+import { signOut } from 'firebase/auth';
 import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
 
 interface AppSidebarProps {
@@ -15,7 +16,6 @@ interface AppSidebarProps {
 }
 
 export default function AppSidebar({ isOpen, setIsOpen }: AppSidebarProps) {
-  const router = useRouter();
   const pathname = usePathname();
   const { isAdmin, loading } = useAdmin();
   const [mounted, setMounted] = useState(false);
@@ -76,10 +76,27 @@ export default function AppSidebar({ isOpen, setIsOpen }: AppSidebarProps) {
     setNotifs(updated);
   }, [pathname, latestIds]);
 
-  const handleLogout = () => {
-    setIsOpen(false);
-    // IMPORTANTE: Non usiamo localStorage.clear() qui per mantenere i pallini letti
-    router.push('/login');
+  // FUNZIONE LOGOUT POTENZIATA (PIAZZA PULITA ANCHE DA MOBILE)
+  const handleLogout = async () => {
+    try {
+      setIsOpen(false);
+      
+      // Scollega da Firebase
+      await signOut(auth);
+      
+      // Svuota la sessione
+      window.sessionStorage.clear();
+      
+      // Svuota i cookie per non confondere il Middleware
+      document.cookie = "session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      document.cookie = "__session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      
+      // IMPORTANTE: Non usiamo localStorage.clear() qui per mantenere i pallini letti
+      // Forza il refresh totale per ripulire la cache del telefono
+      window.location.href = '/login';
+    } catch (error) {
+      window.location.href = '/login';
+    }
   };
 
   return (

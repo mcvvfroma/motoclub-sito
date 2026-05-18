@@ -70,10 +70,16 @@ export default function Navbar({ setIsOpen }: NavbarProps) {
 
   const hasAnyNotif = Object.values(notifs).some(v => v);
 
+  // FUNZIONE LOGOUT POTENZIATA (PIAZZA PULITA)
   const handleLogoff = async () => {
     try {
       await signOut(auth);
       window.sessionStorage.clear();
+      
+      // Svuota i cookie di sessione per evitare blocchi sul Middleware
+      document.cookie = "session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      document.cookie = "__session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      
       window.location.href = '/login';
     } catch (error) {
       window.location.href = '/login';
